@@ -1,0 +1,33 @@
+import { BlockSet } from "jp.ngt.ngtlib.block";
+import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
+import { Block } from "net.minecraft.block";
+import { Entity } from "net.minecraft.entity";
+import { InventoryPlayer } from "net.minecraft.entity.player";
+import { ItemStack } from "net.minecraft.item";
+import { NBTTagCompound } from "net.minecraft.nbt";
+import { TileEntity } from "net.minecraft.tileentity";
+import { World } from "net.minecraft.world";
+
+//lib_RTMApiCompat.jsの型定義ファイル
+/**
+ * RTMのバージョン差異を吸収するためのクラスです。RTMのバージョンによっては正常に動作しない機能もあります
+ * 
+ * 1.12と1.7.10の両方で動作するように設計されていますが、すべてのバージョンで完全な互換性があるわけではありません
+ */
+export class RTMApiCompat {
+    static isOldVer: boolean;
+    static getRider(entity: EntityVehicle): Entity;
+    static getRidingEntity(entity: EntityVehicle): Entity;
+    static dismountPlayer(entity: EntityVehicle): void;
+    static createNBTFromTileEntity(tileEntity: TileEntity): NBTTagCompound;
+    static setBlock(world: World, x: number, y: number, z: number, block: Block, metadata: number): void;
+    static getBlock(world: World, x: number, y: number, z: number): Block;
+    static getMetadata(world: World, x: number, y: number, z: number): number;
+    static getTileEntity(world: World, x: number, y: number, z: number): TileEntity;
+    static hasTileEntity(blockSet: BlockSet): boolean;
+    static setResourceName(tileEntity: TileEntity, nbt: NBTTagCompound): void;
+    static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void;
+    static getItemStackAt(inventory: InventoryPlayer, index: number): ItemStack;
+    static doFollowing(entity: Entity, hostPlayer: Entity): void;
+    static startRiding(entity: Entity, targetEntity: Entity): void;
+}

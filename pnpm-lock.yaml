@@ -1,0 +1,40 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      rtm-ts:
+        specifier: latest
+        version: 0.5.2
+
+packages:
+
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
+
+  rtm-ts@0.5.2:
+    resolution: {integrity: sha512-ylqgDneB/MTC7uGFCNgdp9x0tK8DsWHdOgPSoHTEJFlF0VkvMD9rTO7ytBcHJ3styeL/LJCo0H87pKOsMCDsug==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+snapshots:
+
+  commander@12.1.0: {}
+
+  rtm-ts@0.5.2:
+    dependencies:
+      commander: 12.1.0
+      typescript: 5.9.3
+
+  typescript@5.9.3: {}
