@@ -28,9 +28,7 @@ export class Quaternion {
         public x: number = 0,
         public y: number = 0,
         public z: number = 0
-    ) {
-        NGTLog.debug("[Quaternion] new");
-    }
+    ) { }
 
     /**
      * クォータニオンを正規化して自身を更新する
