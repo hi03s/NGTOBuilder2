@@ -4,11 +4,11 @@ import { ScriptExecuter } from "jp.ngt.rtm.modelpack";
 import { Blocks } from "net.minecraft.init";
 import { WeakHashMap } from "java.util";
 import { BlockSet } from "jp.ngt.ngtlib.block";
-import { combineNGTOList, NGTOBuilderUtil, Pos } from "./lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
-import { RTMApiCompat } from "./lib_hi03toolkit_1_0/lib_RTMApiCompat";
-import { BlockBuilder } from "./lib_hi03toolkit_1_0/lib_BlockBuilder";
+import { NGTOBuilderUtil, Pos } from "../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
+import { RTMApiCompat } from "../lib_hi03toolkit_1_0/lib_RTMApiCompat";
+import { BlockBuilder } from "../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { EntityPlayer } from "net.minecraft.entity.player";
-import { UndoManager } from "./lib_hi03toolkit_1_0/lib_UndoManager";
+import { UndoManager } from "../lib_hi03toolkit_1_0/lib_UndoManager";
 
 //#################################
 //##  hi03式エディターツール v1.0  ##
@@ -40,7 +40,7 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     dataMap.setBoolean("isInitializedServer", true, 1);
 
     //ブロック生成用のBlockBuilder
-    if (!builder) builder = new BlockBuilder();
+    if (builder === undefined) builder = new BlockBuilder();
     else builder.clear(entity);
 
     //dataMapのリセット

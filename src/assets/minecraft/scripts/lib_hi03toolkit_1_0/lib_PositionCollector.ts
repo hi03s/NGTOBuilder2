@@ -98,6 +98,16 @@ export class PositionCollector {
         this.set(entity, []);
     }
 
+    /**
+     * 座標の数を取得する
+     * @param entity 
+     * @returns 
+     */
+    size(entity: Entity): number {
+        const posList = this.get(entity);
+        return posList.length;
+    }
+
     private get(entity: Entity): DuplicatePos[] {
         let list = this.hashMap.get(entity);
         if (!list) {

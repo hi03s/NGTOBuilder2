@@ -15,7 +15,10 @@
       "net.minecraftforge",
       "cpw.mods",
       "jp.ngt",
-      "org.lwjgl"
+      "org.lwjgl",
+      "java.util",
+      "java.nio",
+      "java.lang.System"
     ]
   },
   "compilerOptions": {

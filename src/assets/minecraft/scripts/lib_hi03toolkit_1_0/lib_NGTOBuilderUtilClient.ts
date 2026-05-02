@@ -10,6 +10,10 @@ import { NGTUtil } from "jp.ngt.ngtlib.util";
 import { ModelSetVehicleBaseClient } from "jp.ngt.rtm.modelpack.modelset";
 import { NGTOBuilderUtil } from "./lib_NGTOBuilderUtil";
 import { NGTLog } from "jp.ngt.ngtlib.io";
+import { FloatBuffer } from "java.nio";
+import { Quaternion } from "./lib_Quaternion";
+import { BufferUtils } from "org.lwjgl";
+import { System } from "java.lang";
 
 export type Pos = [
     x: number,
@@ -24,6 +28,8 @@ export type Pos = [
 export class NGTOBuilderUtilClient {
 
     private static glCache: HashMap<string, DisplayList> = new HashMap();
+
+    private static bufferCache: HashMap<string, FloatBuffer> = new HashMap();
 
     /**
      * 視線の先の座標/ブロック座標/ブロック側面座標を取得する。
@@ -55,10 +61,31 @@ export class NGTOBuilderUtilClient {
     static isKeyDown(dataMap: DataMap, keyCode: number, optionKeyCode?: number): boolean {
         let optionKeyDown = true;
         if (optionKeyCode !== undefined && optionKeyCode !== null) optionKeyDown = Keyboard.isKeyDown(optionKeyCode);
-        const prevKeyDown = dataMap.getBoolean("prevKeyDown_" + keyCode);
+        const prevKeyDown = dataMap.getBoolean(`prevKeyDown_${keyCode}`);
         const isKeyDown = Keyboard.isKeyDown(keyCode);
-        if (prevKeyDown !== isKeyDown) dataMap.setBoolean("prevKeyDown_" + keyCode, isKeyDown, 0);
+        if (prevKeyDown !== isKeyDown) dataMap.setBoolean(`prevKeyDown_${keyCode}`, isKeyDown, 0);
         return !prevKeyDown && isKeyDown && optionKeyDown;
+    }
+
+    /**
+     * キーが押され続けていることを検知する
+     * @param dataMap 
+     * @param keyCode 
+     * @param requiredMillis 押され続けているとみなすために必要な時間[ms]
+     * @returns 
+     */
+    static isKeyDownLong(dataMap: DataMap, keyCode: number, requiredMillis: number): boolean {
+        const now = System.currentTimeMillis();
+        let pressStart = Number(dataMap.getString(`keyDownStartTime_${keyCode}`));
+        if (Keyboard.isKeyDown(keyCode)) {
+            if (pressStart === 0) {
+                pressStart = now;
+                dataMap.setString(`keyDownStartTime_${keyCode}`, String(pressStart), 0);
+            }
+            return (now - pressStart) >= requiredMillis;
+        }
+        if (pressStart !== 0) dataMap.setString(`keyDownStartTime_${keyCode}`, "0", 0);
+        return false;
     }
 
     /**
@@ -107,5 +134,36 @@ export class NGTOBuilderUtilClient {
         const model = modelObj.model;
         const currentMatId = renderer.currentMatId;
         NGTRenderHelper.renderCustomModel(model, currentMatId, smoothing, partsName);
+    }
+
+    /**
+     * クォータニオンをOpenGLの行列に変換して適用する。キャッシュ化による高速化も行う。
+     * @param q クォータニオン
+     */
+    static glApplyQuaternionMatrix(q: Quaternion): void {
+        const matrix = Quaternion.applyQuaternion(q);
+        const key = NGTOBuilderUtilClient.createMatrixKey(matrix);
+        const cache = this.bufferCache.get(key);
+        if (cache) {
+            GL11.glMultMatrix(cache);
+        }
+        else {
+            const buffer = BufferUtils.createFloatBuffer(16);
+            buffer.clear();
+            matrix.forEach(v => { buffer.put(v) });
+            buffer.flip();
+            this.bufferCache.put(key, buffer);
+            GL11.glMultMatrix(buffer);
+        }
+    }
+
+    private static createMatrixKey(matrix: number[]): string {
+        let key = "";
+        for (let i = 0; i < matrix.length; i++) {
+            const value = Math.round(matrix[i] * 1000000) / 1000000;
+            if (i > 0) key += ",";
+            key += value;
+        }
+        return key;
     }
 }
