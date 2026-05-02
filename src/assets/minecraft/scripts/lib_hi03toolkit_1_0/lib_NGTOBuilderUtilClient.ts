@@ -14,6 +14,7 @@ import { FloatBuffer } from "java.nio";
 import { Quaternion } from "./lib_Quaternion";
 import { BufferUtils } from "org.lwjgl";
 import { System } from "java.lang";
+import { NGTObject } from "jp.ngt.ngtlib.block";
 
 export type Pos = [
     x: number,
@@ -155,6 +156,16 @@ export class NGTOBuilderUtilClient {
             this.bufferCache.put(key, buffer);
             GL11.glMultMatrix(buffer);
         }
+    }
+
+    /**
+     * NGTOを描画する
+     * @param renderer 
+     * @param ngto 
+     * @param pass 
+     */
+    static renderNGTO(renderer: PartsRenderer, ngto: NGTObject, pass: number): void {
+        RTMApiCompatClient.renderNGTO(renderer, ngto, pass);
     }
 
     private static createMatrixKey(matrix: number[]): string {

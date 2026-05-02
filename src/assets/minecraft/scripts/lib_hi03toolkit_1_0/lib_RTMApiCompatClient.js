@@ -64,16 +64,24 @@ RTMApiCompatClient.generateGLList = function () {
     else return Packages.jp.ngt.ngtlib.renderer.GLHelper.generateGLList(null);
 }
 RTMApiCompatClient.ngtoWorld = new java.util.HashMap();
-RTMApiCompatClient.renderNGTO = function (ngto, pass) {
-    if (RTMApiCompatClient.isOldVer) {
-        Packages.jp.ngt.ngtlib.renderer.NGTRenderer.renderNGTObject(ngto, true);
-    }
-    else {
-        var world = RTMApiCompatClient.ngtoWorld.get(ngto);
-        if (!world) {
-            world = new Packages.jp.ngt.ngtlib.world.NGTWorld(Packages.jp.ngt.ngtlib.util.NGTUtil.getClientWorld(), ngto);
-            RTMApiCompatClient.ngtoWorld.put(ngto, world);
+RTMApiCompatClient.renderNGTO = function (renderer, ngto, pass) {
+    var NGTUtil = Packages.jp.ngt.ngtlib.util.NGTUtil;
+    var modelObj = NGTUtil.getField(PartsRenderer.class, renderer, "modelObj");
+    var matId = renderer.currentMatId;
+    if (modelObj) {
+        var defaultTexture = modelObj.textures[matId].material.texture;
+        renderer.bindTexture(Packages.net.minecraft.client.renderer.texture.TextureMap.field_110575_b);
+        if (RTMApiCompatClient.isOldVer) {
+            Packages.jp.ngt.ngtlib.renderer.NGTRenderer.renderNGTObject(ngto, true);
         }
-        Packages.jp.ngt.ngtlib.renderer.NGTObjectRenderer.INSTANCE.renderNGTObject(world, ngto, true, 0, pass);
+        else {
+            var world = RTMApiCompatClient.ngtoWorld.get(ngto);
+            if (!world) {
+                world = new Packages.jp.ngt.ngtlib.world.NGTWorld(NGTUtil.getClientWorld(), ngto);
+                RTMApiCompatClient.ngtoWorld.put(ngto, world);
+            }
+            Packages.jp.ngt.ngtlib.renderer.NGTObjectRenderer.INSTANCE.renderNGTObject(world, ngto, true, 0, pass);
+        }
+        renderer.bindTexture(defaultTexture);
     }
 }
