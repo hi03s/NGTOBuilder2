@@ -27,6 +27,14 @@ export class Quaternion {
         public y: number = 0,
         public z: number = 0
     ) { }
+    
+    /**
+     * ハッシュを返す
+     * @returns
+     */
+    getHash(): string{
+        return `${this.w}_${this.x}_${this.y}_${this.z}`
+    }
 
     /**
      * クォータニオンを正規化して自身を更新する
