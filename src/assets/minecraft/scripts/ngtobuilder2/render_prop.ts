@@ -18,6 +18,8 @@ import { Vec3 } from "jp.ngt.ngtlib.math";
 import { NGTOBuilderUtil } from "../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { OpenGlHelper } from "net.minecraft.client.renderer";
 import { RotatableBlockObject } from "../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
+import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
+import { Blocks } from "net.minecraft.init";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
@@ -77,7 +79,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
         //回転モードを切り替え
         isWorldAxis: Keyboard.KEY_O,
-        
+
         //補間モード切り替え
         switchInterpolationMode: Keyboard.KEY_U,
 
@@ -104,6 +106,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
     collector = new PositionCollector();
     quaternionManager = new HashMap();
     posListCache = new HashMap();
+    prevNGTOData = new HashMap();
     initParts();
 }
 declare global {
@@ -130,13 +133,14 @@ declare global {
         resetRotation: number;
         isWorldAxis: number;
         resetPos: number;
-        switchInterpolationMode:number;
+        switchInterpolationMode: number;
     };
     var snapAngleList: number[];
     var Version: string;
     var collector: PositionCollector;
     var quaternionManager: HashMap<Entity, Quaternion>;
     var posListCache: HashMap<string, Pos[]>;
+    var prevNGTOData: HashMap<Entity, NGTObject | null>;
 }
 
 function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick: boolean, isLeftClick: boolean): void {
@@ -446,6 +450,8 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     //NGTOを描画
     const ngto = NGTOBuilderUtil.getHeldNGTO(player);
     const q = quaternionManager.get(entity);
+    let prevNGTO = prevNGTOData.get(entity);
+    prevNGTOData.put(entity, ngto);
     if (ngto && q) {
         let selectedPos = null;
         if (collector.size(entity) > 0) selectedPos = collector.getAll(entity)[0];
@@ -454,11 +460,11 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
             GL11.glPushMatrix();
-            GL11.glTranslatef(selectedPos[0] + 0.5, selectedPos[1], selectedPos[2] + 0.5);
+            GL11.glTranslatef(selectedPos[0] + 0.5, selectedPos[1] + 0.5, selectedPos[2] + 0.5);
             GL11.glTranslatef(-posX, -posY, -posZ);
             NGTOBuilderUtilClient.glApplyQuaternionMatrix(q);
-            GL11.glTranslatef(-centerX, 0, -centerZ);
-            NGTOBuilderUtilClient.renderNGTO(renderer, ngto, pass);
+            GL11.glTranslatef(-centerX, -0.5, -centerZ);
+            NGTOBuilderUtilClient.renderNGTO(prevNGTO !== ngto, entity, renderer, ngto, pass);
             GL11.glPopMatrix();
         }
     }
@@ -472,16 +478,29 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         const qHash = q.getHash();
         const hash = entityId + ngtoHash + qHash + String(isPlaceAirBlock) + String(interpolationMode);
         let posList = posListCache.get(hash);//相対座標で管理
-        if (!posList) {
+        if (!posList || (prevNGTO !== ngto)) {
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
-            //posListを生成
-            const blockObj = RotatableBlockObject.createFromNGTO(ngto);
-            if (!isPlaceAirBlock) blockObj.removeAirBlock();
-            blockObj.setRotationAxisPos(centerX, 0, centerZ);
-            blockObj.rotate(interpolationMode, q);
-            blockObj.toBlockPos();
-            posList = blockObj.getPlacePosList(0, 0, 0);//(0, 0, 0)で相対座標として生成
+            NGTLog.debug("test1");
+            if ((ngto.xSize * ngto.ySize * ngto.zSize) > 20000 ||
+                (interpolationMode === 1 && (ngto.xSize * ngto.ySize * ngto.zSize * 8) > 20000)) {//補間ありで20000ブロック超えるときも代替表示
+                //巨大ブロックは代替表示
+                const hugePosList = NGTOBuilderUtilClient.getOutsideFramePosList(ngto);
+                const blockObj = RotatableBlockObject.createFromPosList(new BlockSet(Blocks.stone, 0), hugePosList);
+                blockObj.setRotationAxisPos(centerX, 0, centerZ);
+                blockObj.rotate(0, q);
+                blockObj.toBlockPos();
+                posList = blockObj.getPlacePosList(0, 0, 0);//(0, 0, 0)で相対座標として生成
+            }
+            else {
+                //posListを生成
+                const blockObj = RotatableBlockObject.createFromNGTO(ngto);
+                if (!isPlaceAirBlock) blockObj.removeAirBlock();
+                blockObj.setRotationAxisPos(centerX, 0, centerZ);
+                blockObj.rotate(interpolationMode, q);
+                blockObj.toBlockPos();
+                posList = blockObj.getPlacePosList(0, 0, 0);//(0, 0, 0)で相対座標として生成
+            }
             posListCache.put(hash, posList);
         }
         //描画

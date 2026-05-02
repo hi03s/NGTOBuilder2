@@ -179,7 +179,7 @@ export class RotatableBlockObject {
             additionalBlockSet.local_y = Math.floor(additionalBlockSet.local_y);//なぜかfloorだとうまくいく
             additionalBlockSet.local_z = Math.round(additionalBlockSet.local_z);
             const posKey = `${additionalBlockSet.local_x}_${additionalBlockSet.local_y}_${additionalBlockSet.local_z}`;
-            if (posKeyList.indexOf(posKey) === -1){
+            if (posKeyList.indexOf(posKey) === -1) {
                 //座標が被っていなければ追加
                 this.rotatableBlockSetList.push(additionalBlockSet);
             }
@@ -213,6 +213,15 @@ export class RotatableBlockObject {
             result.push([rotatableBlockSet.local_x + placeX, rotatableBlockSet.local_y + placeY, rotatableBlockSet.local_z + placeZ]);
         }
         return result;
+    }
+
+    static createFromPosList(blockSet: BlockSet, posList: Pos[]): RotatableBlockObject {
+        const blockSetList: RotatableBlockSet[] = [];
+        posList.forEach(pos => {
+            const rotatableBlockSet = new RotatableBlockSet(blockSet, pos[0], pos[1], pos[2]);
+            blockSetList.push(rotatableBlockSet)
+        });
+        return new RotatableBlockObject(blockSetList);
     }
 
     /**

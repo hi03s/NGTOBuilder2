@@ -15,6 +15,7 @@ import { Quaternion } from "./lib_Quaternion";
 import { BufferUtils } from "org.lwjgl";
 import { System } from "java.lang";
 import { NGTObject } from "jp.ngt.ngtlib.block";
+import { RotatableBlockSet } from "./lib_RotatableBlockObject";
 
 export type Pos = [
     x: number,
@@ -89,37 +90,65 @@ export class NGTOBuilderUtilClient {
         return false;
     }
 
+    static getOutsideFramePosList(ngto: NGTObject): Pos[] {
+        const blockSetList: Pos[] = [];
+        const maxX = ngto.xSize;
+        const maxY = ngto.ySize;
+        const maxZ = ngto.zSize;
+        const yzList = [[0, 0], [0, maxZ], [maxY, 0], [maxY, maxZ]];
+        for (let xIdx = 0; xIdx < ngto.xSize; xIdx++) {
+            yzList.forEach(function (posYZ) {
+                blockSetList.push([xIdx, posYZ[0], posYZ[1]]);
+            });
+        }
+        const xyList = [[0, 0], [maxX, 0], [0, maxY], [maxX, maxY]];
+        for (let zIdx = 0; zIdx < ngto.zSize; zIdx++) {
+            xyList.forEach(function (posXY) {
+                blockSetList.push([posXY[0], posXY[1], zIdx]);
+            });
+        }
+        const xzList = [[0, 0], [maxX, 0], [0, maxZ], [maxX, maxZ]];
+        for (let yIdx = 0; yIdx < ngto.ySize; yIdx++) {
+            xzList.forEach(function (posXZ) {
+                blockSetList.push([posXZ[0], yIdx, posXZ[1]]);
+            });
+        }
+        return blockSetList;
+    }
+
     /**
      * ブロックを設置する座標にフレームを描画する(キャッシュ化によるStatic描画)
+     * 20000ブロックを超えるフレームは描画できません
      * @param renderer 
      * @param entity 
      * @param posList 
      */
-    static renderPlaceBlocksStatic(renderer: PartsRenderer, partName:string, entity: Entity, posList: Pos[]): void {
-        //posListをハッシュ化
-        const posListHash = Arrays.deepHashCode(posList);
-        const key = `${entity.getUniqueID()}_${posListHash}`;
-        const glList = NGTOBuilderUtilClient.glCache.get(key);
-        if (!glList) {
-            const glList = RTMApiCompatClient.generateGLList();
-            NGTLog.debug(`[NGTOBuilderUtilClient] Generate GLList: ${key}/${glList.value}`);
-            GL11.glPushMatrix();
-            GLHelper.startCompile(glList);
-
-            posList.forEach(pos => {
+    static renderPlaceBlocksStatic(renderer: PartsRenderer, partName: string, entity: Entity, posList: Pos[]): void {
+        if (posList.length <= 20000) {
+            //posListをハッシュ化
+            const posListHash = Arrays.deepHashCode(posList);
+            const key = `${entity.getUniqueID()}_${posListHash}`;
+            const glList = NGTOBuilderUtilClient.glCache.get(key);
+            if (!glList) {
+                const glList = RTMApiCompatClient.generateGLList();
                 GL11.glPushMatrix();
-                GL11.glTranslated(pos[0], pos[1], pos[2]);
-                NGTOBuilderUtilClient.renderStaticPart(renderer, partName);
+                GLHelper.startCompile(glList);
+
+                posList.forEach(pos => {
+                    GL11.glPushMatrix();
+                    GL11.glTranslated(pos[0], pos[1], pos[2]);
+                    NGTOBuilderUtilClient.renderStaticPart(renderer, partName);
+                    GL11.glPopMatrix();
+                });
+
+                GLHelper.endCompile();
                 GL11.glPopMatrix();
-            });
 
-            GLHelper.endCompile();
-            GL11.glPopMatrix();
-
-            NGTOBuilderUtilClient.glCache.put(key, glList);
-        }
-        else {
-            GLHelper.callList(glList);
+                NGTOBuilderUtilClient.glCache.put(key, glList);
+            }
+            else {
+                GLHelper.callList(glList);
+            }
         }
     }
 
@@ -164,8 +193,24 @@ export class NGTOBuilderUtilClient {
      * @param ngto 
      * @param pass 
      */
-    static renderNGTO(renderer: PartsRenderer, ngto: NGTObject, pass: number): void {
-        RTMApiCompatClient.renderNGTO(renderer, ngto, pass);
+    static renderNGTO(updateCache:boolean, entity: Entity, renderer: PartsRenderer, ngto: NGTObject, pass: number): void {
+        const key = `${entity.getEntityId()}_${NGTOBuilderUtil.getNGTOHash(ngto)}`;
+        const glList = NGTOBuilderUtilClient.glCache.get(key);
+        if (!glList || updateCache) {
+            const glList = RTMApiCompatClient.generateGLList();
+            GL11.glPushMatrix();
+            GLHelper.startCompile(glList);
+
+            RTMApiCompatClient.renderNGTO(renderer, ngto, pass);
+
+            GLHelper.endCompile();
+            GL11.glPopMatrix();
+
+            NGTOBuilderUtilClient.glCache.put(key, glList);
+        }
+        else {
+            GLHelper.callList(glList);
+        }
     }
 
     private static createMatrixKey(matrix: number[]): string {
