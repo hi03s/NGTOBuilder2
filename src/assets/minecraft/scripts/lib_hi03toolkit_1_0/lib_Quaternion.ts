@@ -1,3 +1,4 @@
+import { NGTLog } from "jp.ngt.ngtlib.io";
 import { Vec3 } from "jp.ngt.ngtlib.math";
 import { BufferUtils } from "org.lwjgl";
 
@@ -27,7 +28,27 @@ export class Quaternion {
         public x: number = 0,
         public y: number = 0,
         public z: number = 0
-    ) { }
+    ) {
+        NGTLog.debug("[Quaternion] new");
+    }
+
+    /**
+     * クォータニオンを正規化して自身を更新する
+     * @returns 
+     */
+    normalizeSelf(): Quaternion {
+        const length = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+        if (length === 0) {
+            this.w = 1;
+            this.x = this.y = this.z = 0;
+            return this;
+        }
+        this.w /= length;
+        this.x /= length;
+        this.y /= length;
+        this.z /= length;
+        return this;
+    }
 
     /**
      * クォータニオンを正規化する
@@ -88,7 +109,7 @@ export class Quaternion {
      * pitchが±90度付近ではyaw/rollの分離が不安定になる点に注意。
      */
     toEuler(): EulerAngles {
-        const q = this.normalize();
+        const q = this.normalizeSelf();
 
         const w = q.w;
         const x = q.x;
@@ -165,7 +186,7 @@ export class Quaternion {
             nx * s,
             ny * s,
             nz * s
-        ).normalize();
+        ).normalizeSelf();
     }
 
     /**
@@ -187,7 +208,7 @@ export class Quaternion {
         const qPitch = Quaternion.fromAxisAngle(1, 0, 0, pitch);
         const qRoll = Quaternion.fromAxisAngle(0, 0, 1, roll);
 
-        return qYaw.multiply(qPitch).multiply(qRoll).normalize();
+        return qYaw.multiply(qPitch).multiply(qRoll).normalizeSelf();
     }
 
     /**
@@ -196,7 +217,7 @@ export class Quaternion {
      * @returns OpenGL行列(4x4の列優先配列)
      */
     static applyQuaternion(q: Quaternion): number[] {
-        const nq = q.normalize();
+        const nq = q.normalizeSelf();
 
         const x = nq.x;
         const y = nq.y;
@@ -229,7 +250,7 @@ export class Quaternion {
             m00, m10, m20, 0,
             m01, m11, m21, 0,
             m02, m12, m22, 0,
-            0,   0,   0,   1
+            0, 0, 0, 1
         ];
     }
 
