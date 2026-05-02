@@ -95,7 +95,7 @@ export class NGTOBuilderUtilClient {
      * @param entity 
      * @param posList 
      */
-    static renderPlaceBlocksStatic(renderer: PartsRenderer, entity: Entity, posList: Pos[]): void {
+    static renderPlaceBlocksStatic(renderer: PartsRenderer, partName:string, entity: Entity, posList: Pos[]): void {
         //posListをハッシュ化
         const posListHash = Arrays.deepHashCode(posList);
         const key = `${entity.getUniqueID()}_${posListHash}`;
@@ -109,7 +109,7 @@ export class NGTOBuilderUtilClient {
             posList.forEach(pos => {
                 GL11.glPushMatrix();
                 GL11.glTranslated(pos[0], pos[1], pos[2]);
-                NGTOBuilderUtilClient.renderStaticPart(renderer, "renderStaticPart");
+                NGTOBuilderUtilClient.renderStaticPart(renderer, partName);
                 GL11.glPopMatrix();
             });
 

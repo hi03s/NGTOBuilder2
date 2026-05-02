@@ -7,6 +7,7 @@ import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
 import { UndoManager } from "./lib_UndoManager";
+import { RotatableBlockObject } from "./lib_RotatableBlockObject";
 
 export type BlockSetPlacement = [
     blockSet: BlockSet,
@@ -131,6 +132,10 @@ export class BlockBuilder {
                 }
             }
         }
+    }
+
+    addFromRotatableBlockObject(entity:Entity, rbo: RotatableBlockObject, placeX: number, placeY: number, placeZ: number): void {
+        
     }
 
     /**

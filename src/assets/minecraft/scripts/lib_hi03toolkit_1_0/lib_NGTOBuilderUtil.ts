@@ -112,6 +112,7 @@ export class NGTOBuilderUtil {
 
     /**
      * BlockSetと相対座標リストからNGTOを作成する
+     * 範囲内でリストにない座標は空気ブロックで満たされる
      * @param blockSet 
      * @param relativePosList 相対座標リスト [[x, y, z], ...]
      */
@@ -387,43 +388,6 @@ export class NGTOBuilderUtil {
         const anchorY = 0;
         const anchorZ = Math.floor(newD / 2);
         return NGTObject.createNGTO(list, newW, newH, newD, anchorX, anchorY, anchorZ);
-    }
-
-    /**
-     * NGTOと設置座標から、NGTOのブロックが設置されるワールド座標のリストを作成する
-     * @param ngto 
-     * @param placeX 
-     * @param placeY 
-     * @param placeZ 
-     * @returns 
-     */
-    static createExpectedPosList(ngto: NGTObject, placeX: number, placeY: number, placeZ: number, isIgnoreAir: boolean): Pos[] {
-        const ngtoHash = this.getNGTOHash(ngto);
-        const key = `${ngtoHash}_${placeX}_${placeY}_${placeZ}`;
-        const posList: Pos[] = [];
-        if (!ngto) return posList;
-
-        //キャッシュがある場合はそちらを使う
-        const cached = this.posListCache.get(key);
-        if (cached) return cached;
-
-        //キャッシュがない場合は新たに作成する
-        const origX = ngto.origX;
-        const origY = ngto.origY;
-        const origZ = ngto.origZ;
-        for (let x = 0; x < ngto.xSize; x++) {
-            for (let y = 0; y < ngto.ySize; y++) {
-                for (let z = 0; z < ngto.zSize; z++) {
-                    const blockSet = ngto.getBlockSet(x, y, z);
-                    if (!blockSet) continue;
-                    const id = Block.getIdFromBlock(blockSet.block);
-                    if (id === 0 && isIgnoreAir) continue;
-                    posList.push([placeX + x - origX, placeY + y - origY, placeZ + z - origZ]);
-                }
-            }
-        }
-        this.posListCache.put(key, posList);
-        return posList;
     }
 
     /**
