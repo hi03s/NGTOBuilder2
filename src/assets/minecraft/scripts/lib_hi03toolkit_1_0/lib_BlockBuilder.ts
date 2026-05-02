@@ -68,15 +68,17 @@ export class BlockBuilder {
         const tileEntity = RTMApiCompat.getTileEntity(world, pos[0], pos[1], pos[2]);
         const block = RTMApiCompat.getBlock(world, pos[0], pos[1], pos[2]);
         const metadata = RTMApiCompat.getMetadata(world, pos[0], pos[1], pos[2]);
-        let nbt = null;
-        let blockRotation = 0;
-        if (tileEntity && !(tileEntity instanceof TileEntityLargeRailBase)) {
-            if (block instanceof TileEntityPlaceable) blockRotation = block.getRotation();
-            nbt = RTMApiCompat.createNBTFromTileEntity(tileEntity);
+        if (block !== null && metadata !== null) {
+            let nbt = null;
+            let blockRotation = 0;
+            if (tileEntity && !(tileEntity instanceof TileEntityLargeRailBase)) {
+                if (block instanceof TileEntityPlaceable) blockRotation = block.getRotation();
+                nbt = RTMApiCompat.createNBTFromTileEntity(tileEntity);
+            }
+            const blockSet = !nbt ? new BlockSet(block, metadata) : new BlockSet(block, metadata, nbt);
+            posList.push([blockSet, pos[0], pos[1], pos[2], blockRotation]);
+            this.set(entity, posList);
         }
-        const blockSet = !nbt ? new BlockSet(block, metadata) : new BlockSet(block, metadata, nbt);
-        posList.push([blockSet, pos[0], pos[1], pos[2], blockRotation]);
-        this.set(entity, posList);
     }
 
     /**

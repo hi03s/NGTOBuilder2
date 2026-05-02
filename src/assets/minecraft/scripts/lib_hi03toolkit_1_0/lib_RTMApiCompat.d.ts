@@ -16,18 +16,18 @@ import { World } from "net.minecraft.world";
  */
 export class RTMApiCompat {
     static isOldVer: boolean;
-    static getRider(entity: EntityVehicle): Entity;
-    static getRidingEntity(entity: EntityVehicle): Entity;
+    static getRider(entity: EntityVehicle): Entity | null;
+    static getRidingEntity(entity: EntityVehicle): Entity | null;
     static dismountPlayer(entity: EntityVehicle): void;
     static createNBTFromTileEntity(tileEntity: TileEntity): NBTTagCompound;
     static setBlock(world: World, x: number, y: number, z: number, block: Block, metadata: number): void;
-    static getBlock(world: World, x: number, y: number, z: number): Block;
-    static getMetadata(world: World, x: number, y: number, z: number): number;
-    static getTileEntity(world: World, x: number, y: number, z: number): TileEntity;
+    static getBlock(world: World, x: number, y: number, z: number): Block | null;
+    static getMetadata(world: World, x: number, y: number, z: number): number | null;
+    static getTileEntity(world: World, x: number, y: number, z: number): TileEntity | null;
     static hasTileEntity(blockSet: BlockSet): boolean;
     static setResourceName(tileEntity: TileEntity, nbt: NBTTagCompound): void;
     static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void;
-    static getItemStackAt(inventory: InventoryPlayer, index: number): ItemStack;
+    static getItemStackAt(inventory: InventoryPlayer, index: number): ItemStack | null;
     static doFollowing(entity: Entity, hostPlayer: Entity): void;
     static startRiding(entity: Entity, targetEntity: Entity): void;
 }

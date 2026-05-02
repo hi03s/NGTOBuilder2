@@ -38,13 +38,15 @@ export class NGTOBuilderUtil {
      */
     static getHeldNGTO(player: EntityPlayer): NGTObject | null {
         const currrentItem = NGTOBuilderUtil.getHeldItem(player);
-        const nbt = currrentItem.getTagCompound();
-        const cachedNGTO = this.ngtoCache.get(nbt);
-        if (cachedNGTO) return cachedNGTO;
-        if (nbt && nbt.hasKey("BlocksData")) {
-            const ngto = ItemMiniature.getNGTObject(nbt);
-            this.ngtoCache.put(nbt, ngto);
-            return ngto;
+        if (currrentItem) {
+            const nbt = currrentItem.getTagCompound();
+            const cachedNGTO = this.ngtoCache.get(nbt);
+            if (cachedNGTO) return cachedNGTO;
+            if (nbt && nbt.hasKey("BlocksData")) {
+                const ngto = ItemMiniature.getNGTObject(nbt);
+                this.ngtoCache.put(nbt, ngto);
+                return ngto;
+            }
         }
         return null;
     }
@@ -84,7 +86,7 @@ export class NGTOBuilderUtil {
      * @param player 
      * @returns アイテムスタック。取得できない場合はnull
      */
-    static getHeldItem(player: EntityPlayer): ItemStack {
+    static getHeldItem(player: EntityPlayer): ItemStack | null {
         const inventory = player.inventory;
         const index = inventory.currentItem;
         return RTMApiCompat.getItemStackAt(inventory, index);
@@ -96,7 +98,7 @@ export class NGTOBuilderUtil {
      * @returns ブロックセット。取得できない場合はnull
      */
     static getHeldBlockSet(player: EntityPlayer): BlockSet | null {
-        const itemStack: ItemStack = this.getHeldItem(player);
+        const itemStack = this.getHeldItem(player);
         if (itemStack) {
             const itemBlock = Block.getBlockFromItem(itemStack.getItem());
             if (itemBlock instanceof Block) {
