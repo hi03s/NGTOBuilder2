@@ -1,6 +1,4 @@
-import { NGTLog } from "jp.ngt.ngtlib.io";
 import { Vec3 } from "jp.ngt.ngtlib.math";
-import { BufferUtils } from "org.lwjgl";
 
 export type EulerAngles = {
     /** Y軸周りの回転角度[deg] */
@@ -92,7 +90,73 @@ export class Quaternion {
      * @returns Yaw角、つまりY軸周りの回転角度[deg]
      */
     extractYaw(): number {
-        return this.toEuler().yaw;
+        // 精度と割り当てを抑えるため、直接計算して角度を返す（[deg]）
+        const length = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+        let w = this.w, x = this.x, y = this.y, z = this.z;
+        if (length !== 0) {
+            w /= length; x /= length; y /= length; z /= length;
+        }
+        const m02 = 2 * (x * z + w * y);
+        const m22 = 1 - 2 * (x * x + y * y);
+        const yawRad = Math.atan2(m02, m22);
+        return Quaternion.radToDeg(yawRad);
+    }
+
+    /**
+     * Yaw を stepDeg に丸める差分回転を適用して返す。
+     * @param q 対象クォータニオン
+     * @param stepDeg スナップ角度[deg]
+     * @param useWorldAxis true=ワールド軸(前乗算)、false=ローカル軸(後乗算)
+     */
+    static snapYawDelta(q: Quaternion, stepDeg: number, useWorldAxis: boolean): Quaternion {
+        if (stepDeg === 0) return q;
+        const currentYaw = q.extractYaw();
+        const snapped = Math.round(currentYaw / stepDeg) * stepDeg;
+        let delta = snapped - currentYaw;
+        // delta を -180..180 の範囲に収める
+        delta = ((delta + 180) % 360) - 180;
+        if (Math.abs(delta) < 1e-6) return q;
+        const rot = Quaternion.fromAxisAngle(0, 1, 0, delta);
+        const result = useWorldAxis ? rot.multiply(q) : q.multiply(rot);
+        return result.normalizeSelf();
+    }
+
+    /**
+     * Pitch を stepDeg に丸める差分回転を適用して返す。
+     * @param q 対象クォータニオン
+     * @param stepDeg スナップ角度[deg]
+     * @param useWorldAxis true=ワールド軸(前乗算)、false=ローカル軸(後乗算)
+     */
+    static snapPitchDelta(q: Quaternion, stepDeg: number, useWorldAxis: boolean): Quaternion {
+        if (stepDeg === 0) return q;
+        const e = q.toEuler();
+        const current = e.pitch;
+        const snapped = Math.round(current / stepDeg) * stepDeg;
+        let delta = snapped - current;
+        delta = ((delta + 180) % 360) - 180;
+        if (Math.abs(delta) < 1e-6) return q;
+        const rot = Quaternion.fromAxisAngle(1, 0, 0, delta);
+        const result = useWorldAxis ? rot.multiply(q) : q.multiply(rot);
+        return result.normalizeSelf();
+    }
+
+    /**
+     * Roll を stepDeg に丸める差分回転を適用して返す。
+     * @param q 対象クォータニオン
+     * @param stepDeg スナップ角度[deg]
+     * @param useWorldAxis true=ワールド軸(前乗算)、false=ローカル軸(後乗算)
+     */
+    static snapRollDelta(q: Quaternion, stepDeg: number, useWorldAxis: boolean): Quaternion {
+        if (stepDeg === 0) return q;
+        const e = q.toEuler();
+        const current = e.roll;
+        const snapped = Math.round(current / stepDeg) * stepDeg;
+        let delta = snapped - current;
+        delta = ((delta + 180) % 360) - 180;
+        if (Math.abs(delta) < 1e-6) return q;
+        const rot = Quaternion.fromAxisAngle(0, 0, 1, delta);
+        const result = useWorldAxis ? rot.multiply(q) : q.multiply(rot);
+        return result.normalizeSelf();
     }
 
     /**
