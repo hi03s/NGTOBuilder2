@@ -1,6 +1,7 @@
 
 //lib_RTMApiCompatClient.jsの型定義ファイル
 
+import { NGTObject } from "jp.ngt.ngtlib.block";
 import { DisplayList } from "jp.ngt.ngtlib.renderer";
 
 /**
@@ -25,4 +26,5 @@ export class RTMApiCompatClient {
         side: number;
     } | null;
     static generateGLList(): DisplayList;
+    static renderNGTO(ngto: NGTObject, pass: number): void;
 }

@@ -63,3 +63,17 @@ RTMApiCompatClient.generateGLList = function () {
     if (RTMApiCompatClient.isOldVer) return Packages.jp.ngt.ngtlib.renderer.GLHelper.generateGLList();
     else return Packages.jp.ngt.ngtlib.renderer.GLHelper.generateGLList(null);
 }
+RTMApiCompatClient.ngtoWorld = new java.util.HashMap();
+RTMApiCompatClient.renderNGTO = function (ngto, pass) {
+    if (RTMApiCompatClient.isOldVer) {
+        Packages.jp.ngt.ngtlib.renderer.NGTRenderer.renderNGTObject(ngto, true);
+    }
+    else {
+        var world = RTMApiCompatClient.ngtoWorld.get(ngto);
+        if (!world) {
+            world = new Packages.jp.ngt.ngtlib.world.NGTWorld(Packages.jp.ngt.ngtlib.util.NGTUtil.getClientWorld(), ngto);
+            RTMApiCompatClient.ngtoWorld.put(ngto, world);
+        }
+        Packages.jp.ngt.ngtlib.renderer.NGTObjectRenderer.INSTANCE.renderNGTObject(world, ngto, true, 0, pass);
+    }
+}
