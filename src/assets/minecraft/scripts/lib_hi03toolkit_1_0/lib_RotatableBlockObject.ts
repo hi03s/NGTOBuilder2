@@ -25,10 +25,16 @@ export type Pos = [
 export class RotatableBlockObject {
 
     public additionalBlocks: RotatableBlockSet[] = [];
+    public minX: number = 0;
+    public minY: number = 0;
+    public minZ: number = 0;
+    public maxX: number = 0;
+    public maxY: number = 0;
+    public maxZ: number = 0;
 
-    constructor(
-        public rotatableBlockSetList: RotatableBlockSet[],
-    ) { }
+    constructor(public rotatableBlockSetList: (RotatableBlockSet | undefined)[]) {//回転処理によって欠落が生じる可能性がある
+
+    }
 
     /**
      * ブロックの位置をオフセットする
@@ -41,6 +47,7 @@ export class RotatableBlockObject {
         const newBlockSetList: RotatableBlockSet[] = [];
         for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
+            if (!rotatableBlockSet) continue;
             const newRotatableBlockSet = new RotatableBlockSet(
                 rotatableBlockSet.blockSet,
                 rotatableBlockSet.local_x + offsetX,
@@ -50,6 +57,7 @@ export class RotatableBlockObject {
             newRotatableBlockSet.setRotationCenterPos(rotatableBlockSet.axis_x, rotatableBlockSet.axis_y, rotatableBlockSet.axis_z);
             newBlockSetList.push(newRotatableBlockSet);
         }
+        this.calcSize();
         return new RotatableBlockObject(newBlockSetList);
     }
 
@@ -61,6 +69,7 @@ export class RotatableBlockObject {
         const newBlockSetList: RotatableBlockSet[] = [];
         for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
+            if (!rotatableBlockSet) continue;
             const newRotatableBlockSet = new RotatableBlockSet(
                 rotatableBlockSet.blockSet,
                 rotatableBlockSet.local_x,
@@ -82,6 +91,7 @@ export class RotatableBlockObject {
     setRotationAxisPos(axis_x: number, axis_y: number, axis_z: number): void {
         for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
+            if (!rotatableBlockSet) continue;
             rotatableBlockSet.setRotationCenterPos(axis_x, axis_y, axis_z);
         }
     }
@@ -89,27 +99,40 @@ export class RotatableBlockObject {
     /**
      * ブロックを回転する(ローカル座標)
      * @param mode 補間モード 0:補間なし 1:座標拡散
+     * @param diffusionRate 補間の拡散量[m]
      * @param quaternionOrYaw クォータニオン または Y軸周りの回転(度)
      * @param pitch X軸周りの回転(度) - quaternionOrYawがQuaternionの場合は無視
      * @param roll Z軸周りの回転(度) - quaternionOrYawがQuaternionの場合は無視
      * @returns 補間モードがONの時の追加ブロック
      */
-    rotate(mode: number, quaternionOrYaw: number | Quaternion, pitch?: number, roll?: number): void {
+    rotate(mode: number, diffusionRate:number, quaternionOrYaw: number | Quaternion, pitch?: number, roll?: number): void {
         const yaw = quaternionOrYaw instanceof Quaternion ? quaternionOrYaw.extractYaw() : quaternionOrYaw;
         this.additionalBlocks = [];//最後のrotateの補間だけ追加する
         for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
+            if (!rotatableBlockSet) continue;
             const rotatedPos = rotatableBlockSet.getRotated(quaternionOrYaw, pitch, roll);
             if (mode === 0) {//補間なし
                 rotatableBlockSet.local_x = rotatedPos[0];
                 rotatableBlockSet.local_y = rotatedPos[1];
                 rotatableBlockSet.local_z = rotatedPos[2];
             }
-            if (mode === 1) {//座標拡散 角方向へオフセットした座標を追加する
+            if (mode === 1) {//XZ拡散
+                const offset = diffusionRate;
                 rotatableBlockSet.local_x = rotatedPos[0];
                 rotatableBlockSet.local_y = rotatedPos[1];
                 rotatableBlockSet.local_z = rotatedPos[2];
-                const offset = 0.25;
+                this.additionalBlocks.push(rotatableBlockSet.copy(-offset, 0, -offset));
+                this.additionalBlocks.push(rotatableBlockSet.copy(-offset, 0, +offset));
+                this.additionalBlocks.push(rotatableBlockSet.copy(+offset, 0, -offset));
+                rotatableBlockSet.local_x += offset;
+                rotatableBlockSet.local_z += offset;
+            }
+            if (mode === 2) {//XYZ拡散
+                const offset = diffusionRate;
+                rotatableBlockSet.local_x = rotatedPos[0];
+                rotatableBlockSet.local_y = rotatedPos[1];
+                rotatableBlockSet.local_z = rotatedPos[2];
                 this.additionalBlocks.push(rotatableBlockSet.copy(-offset, -offset, -offset));
                 this.additionalBlocks.push(rotatableBlockSet.copy(+offset, -offset, -offset));
                 this.additionalBlocks.push(rotatableBlockSet.copy(-offset, -offset, +offset));
@@ -160,43 +183,39 @@ export class RotatableBlockObject {
                 rotatableBlockSet.metadata = metadata;
             }
         }
+        this.calcSize();
     }
 
     toBlockPos(): void {
-        const posKeyList = [];
-        for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
-            const rotatableBlockSet = this.rotatableBlockSetList[i];
-            rotatableBlockSet.local_x = Math.round(rotatableBlockSet.local_x);
-            rotatableBlockSet.local_y = Math.floor(rotatableBlockSet.local_y);//なぜかfloorだとうまくいく
-            rotatableBlockSet.local_z = Math.round(rotatableBlockSet.local_z);
-            const posKey = `${rotatableBlockSet.local_x}_${rotatableBlockSet.local_y}_${rotatableBlockSet.local_z}`;
-            posKeyList.push(posKey);
-        }
+        const xSize = this.maxX - this.minX + 1;
+        const ySize = this.maxY - this.minY + 1;
+        const zSize = this.maxZ - this.minZ + 1;
+        const newBlockList = [];
         //補間ブロックの処理
         for (let i = 0; i < this.additionalBlocks.length; i++) {
             const additionalBlockSet = this.additionalBlocks[i];
             additionalBlockSet.local_x = Math.round(additionalBlockSet.local_x);
             additionalBlockSet.local_y = Math.floor(additionalBlockSet.local_y);//なぜかfloorだとうまくいく
             additionalBlockSet.local_z = Math.round(additionalBlockSet.local_z);
-            const posKey = `${additionalBlockSet.local_x}_${additionalBlockSet.local_y}_${additionalBlockSet.local_z}`;
-            if (posKeyList.indexOf(posKey) === -1) {
-                //座標が被っていなければ追加
-                this.rotatableBlockSetList.push(additionalBlockSet);
-            }
+            const indexX = additionalBlockSet.local_x - this.minX;
+            const indexY = additionalBlockSet.local_y - this.minY;
+            const indexZ = additionalBlockSet.local_z - this.minZ;
+            const index = (indexY * xSize + indexX) * zSize + indexZ;
+            newBlockList[index] = additionalBlockSet;
         }
-    }
-
-    /**
-     * ブロックの中から空気ブロックを削除する
-     * @returns
-     */
-    removeAirBlock(): void {
-        for (let i = this.rotatableBlockSetList.length - 1; i >= 0; i--) {
+        for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
-            if (rotatableBlockSet.blockSet.block.getMaterial().isReplaceable()) {
-                this.rotatableBlockSetList.splice(i, 1);
-            }
+            if (!rotatableBlockSet) continue;
+            rotatableBlockSet.local_x = Math.round(rotatableBlockSet.local_x);
+            rotatableBlockSet.local_y = Math.floor(rotatableBlockSet.local_y);//なぜかfloorだとうまくいく
+            rotatableBlockSet.local_z = Math.round(rotatableBlockSet.local_z);
+            const indexX = rotatableBlockSet.local_x - this.minX;
+            const indexY = rotatableBlockSet.local_y - this.minY;
+            const indexZ = rotatableBlockSet.local_z - this.minZ;
+            const index = (indexY * xSize + indexX) * zSize + indexZ;
+            newBlockList[index] = rotatableBlockSet;
         }
+        this.rotatableBlockSetList = newBlockList.filter(v => v !== undefined);
     }
 
     /**
@@ -210,9 +229,23 @@ export class RotatableBlockObject {
         const result: Pos[] = [];
         for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
+            if (!rotatableBlockSet) continue;
             result.push([rotatableBlockSet.local_x + placeX, rotatableBlockSet.local_y + placeY, rotatableBlockSet.local_z + placeZ]);
         }
         return result;
+    }
+
+    private calcSize() {
+        this.rotatableBlockSetList.forEach(rbs => {
+            if (rbs) {
+                this.minX = Math.round(Math.min(this.minX, rbs.local_x));
+                this.minY = Math.floor(Math.min(this.minY, rbs.local_y));
+                this.minZ = Math.round(Math.min(this.minZ, rbs.local_z));
+                this.maxX = Math.round(Math.max(this.maxX, rbs.local_x));
+                this.maxY = Math.floor(Math.max(this.maxY, rbs.local_y));
+                this.maxZ = Math.round(Math.max(this.maxZ, rbs.local_z));
+            }
+        });
     }
 
     static createFromPosList(blockSet: BlockSet, posList: Pos[]): RotatableBlockObject {
@@ -229,14 +262,16 @@ export class RotatableBlockObject {
      * @param ngto 
      * @returns 
      */
-    static createFromNGTO(ngto: NGTObject): RotatableBlockObject {
+    static createFromNGTO(ngto: NGTObject, isPlaceAirBlock: boolean): RotatableBlockObject {
         const blockSetList = [];
         for (let yIdx = 0; yIdx < ngto.ySize; yIdx++) {
             for (let xIdx = 0; xIdx < ngto.xSize; xIdx++) {
                 for (let zIdx = 0; zIdx < ngto.zSize; zIdx++) {
                     const blockSet = ngto.getBlockSet(xIdx, yIdx, zIdx);
-                    const rotatableBlockSet = new RotatableBlockSet(blockSet, xIdx, yIdx, zIdx);
-                    blockSetList.push(rotatableBlockSet);
+                    if (isPlaceAirBlock || Block.getIdFromBlock(blockSet.block) !== 0) {
+                        const rotatableBlockSet = new RotatableBlockSet(blockSet, xIdx, yIdx, zIdx);
+                        blockSetList.push(rotatableBlockSet);
+                    }
                 }
             }
         }
@@ -249,14 +284,16 @@ export class RotatableBlockObject {
      * @param zIndex スライスするNGTOのZ座標(0 ～ ngto.zSize-1)
      * @returns 
      */
-    static createSliceAtZFromNGTO(ngto: NGTObject, zIndex: number): RotatableBlockObject {
+    static createSliceAtZFromNGTO(ngto: NGTObject, zIndex: number, isPlaceAirBlock: boolean): RotatableBlockObject {
         zIndex = ((zIndex % ngto.zSize) + ngto.zSize) % ngto.zSize;
         const blockSetList = [];
         for (let xIdx = 0; xIdx < ngto.xSize; xIdx++) {
             for (let yIdx = 0; yIdx < ngto.ySize; yIdx++) {
                 const blockSet = ngto.getBlockSet(xIdx, yIdx, zIndex);
-                const rotatableBlockSet = new RotatableBlockSet(blockSet, xIdx, yIdx, 0);
-                blockSetList.push(rotatableBlockSet);
+                if (isPlaceAirBlock || Block.getIdFromBlock(blockSet.block) !== 0) {
+                    const rotatableBlockSet = new RotatableBlockSet(blockSet, xIdx, yIdx, 0);
+                    blockSetList.push(rotatableBlockSet);
+                }
             }
         }
         return new RotatableBlockObject(blockSetList);
@@ -268,14 +305,16 @@ export class RotatableBlockObject {
      * @param xIndex スライスするNGTOのX座標(0 ～ ngto.xSize-1)
      * @returns 
      */
-    static createSliceAtXFromNGTO(ngto: NGTObject, xIndex: number): RotatableBlockObject {
+    static createSliceAtXFromNGTO(ngto: NGTObject, xIndex: number, isPlaceAirBlock: boolean): RotatableBlockObject {
         xIndex = ((xIndex % ngto.xSize) + ngto.xSize) % ngto.xSize;
         const blockSetList = [];
         for (let yIdx = 0; yIdx < ngto.ySize; yIdx++) {
             for (let zIdx = 0; zIdx < ngto.zSize; zIdx++) {
                 const blockSet = ngto.getBlockSet(xIndex, yIdx, zIdx);
-                const rotatableBlockSet = new RotatableBlockSet(blockSet, 0, yIdx, zIdx);
-                blockSetList.push(rotatableBlockSet);
+                if (isPlaceAirBlock || Block.getIdFromBlock(blockSet.block) !== 0) {
+                    const rotatableBlockSet = new RotatableBlockSet(blockSet, 0, yIdx, zIdx);
+                    blockSetList.push(rotatableBlockSet);
+                }
             }
         }
         return new RotatableBlockObject(blockSetList);
@@ -287,14 +326,16 @@ export class RotatableBlockObject {
      * @param yIndex スライスするNGTOのY座標(0 ～ ngto.ySize-1)
      * @returns 
      */
-    static createSliceAtYFromNGTO(ngto: NGTObject, yIndex: number): RotatableBlockObject {
+    static createSliceAtYFromNGTO(ngto: NGTObject, yIndex: number, isPlaceAirBlock: boolean): RotatableBlockObject {
         yIndex = ((yIndex % ngto.ySize) + ngto.ySize) % ngto.ySize;
         const blockSetList = [];
         for (let xIdx = 0; xIdx < ngto.xSize; xIdx++) {
             for (let zIdx = 0; zIdx < ngto.zSize; zIdx++) {
                 const blockSet = ngto.getBlockSet(xIdx, yIndex, zIdx);
-                const rotatableBlockSet = new RotatableBlockSet(blockSet, xIdx, 0, zIdx);
-                blockSetList.push(rotatableBlockSet);
+                if (isPlaceAirBlock || Block.getIdFromBlock(blockSet.block) !== 0) {
+                    const rotatableBlockSet = new RotatableBlockSet(blockSet, xIdx, 0, zIdx);
+                    blockSetList.push(rotatableBlockSet);
+                }
             }
         }
         return new RotatableBlockObject(blockSetList);

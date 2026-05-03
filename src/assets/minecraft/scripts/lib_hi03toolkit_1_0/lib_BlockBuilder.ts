@@ -30,8 +30,6 @@ export type Pos = [
  */
 export class BlockBuilder {
 
-    static buildLimit: number = 500;//1回のdoBuildで処理するブロックの数。500ブロック/tick : 10000ブロック/秒
-
     private hashMap: HashMap<Entity, BlockSetPlacement[]>;
 
     constructor() {
@@ -106,36 +104,12 @@ export class BlockBuilder {
         posList.forEach(([x, y, z]: Pos): void => { this.add(entity, blockSet, x, y, z); });
     }
 
-    /**
-     * NGTOからブロックを追加する
-     * @param entity 
-     * @param ngto 
-     * @param placeX 
-     * @param placeY 
-     * @param placeZ 
-     * @param isIgnoreAir 
-     * @returns 
-     */
-    addFromNGTO(entity: Entity, ngto: NGTObject, placeX: number, placeY: number, placeZ: number, isIgnoreAir: boolean): void {
-        if (!ngto) return;
-        const origX = ngto.origX;
-        const origY = ngto.origY;
-        const origZ = ngto.origZ;
-        for (let x = 0; x < ngto.xSize; x++) {
-            for (let y = 0; y < ngto.ySize; y++) {
-                for (let z = 0; z < ngto.zSize; z++) {
-                    const blockSet = ngto.getBlockSet(x, y, z);
-                    if (!blockSet) continue;
-                    const id = Block.getIdFromBlock(blockSet.block);
-                    if (id === 0 && isIgnoreAir) continue; // skip air
-                    this.add(entity, blockSet, placeX + x - origX, placeY + y - origY, placeZ + z - origZ);
-                }
-            }
+    addFromRotatableBlockObject(entity: Entity, rbo: RotatableBlockObject, placeX: number, placeY: number, placeZ: number): void {
+        for (let i = 0; i < rbo.rotatableBlockSetList.length; i++) {
+            const rbs = rbo.rotatableBlockSetList[i];
+            if (!rbs) continue;
+            this.add(entity, rbs.blockSet, rbs.local_x + placeX, rbs.local_y + placeY, rbs.local_z + placeZ);
         }
-    }
-
-    addFromRotatableBlockObject(entity:Entity, rbo: RotatableBlockObject, placeX: number, placeY: number, placeZ: number): void {
-        
     }
 
     /**
@@ -150,46 +124,12 @@ export class BlockBuilder {
      * ブロックを生成する
      * 終了するまで実行し続ける必要があるため、完了しているかどうかはisFinishedで判定する
      * @param entity 
+     * @param buildLimit 1tickあたりのブロック生成数
      */
-    doBuild(entity: Entity): void {
+    doBuild(entity: Entity, buildLimit: number): void {
         const world = entity.worldObj;
         const posList = this.get(entity);
-        const undoBuilder = new BlockBuilder();
-        for (let i = 0; i < BlockBuilder.buildLimit && posList.length > 0; i++) {
-            const data = posList.shift();
-            if (!data) break;
-            const blockSet = data[0];
-            const block = blockSet.block;
-            const metadata = blockSet.metadata;
-            const x = data[1];
-            const y = data[2];
-            const z = data[3];
-            const blockRotation = data[4];
-            //ブロックを設置する前に、元のブロックをバックアップする
-            undoBuilder.addBackup(entity, [x, y, z]);
-            //ブロックを設置
-            RTMApiCompat.setBlock(world, x, y, z, block, metadata);
-            if (block instanceof BlockDoor) {
-                const upsideMetadata = 8;
-                RTMApiCompat.setBlock(world, x, y + 1, z, block, upsideMetadata);
-            }
-            if (RTMApiCompat.hasTileEntity(blockSet)) {
-                const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
-                if (tileEntity) BlockBuilder.setTileEntityData(tileEntity, blockSet, x, y, z, blockRotation);
-            }
-        }
-        UndoManager.push(entity, undoBuilder);
-        this.set(entity, posList);
-    }
-
-    /**
-     * UndoManager用の関数
-     * @param entity 
-     */
-    undoBuild(entity: Entity): void {
-        const world = entity.worldObj;
-        const posList = this.get(entity);
-        for (let i = 0; i < BlockBuilder.buildLimit && posList.length > 0; i++) {
+        for (let i = 0; i < buildLimit && posList.length > 0; i++) {
             const data = posList.shift();
             if (!data) break;
             const blockSet = data[0];
@@ -213,11 +153,11 @@ export class BlockBuilder {
         this.set(entity, posList);
     }
 
-    private get(entity: Entity): BlockSetPlacement[] {
+    get(entity: Entity): BlockSetPlacement[] {
         return this.hashMap.get(entity) || [];
     }
 
-    private set(entity: Entity, posList: BlockSetPlacement[]): void {
+    set(entity: Entity, posList: BlockSetPlacement[]): void {
         this.hashMap.put(entity, posList);
     }
 

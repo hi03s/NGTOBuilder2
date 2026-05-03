@@ -63,10 +63,13 @@ export class NGTOBuilderUtilClient {
     static isKeyDown(dataMap: DataMap, keyCode: number, optionKeyCode?: number): boolean {
         let optionKeyDown = true;
         if (optionKeyCode !== undefined && optionKeyCode !== null) optionKeyDown = Keyboard.isKeyDown(optionKeyCode);
-        const prevKeyDown = dataMap.getBoolean(`prevKeyDown_${keyCode}`);
-        const isKeyDown = Keyboard.isKeyDown(keyCode);
-        if (prevKeyDown !== isKeyDown) dataMap.setBoolean(`prevKeyDown_${keyCode}`, isKeyDown, 0);
-        return !prevKeyDown && isKeyDown && optionKeyDown;
+        if (optionKeyDown) {
+            const prevKeyDown = dataMap.getBoolean(`prevKeyDown_${keyCode}`);
+            const isKeyDown = Keyboard.isKeyDown(keyCode);
+            if (prevKeyDown !== isKeyDown) dataMap.setBoolean(`prevKeyDown_${keyCode}`, isKeyDown, 0);
+            return !prevKeyDown && isKeyDown;
+        }
+        return false;
     }
 
     /**
@@ -193,7 +196,7 @@ export class NGTOBuilderUtilClient {
      * @param ngto 
      * @param pass 
      */
-    static renderNGTO(updateCache:boolean, entity: Entity, renderer: PartsRenderer, ngto: NGTObject, pass: number): void {
+    static renderNGTO(updateCache: boolean, entity: Entity, renderer: PartsRenderer, ngto: NGTObject, pass: number): void {
         const key = `${entity.getEntityId()}_${NGTOBuilderUtil.getNGTOHash(ngto)}`;
         const glList = NGTOBuilderUtilClient.glCache.get(key);
         if (!glList || updateCache) {
