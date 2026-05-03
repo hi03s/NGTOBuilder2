@@ -16,6 +16,7 @@ import { BufferUtils } from "org.lwjgl";
 import { System } from "java.lang";
 import { NGTObject } from "jp.ngt.ngtlib.block";
 import { RotatableBlockSet } from "./lib_RotatableBlockObject";
+import { OpenGlHelper } from "net.minecraft.client.renderer";
 
 export type Pos = [
     x: number,
@@ -214,6 +215,19 @@ export class NGTOBuilderUtilClient {
         else {
             GLHelper.callList(glList);
         }
+    }
+
+    static enableAlpha(alpha: number): void {
+        GL11.glDisable(GL11.GL_ALPHA_TEST);
+        GL11.glEnable(GL11.GL_BLEND);
+        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
+        GL11.glColor4f(1.0, 1.0, 1.0, alpha);
+    }
+
+    static disableAlpha(): void {
+        GL11.glColor4f(1.0, 1.0, 1.0, 1.0);
+        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glEnable(GL11.GL_ALPHA_TEST);
     }
 
     private static createMatrixKey(matrix: number[]): string {

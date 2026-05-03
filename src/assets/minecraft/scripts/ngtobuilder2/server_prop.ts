@@ -50,7 +50,7 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     else builder.clear(entity);
 
     //1tickに生成するブロック数
-    blockLimit = 250;//5000ブロック/秒
+    blockLimit = 500;//blocks/tick (10000 blocks/sec)
 
     //dataMapのリセット
     dataMap.setBoolean("buildComplete", false, 1);
@@ -82,20 +82,29 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
     if (receiveData) {
         const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");
         if (!isInitializedBuild && ngto) {
+            const isHuge = (ngto.xSize * ngto.ySize * ngto.zSize) > 20000;
+            if (isHuge) NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 計算中...");
             const q = new Quaternion(...receiveData.q);
             const interpolationMode = dataMap.getInt("interpolationMode");
             const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
             const diffusionRate = dataMap.getInt("diffusionRate");
+            const isMirrorX = dataMap.getBoolean("isMirrorX");
+            const isMirrorY = dataMap.getBoolean("isMirrorY");
+            const isMirrorZ = dataMap.getBoolean("isMirrorZ");
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
             dataMap.setBoolean("isInitializedBuild", true, 1);
             const blockObj = RotatableBlockObject.createFromNGTO(ngto, isPlaceAirBlock);
+            if (isMirrorX) blockObj.mirrorX();
+            if (isMirrorZ) blockObj.mirrorZ();
+            if (isMirrorY) blockObj.mirrorY();
             blockObj.setRotationAxisPos(centerX, 0, centerZ);
             blockObj.rotate(interpolationMode, diffusionRate / 100, q);
             blockObj.toBlockPos();
             builder.addFromRotatableBlockObject(entity, blockObj, receiveData.pos[0], receiveData.pos[1], receiveData.pos[2]);
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
+            if (isHuge) NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成開始...");
         }
         //生成を中止
         if (cancelBuild) {
@@ -107,6 +116,8 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
         builder.doBuild(entity, blockLimit);
         //生成完了の処理
         if (builder.isFinished(entity)) {
+            NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成終了");
+            builder.clear(entity);
             dataMap.setBoolean("isInitializedBuild", false, 1);
             dataMap.setBoolean("isBuilding", false, 1);
             dataMap.setBoolean("cancelBuild", false, 1);

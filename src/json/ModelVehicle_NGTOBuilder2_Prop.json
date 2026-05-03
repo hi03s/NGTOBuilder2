@@ -21,7 +21,7 @@
     "yawCoefficient": [0.0, 0.0],
     "useCustomColor": false,
     "smoothing": true,
-    "doCulling": true,
+    "doCulling": false,
     "changeYawOnStopping": false,
     "accuracy": "LOW",
     "tags": "ngto builder 2 hi03"

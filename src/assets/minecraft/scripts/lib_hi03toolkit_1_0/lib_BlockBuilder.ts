@@ -1,12 +1,11 @@
 import { HashMap } from "java.util";
-import { BlockSet, NGTObject, TileEntityCustom, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
+import { BlockSet, TileEntityCustom, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
 import { TileEntityLargeRailBase } from "jp.ngt.rtm.rail";
-import { Block, BlockDoor } from "net.minecraft.block";
+import { BlockDoor } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
-import { UndoManager } from "./lib_UndoManager";
 import { RotatableBlockObject } from "./lib_RotatableBlockObject";
 
 export type BlockSetPlacement = [
@@ -31,9 +30,11 @@ export type Pos = [
 export class BlockBuilder {
 
     private hashMap: HashMap<Entity, BlockSetPlacement[]>;
+    private processed: HashMap<Entity, number>;
 
     constructor() {
-        this.hashMap = new HashMap;
+        this.hashMap = new HashMap();
+        this.processed = new HashMap();
     }
 
     /**
@@ -43,7 +44,8 @@ export class BlockBuilder {
      */
     isFinished(entity: Entity): boolean {
         const posList = this.get(entity);
-        return posList.length === 0;
+        const processed = this.getProcessed(entity);
+        return processed >= posList.length;
     }
 
     /**
@@ -53,7 +55,8 @@ export class BlockBuilder {
      */
     getCount(entity: Entity): number {
         const posList = this.get(entity);
-        return posList.length;
+        const processed = this.getProcessed(entity);
+        return Math.max(0, posList.length - processed);
     }
 
     /**
@@ -118,6 +121,7 @@ export class BlockBuilder {
      */
     clear(entity: Entity): void {
         this.set(entity, []);
+        this.setProcessed(entity, 0);
     }
 
     /**
@@ -127,19 +131,32 @@ export class BlockBuilder {
      * @param buildLimit 1tickあたりのブロック生成数
      */
     doBuild(entity: Entity, buildLimit: number): void {
+        if (buildLimit <= 0) return;
         const world = entity.worldObj;
         const posList = this.get(entity);
-        for (let i = 0; i < buildLimit && posList.length > 0; i++) {
-            const data = posList.shift();
-            if (!data) break;
+        let processed = this.getProcessed(entity);
+        if (processed >= posList.length) {
+            this.clear(entity);
+            return;
+        }
+        const end = Math.min(processed + buildLimit, posList.length);
+        for (let i = processed; i < end; i++) {
+            const data = posList[i];
+            if (!data) continue;
             const blockSet = data[0];
             const block = blockSet.block;
             const metadata = blockSet.metadata;
+            if (blockSet.block instanceof BlockDoor && metadata >= 8) continue; // ドア上部はスキップ
             const x = data[1];
             const y = data[2];
             const z = data[3];
             const blockRotation = data[4];
-            //ブロックを設置
+            const replaceBlock = RTMApiCompat.getBlock(world, x, y, z);
+            const replaceBlockMeta = RTMApiCompat.getMetadata(world, x, y, z);
+            if (replaceBlock === block && replaceBlockMeta === metadata) continue;
+            const tile = RTMApiCompat.getTileEntity(world, x, y, z);
+            if (tile instanceof TileEntityLargeRailBase) continue;
+            // ブロックを設置
             RTMApiCompat.setBlock(world, x, y, z, block, metadata);
             if (block instanceof BlockDoor) {
                 const upsideMetadata = 8;
@@ -147,10 +164,18 @@ export class BlockBuilder {
             }
             if (RTMApiCompat.hasTileEntity(blockSet)) {
                 const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
-                if (tileEntity) BlockBuilder.setTileEntityData(tileEntity, blockSet, x, y, z, blockRotation);
+                if (tileEntity) {
+                    BlockBuilder.setTileEntityData(tileEntity, blockSet, x, y, z, blockRotation);
+                }
             }
         }
-        this.set(entity, posList);
+        processed = end;
+        if (processed >= posList.length) {
+            this.clear(entity);
+        }
+        else {
+            this.setProcessed(entity, processed);
+        }
     }
 
     get(entity: Entity): BlockSetPlacement[] {
@@ -159,6 +184,14 @@ export class BlockBuilder {
 
     set(entity: Entity, posList: BlockSetPlacement[]): void {
         this.hashMap.put(entity, posList);
+    }
+
+    getProcessed(entity: Entity): number {
+        return this.processed.get(entity) || 0;
+    }
+
+    setProcessed(entity: Entity, processed: number): void {
+        this.processed.put(entity, processed);
     }
 
     static setTileEntityData(tile: TileEntity, blockSet: BlockSet, x: number, y: number, z: number, yaw: number): void {

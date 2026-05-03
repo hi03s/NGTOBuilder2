@@ -105,19 +105,15 @@ export class RotatableBlockObject {
      * @param roll Z軸周りの回転(度) - quaternionOrYawがQuaternionの場合は無視
      * @returns 補間モードがONの時の追加ブロック
      */
-    rotate(mode: number, diffusionRate:number, quaternionOrYaw: number | Quaternion, pitch?: number, roll?: number): void {
-        const yaw = quaternionOrYaw instanceof Quaternion ? quaternionOrYaw.extractYaw() : quaternionOrYaw;
+    rotate(mode: number, diffusionRate: number, quaternionOrYaw: number | Quaternion, pitch?: number, roll?: number): void {
+        let yaw = quaternionOrYaw instanceof Quaternion ? quaternionOrYaw.extractYaw() : quaternionOrYaw;
+        yaw = (yaw + 360) % 360;
         this.additionalBlocks = [];//最後のrotateの補間だけ追加する
         for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
             if (!rotatableBlockSet) continue;
             const rotatedPos = rotatableBlockSet.getRotated(quaternionOrYaw, pitch, roll);
-            if (mode === 0) {//補間なし
-                rotatableBlockSet.local_x = rotatedPos[0];
-                rotatableBlockSet.local_y = rotatedPos[1];
-                rotatableBlockSet.local_z = rotatedPos[2];
-            }
-            if (mode === 1) {//XZ拡散
+            if (mode === 0) {//XZ拡散
                 const offset = diffusionRate;
                 rotatableBlockSet.local_x = rotatedPos[0];
                 rotatableBlockSet.local_y = rotatedPos[1];
@@ -128,7 +124,7 @@ export class RotatableBlockObject {
                 rotatableBlockSet.local_x += offset;
                 rotatableBlockSet.local_z += offset;
             }
-            if (mode === 2) {//XYZ拡散
+            if (mode === 1) {//XYZ拡散
                 const offset = diffusionRate;
                 rotatableBlockSet.local_x = rotatedPos[0];
                 rotatableBlockSet.local_y = rotatedPos[1];
@@ -144,10 +140,15 @@ export class RotatableBlockObject {
                 rotatableBlockSet.local_y += offset;
                 rotatableBlockSet.local_z += offset;
             }
+            if (mode === 2) {//補間なし
+                rotatableBlockSet.local_x = rotatedPos[0];
+                rotatableBlockSet.local_y = rotatedPos[1];
+                rotatableBlockSet.local_z = rotatedPos[2];
+            }
             //一部のブロックは向きをメタデータから変える
-            let metadata = rotatableBlockSet.metadata;
             let isChangeMetaData = false;
             const block = rotatableBlockSet.blockSet.block;
+            let metadata = rotatableBlockSet.blockSet.metadata;
             const instanceList = [BlockStairs, BlockDoor, BlockFenceGate, BlockLog, BlockLadder, BlockButton];
             for (let instanceIdx = 0; instanceIdx < instanceList.length; instanceIdx++) {
                 if (block instanceof instanceList[instanceIdx]) {
@@ -161,9 +162,17 @@ export class RotatableBlockObject {
                 if (block instanceof BlockLog) directions = [];//原木もメタデータの構造が違う
                 if (block instanceof BlockLadder) directions = [2, 4, 3, 5];//はしご
                 if (block instanceof BlockButton) directions = [2, 3, 1, 4];//ボタン
-                let blockDir = metadata & 3;//2bitで方角管理
-                const option1 = metadata & 4;//3bitめを取得
-                const option2 = metadata & 8;//4bitめを取得
+                let blockDir: number;
+                let option1 = 0;
+                let option2 = 0;
+                if (block instanceof BlockLadder) {// はしごは metadata 2〜5 をそのまま方向として使う
+                    blockDir = metadata;
+                }
+                else {// 通常の向き付きブロックは下位2bitを方向として使う
+                    blockDir = metadata & 3;
+                    option1 = metadata & 4;
+                    option2 = metadata & 8;
+                }
                 const currentDirIndex = directions.indexOf(blockDir);
                 let rotateIndex = 0;
                 if (45 <= yaw && yaw < 135) rotateIndex = 1;
@@ -173,7 +182,7 @@ export class RotatableBlockObject {
                     const newDirIndex = (currentDirIndex + rotateIndex) % directions.length;
                     blockDir = directions[newDirIndex];
                 }
-                metadata = option2 | option1 | blockDir;//新しいメタデータ
+                metadata = block instanceof BlockLadder ? blockDir : option2 | option1 | blockDir;
                 if (block instanceof BlockLog) {//原木は3/4bit入れ替えで向きを変える
                     if (rotateIndex === 1 || rotateIndex === 3) {
                         metadata = metadata ^ 4;
@@ -181,6 +190,10 @@ export class RotatableBlockObject {
                     }
                 }
                 rotatableBlockSet.metadata = metadata;
+                if (rotatableBlockSet.blockSet) {
+                    const prevNBT = rotatableBlockSet.blockSet.nbt;
+                    rotatableBlockSet.blockSet = prevNBT ? new BlockSet(rotatableBlockSet.blockSet.block, metadata, prevNBT) : new BlockSet(rotatableBlockSet.blockSet.block, metadata);
+                }
             }
         }
         this.calcSize();
@@ -203,6 +216,7 @@ export class RotatableBlockObject {
             const index = (indexY * xSize + indexX) * zSize + indexZ;
             newBlockList[index] = additionalBlockSet;
         }
+        this.additionalBlocks = [];
         for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
             const rotatableBlockSet = this.rotatableBlockSetList[i];
             if (!rotatableBlockSet) continue;
@@ -246,6 +260,140 @@ export class RotatableBlockObject {
                 this.maxZ = Math.round(Math.max(this.maxZ, rbs.local_z));
             }
         });
+    }
+
+    /**
+     * X軸について鏡像にする
+     * toBlockPos()実行後に使用してください
+     */
+    mirrorX(): void {
+        this.calcSize();
+        const centerX = (this.minX + this.maxX) / 2;
+        for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
+            const rbs = this.rotatableBlockSetList[i];
+            if (!rbs) continue;
+            //座標交換
+            rbs.local_x = 2 * centerX - rbs.local_x;
+            rbs.axis_x = 2 * centerX - rbs.axis_x;
+            //メタデータ変換
+            let isChangeMetaData = false;
+            const block = rbs.blockSet.block;
+            const instanceList = [BlockStairs, BlockDoor, BlockFenceGate, BlockLog, BlockLadder, BlockButton];
+            for (let instanceIdx = 0; instanceIdx < instanceList.length; instanceIdx++) {
+                if (block instanceof instanceList[instanceIdx]) {
+                    isChangeMetaData = true;
+                    break;
+                }
+            }
+            if (isChangeMetaData) {
+                let directions: number[] = [0, 3, 2, 1];
+                if (block instanceof BlockStairs) directions = [0, 3, 1, 2];
+                if (block instanceof BlockLog) directions = [];
+                if (block instanceof BlockLadder) directions = [2, 4, 3, 5];
+                if (block instanceof BlockButton) directions = [2, 3, 1, 4];
+                let metadata = rbs.blockSet.metadata;
+                let blockDir: number;
+                let option1 = 0;
+                let option2 = 0;
+                if (block instanceof BlockLadder) {
+                    blockDir = metadata;
+                }
+                else {
+                    blockDir = metadata & 3;
+                    option1 = metadata & 4;
+                    option2 = metadata & 8;
+                }
+                const currentDirIndex = directions.indexOf(blockDir);
+                if (currentDirIndex !== -1) {
+                    let mappedIndex = currentDirIndex;
+                    if (currentDirIndex === 0) mappedIndex = 2;
+                    else if (currentDirIndex === 2) mappedIndex = 0;
+                    const newDir = directions[mappedIndex];
+                    metadata = block instanceof BlockLadder ? newDir : option2 | option1 | newDir;
+                    rbs.metadata = metadata;
+                    if (rbs.blockSet) {
+                        const prevNBT = rbs.blockSet.nbt;
+                        rbs.blockSet = prevNBT ? new BlockSet(rbs.blockSet.block, metadata, prevNBT) : new BlockSet(rbs.blockSet.block, metadata);
+                    }
+                }
+            }
+        }
+        this.calcSize();
+    }
+
+    /**
+     * Z軸について鏡像にする（破壊的）
+     * toBlockPos()実行後に使用してください
+     */
+    mirrorZ(): void {
+        this.calcSize();
+        const centerZ = (this.minZ + this.maxZ) / 2;
+        for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
+            const rbs = this.rotatableBlockSetList[i];
+            if (!rbs) continue;
+            //座標交換
+            rbs.local_z = 2 * centerZ - rbs.local_z;
+            rbs.axis_z = 2 * centerZ - rbs.axis_z;
+            //メタデータ変換
+            let isChangeMetaData = false;
+            const block = rbs.blockSet.block;
+            const instanceList = [BlockStairs, BlockDoor, BlockFenceGate, BlockLog, BlockLadder, BlockButton];
+            for (let instanceIdx = 0; instanceIdx < instanceList.length; instanceIdx++) {
+                if (block instanceof instanceList[instanceIdx]) {
+                    isChangeMetaData = true;
+                    break;
+                }
+            }
+            if (isChangeMetaData) {
+                let directions: number[] = [0, 3, 2, 1];
+                if (block instanceof BlockStairs) directions = [0, 3, 1, 2];
+                if (block instanceof BlockLog) directions = [];
+                if (block instanceof BlockLadder) directions = [2, 4, 3, 5];
+                if (block instanceof BlockButton) directions = [2, 3, 1, 4];
+                let metadata = rbs.blockSet.metadata;
+                let blockDir: number;
+                let option1 = 0;
+                let option2 = 0;
+                if (block instanceof BlockLadder) {
+                    blockDir = metadata;
+                }
+                else {
+                    blockDir = metadata & 3;
+                    option1 = metadata & 4;
+                    option2 = metadata & 8;
+                }
+                const currentDirIndex = directions.indexOf(blockDir);
+                if (currentDirIndex !== -1) {
+                    let mappedIndex = currentDirIndex;
+                    if (currentDirIndex === 1) mappedIndex = 3;
+                    else if (currentDirIndex === 3) mappedIndex = 1;
+                    const newDir = directions[mappedIndex];
+                    metadata = block instanceof BlockLadder ? newDir : option2 | option1 | newDir;
+                    rbs.metadata = metadata;
+                    if (rbs.blockSet) {
+                        const prevNBT = rbs.blockSet.nbt;
+                        rbs.blockSet = prevNBT ? new BlockSet(rbs.blockSet.block, metadata, prevNBT) : new BlockSet(rbs.blockSet.block, metadata);
+                    }
+                }
+            }
+        }
+        this.calcSize();
+    }
+
+    /**
+     * Y軸について鏡像にする（破壊的）
+     * toBlockPos()実行後に使用してください
+     */
+    mirrorY(): void {
+        this.calcSize();
+        const centerY = (this.minY + this.maxY) / 2;
+        for (let i = 0; i < this.rotatableBlockSetList.length; i++) {
+            const r = this.rotatableBlockSetList[i];
+            if (!r) continue;
+            r.local_y = 2 * centerY - r.local_y;
+            r.axis_y = 2 * centerY - r.axis_y;
+        }
+        this.calcSize();
     }
 
     static createFromPosList(blockSet: BlockSet, posList: Pos[]): RotatableBlockObject {

@@ -16,7 +16,6 @@ import { Entity } from "net.minecraft.entity";
 import { Quaternion } from "../lib_hi03toolkit_1_0/lib_Quaternion";
 import { Vec3 } from "jp.ngt.ngtlib.math";
 import { NGTOBuilderUtil } from "../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
-import { OpenGlHelper } from "net.minecraft.client.renderer";
 import { RotatableBlockObject } from "../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
 import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { Blocks } from "net.minecraft.init";
@@ -57,14 +56,14 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         //ヘルプをチャットに表示
         showHelp: Keyboard.KEY_H,
 
-        //設置高さ変更(設置モード)
+        //設置高さ変更(俯瞰モード)
         posYUp: Keyboard.KEY_UP,
         posYDown: Keyboard.KEY_DOWN,
 
-        //設置高さ/角度リセット(設置モード)
+        //設置高さ/角度/鏡像リセット(俯瞰モード)
         resetPos: Keyboard.KEY_C,
 
-        //回転(設置モード)
+        //回転(俯瞰モード)
         rotationL: Keyboard.KEY_LEFT,
         rotationR: Keyboard.KEY_RIGHT,
 
@@ -89,21 +88,26 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         //回転をリセット
         resetRotation: Keyboard.KEY_C,
 
-        //横回転(回転モード)
+        //横回転(仮置きモード)
         rotationYawL: Keyboard.KEY_LEFT,
         rotationYawR: Keyboard.KEY_RIGHT,
 
-        //縦回転(回転モード)
+        //縦回転(仮置きモード)
         rotationPitchUp: Keyboard.KEY_UP,
         rotationPitchDown: Keyboard.KEY_DOWN,
 
-        //ロール回転(回転モード) [+optionキー]
+        //ロール回転(仮置きモード) [+optionキー]
         rotationRollL: Keyboard.KEY_LEFT,
         rotationRollR: Keyboard.KEY_RIGHT,
 
         //補間の拡散量を変更 [+optionキー]
         diffusionRateUp: Keyboard.KEY_UP,
-        diffusionRateDown: Keyboard.KEY_DOWN
+        diffusionRateDown: Keyboard.KEY_DOWN,
+
+        //ミラー
+        mirrorX: Keyboard.KEY_J,
+        mirrorY: Keyboard.KEY_K,
+        mirrorZ: Keyboard.KEY_L
     }
 
     //-------------------
@@ -143,7 +147,10 @@ declare global {
         switchInterpolationMode: number;
         diffusionRateUp: number;
         diffusionRateDown: number;
-        cancelBuild:number;
+        cancelBuild: number;
+        mirrorX: number;
+        mirrorY: number;
+        mirrorZ: number;
     };
     var snapAngleList: number[];
     var Version: string;
@@ -183,15 +190,19 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateDown)}] 補間の拡散量を減らす`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.build)}] NGTOを生成する`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.undo)}] Undo`);
-        NGTLog.sendChatMessage(sender, `---設置モード---`);
-        NGTLog.sendChatMessage(sender, `[右クリック] 設置位置を決定(回転モードに移行)`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.cancelBuild)}] 生成を中止する`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.mirrorX)}] X軸の鏡像の切り替え`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.mirrorY)}] Y軸の鏡像の切り替え`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.mirrorZ)}] Z軸の鏡像の切り替え`);
+        NGTLog.sendChatMessage(sender, `---俯瞰モード---`);
+        NGTLog.sendChatMessage(sender, `[右クリック] 仮置きする`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.posYUp)}] Y高さを上げる`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.posYDown)}] Y高さを下げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetPos)}] Y高さ/回転をリセット`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetPos)}] Y高さ/回転/鏡像をリセット`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.rotationL)}] 左回転`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.rotationR)}] 右回転`);
-        NGTLog.sendChatMessage(sender, `---回転モード---`);
-        NGTLog.sendChatMessage(sender, `[左クリック] 回転モードを解除(設置モードに移行)`);
+        NGTLog.sendChatMessage(sender, `---仮置きモード---`);
+        NGTLog.sendChatMessage(sender, `[左クリック] 仮置きを解除`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.rotationYawL)}] Yaw回転(Left)`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.rotationYawR)}] Yaw回転(Right)`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.rotationPitchUp)}] Pitch回転(Up)`);
@@ -243,7 +254,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //角度をプレイヤーの方向にセット
-    if (Keyboard.isKeyDown(keyMap.setToPlayerAngle)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.setToPlayerAngle)) {
         const currentQYaw = quaternion.extractYaw();
         if (collector.size(entity) > 0) {//すでに座標指定済み
             const pos = collector.getAll(entity)[0];
@@ -286,16 +297,16 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         interpolationMode = (interpolationMode + 1) % 3;
         dataMap.setInt("interpolationMode", interpolationMode, 1);
         let modeName = "";
-        if (interpolationMode === 0) modeName = "補間なし [Low]";
-        if (interpolationMode === 1) modeName = "XZ拡散 [Medium]";
-        if (interpolationMode === 2) modeName = "XYZ拡散 [High]";
+        if (interpolationMode === 0) modeName = "XZ拡散 [Medium]";
+        if (interpolationMode === 1) modeName = "XYZ拡散 [High]";
+        if (interpolationMode === 2) modeName = "補間なし [Low]";
         NGTLog.sendChatMessage(sender, `補間モード: ${modeName}`);
     }
 
     //補間の拡散量を変更
     let diffusionRate = dataMap.getInt("diffusionRate");
     if (diffusionRate === 0) {
-        diffusionRate = 30;
+        diffusionRate = 20;
         dataMap.setInt("diffusionRate", diffusionRate, 1);
     }
     if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.diffusionRateUp, keyMap.option) && diffusionRate < 100) {
@@ -331,7 +342,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //生成を中止する
-    if (isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.cancelBuild, keyMap.option)){
+    if (isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.cancelBuild, keyMap.option)) {
         NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成を中止");
         dataMap.setBoolean("cancelBuild", true, 1);
     }
@@ -341,6 +352,30 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     if (canUndo && !isBuilding && !isUndo && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.undo, keyMap.option)) {
         dataMap.setBoolean("isUndo", true, 1);
         NGTLog.sendChatMessage(sender, "[NGTO Builder2] Undo...");
+    }
+
+    //X鏡像
+    let isMirrorX = dataMap.getBoolean("isMirrorX");
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.mirrorX)) {
+        isMirrorX = !isMirrorX
+        dataMap.setBoolean("isMirrorX", isMirrorX, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] X鏡像: ${isMirrorX}`);
+    }
+
+    //Y鏡像
+    let isMirrorY = dataMap.getBoolean("isMirrorY");
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.mirrorY)) {
+        isMirrorY = !isMirrorY
+        dataMap.setBoolean("isMirrorY", isMirrorY, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] Y鏡像: ${isMirrorY}`);
+    }
+
+    //Z鏡像
+    let isMirrorZ = dataMap.getBoolean("isMirrorZ");
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.mirrorZ)) {
+        isMirrorZ = !isMirrorZ
+        dataMap.setBoolean("isMirrorZ", isMirrorZ, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] Z鏡像: ${isMirrorZ}`);
     }
 
     //--設置モード--
@@ -353,11 +388,14 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
             dataMap.setInt("offsetY", offsetY - 1, 1);
         }
 
-        //設置高さ/角度リセット
+        //設置高さ/角度/鏡像リセット
         if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.resetPos)) {
             dataMap.setInt("offsetY", 0, 1);
             quaternion = new Quaternion();
             quaternionManager.put(entity, quaternion);
+            dataMap.setBoolean("isMirrorX", false, 1);
+            dataMap.setBoolean("isMirrorY", false, 1);
+            dataMap.setBoolean("isMirrorZ", false, 1);
         }
 
         //回転
@@ -460,6 +498,9 @@ declare global {
     var axisY: Parts;
     var axisZ: Parts;
     var test: Parts;
+    var mirrorX: Parts;
+    var mirrorY: Parts;
+    var mirrorZ: Parts;
 }
 function initParts(): void {
     //## 描画パーツの設定 ##
@@ -474,6 +515,9 @@ function initParts(): void {
     axisY = renderer.registerParts(new Parts("axisY"));
     axisZ = renderer.registerParts(new Parts("axisZ"));
     test = renderer.registerParts(new Parts("test"));
+    mirrorX = renderer.registerParts(new Parts("mirrorX"));
+    mirrorY = renderer.registerParts(new Parts("mirrorY"));
+    mirrorZ = renderer.registerParts(new Parts("mirrorZ"));
 }
 
 //############
@@ -489,6 +533,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const player = MCWrapperClient.getPlayer();
     const offsetY = dataMap.getInt("offsetY");
     const isBuilding = dataMap.getBoolean("isBuilding");
+    const isUndo = dataMap.getBoolean("isUndo");
 
     //カーソル
     if (lookingPos) {
@@ -514,19 +559,44 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const q = quaternionManager.get(entity);
     let prevNGTO = prevNGTOData.get(entity);
     prevNGTOData.put(entity, ngto);
-    if (ngto && q && !isBuilding) {
+    const isMirrorX = dataMap.getBoolean("isMirrorX");
+    const isMirrorY = dataMap.getBoolean("isMirrorY");
+    const isMirrorZ = dataMap.getBoolean("isMirrorZ");
+    let scale = 1;
+    if (ngto) scale = Math.max(ngto.xSize, ngto.ySize, ngto.zSize) * 1.3;
+    if (ngto && q && !isBuilding && !isUndo) {
         let selectedPos = null;
         if (collector.size(entity) > 0) selectedPos = collector.getAll(entity)[0];
         else if (lookingPos) selectedPos = [lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ];
         if (selectedPos) {
-            let centerX = Math.floor(ngto.xSize / 2) + 0.5;
-            let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
+            const centerX2 = ngto.xSize / 2;
+            const centerY2 = ngto.ySize / 2;
+            const centerZ2 = ngto.zSize / 2;
+            const centerX = Math.floor(centerX2) + 0.5;
+            const centerZ = Math.floor(centerZ2) + 0.5;
             GL11.glPushMatrix();
             GL11.glTranslatef(selectedPos[0] + 0.5, selectedPos[1] + 0.5, selectedPos[2] + 0.5);
             GL11.glTranslatef(-posX, -posY, -posZ);
             NGTOBuilderUtilClient.glApplyQuaternionMatrix(q);
             GL11.glTranslatef(-centerX, -0.5, -centerZ);
+            
+            //NGTO 鏡像表示に対応する
+            GL11.glPushMatrix();
+            GL11.glDisable(GL11.GL_CULL_FACE);
+            GL11.glTranslatef(centerX2, centerY2, centerZ2);
+            if (isMirrorX) GL11.glScalef(-1, 1, 1);
+            if (isMirrorY) GL11.glScalef(1, -1, 1);
+            if (isMirrorZ) GL11.glScalef(1, 1, -1);
+            GL11.glTranslatef(-centerX2, -centerY2, -centerZ2);
             NGTOBuilderUtilClient.renderNGTO(prevNGTO !== ngto, entity, renderer, ngto, pass);
+            GL11.glEnable(GL11.GL_CULL_FACE);
+            GL11.glPopMatrix();
+
+            //鏡像マーカー
+            GL11.glTranslatef(centerX, 0.5, centerZ);
+            if (isMirrorX) renderWithScale(mirrorX, scale, scale, scale);
+            if (isMirrorY) renderWithScale(mirrorY, scale, scale, scale);
+            if (isMirrorZ) renderWithScale(mirrorZ, scale, scale, scale);
             GL11.glPopMatrix();
         }
     }
@@ -536,20 +606,25 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         const diffusionRate = dataMap.getInt("diffusionRate");
         const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
         const interpolationMode = dataMap.getInt("interpolationMode");
+        const isMirrorX = dataMap.getBoolean("isMirrorX");
+        const isMirrorY = dataMap.getBoolean("isMirrorY");
+        const isMirrorZ = dataMap.getBoolean("isMirrorZ");
         const entityId = String(entity.getEntityId());
         const ngtoHash = NGTOBuilderUtil.getNGTOHash(ngto);
         const qHash = q.getHash();
-        const hash = entityId + ngtoHash + qHash + String(interpolationMode) + String(isPlaceAirBlock) + String(diffusionRate);
+        const hash = entityId + ngtoHash + qHash + String(interpolationMode) + String(isPlaceAirBlock) + String(diffusionRate) + String(isMirrorX) + String(isMirrorY) + String(isMirrorZ);
         let posList = posListCache.get(hash);//相対座標で管理
         if (!posList || (prevNGTO !== ngto)) {
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
-            if ((ngto.xSize * ngto.ySize * ngto.zSize) > 20000 ||
-                (interpolationMode === 1 && (ngto.xSize * ngto.ySize * ngto.zSize * 4) > 20000) ||
-                (interpolationMode === 2 && (ngto.xSize * ngto.ySize * ngto.zSize * 8) > 20000)) {//補間ありで20000ブロック超えるときも代替表示
+            if ((ngto.xSize * ngto.ySize * ngto.zSize) > 20000 || 
+                (interpolationMode === 1 && (ngto.xSize * ngto.ySize * ngto.zSize * 8) > 20000)) {
                 //巨大ブロックは代替表示
                 const hugePosList = NGTOBuilderUtilClient.getOutsideFramePosList(ngto);
                 const blockObj = RotatableBlockObject.createFromPosList(new BlockSet(Blocks.stone, 0), hugePosList);
+                if (isMirrorX) blockObj.mirrorX();
+                if (isMirrorZ) blockObj.mirrorZ();
+                if (isMirrorY) blockObj.mirrorY();
                 blockObj.setRotationAxisPos(centerX, 0, centerZ);
                 blockObj.rotate(0, diffusionRate / 100, q);
                 blockObj.toBlockPos();
@@ -558,6 +633,9 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             else {
                 //posListを生成
                 const blockObj = RotatableBlockObject.createFromNGTO(ngto, isPlaceAirBlock);
+                if (isMirrorX) blockObj.mirrorX();
+                if (isMirrorZ) blockObj.mirrorZ();
+                if (isMirrorY) blockObj.mirrorY();
                 blockObj.setRotationAxisPos(centerX, 0, centerZ);
                 blockObj.rotate(interpolationMode, diffusionRate / 100, q);
                 blockObj.toBlockPos();
@@ -581,8 +659,6 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     //回転ハンドル
     if (q && !isBuilding) {
         const isWorldAxis = dataMap.getBoolean("isWorldAxis");
-        let scale = 1;
-        if (ngto) scale = Math.max(ngto.xSize, ngto.ySize, ngto.zSize) * 1.33;
         let selectedPos = null;
         if (collector.size(entity) > 0) selectedPos = collector.getAll(entity)[0];
         else if (lookingPos) selectedPos = [lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ];
@@ -674,14 +750,9 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 
 //追加関数
 function renderWithAlpha(part: Parts, alpha: number): void {
-    GL11.glDisable(GL11.GL_ALPHA_TEST);
-    GL11.glEnable(GL11.GL_BLEND);
-    OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-    GL11.glColor4f(1.0, 1.0, 1.0, alpha);
+    NGTOBuilderUtilClient.enableAlpha(alpha);
     part.render(renderer);
-    GL11.glColor4f(1.0, 1.0, 1.0, 1.0);
-    GL11.glDisable(GL11.GL_BLEND);
-    GL11.glEnable(GL11.GL_ALPHA_TEST);
+    NGTOBuilderUtilClient.disableAlpha();
 }
 
 function renderWithScale(part: Parts, scaleX: number, scaleY: number, scaleZ: number): void {
