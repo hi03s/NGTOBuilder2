@@ -2,7 +2,7 @@ import { RTMCore } from "jp.ngt.rtm";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { ScriptExecuter } from "jp.ngt.rtm.modelpack";
 import { WeakHashMap } from "java.util";
-import { NGTOBuilderUtil, Pos } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
+import { combineNGTOList, NGTOBuilderUtil, Pos } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { RTMApiCompat } from "../../lib_hi03toolkit_1_0/lib_RTMApiCompat";
 import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { EntityPlayer } from "net.minecraft.entity.player";
@@ -77,7 +77,27 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
 
     //生成
     const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData>(dataMap, "sendData");
-    const ngto = NGTOBuilderUtil.getHeldNGTO(hostPlayer);
+    const ngtos = NGTOBuilderUtil.getAllInventoryNGTOs(hostPlayer);
+    let ngto = null;
+    if (ngtos) {
+        const ngtoList: combineNGTOList[] = [];//[[ngto, offsetX, offsetY, offsetZ], ...]
+        //データ作成
+        let maxSize = 0;
+        for (let i = 9; i < ngtos.length; i++) {
+            const item = ngtos[i];
+            if (item) maxSize = Math.max(maxSize, item.xSize + 1, item.zSize + 1);
+        }
+        //配列作成
+        for (let i = 9; i < ngtos.length; i++) {
+            const item = ngtos[i];
+            if (item) {
+                const offsetX = (i % 9) * maxSize;
+                const offsetZ = Math.floor(i / 9) * maxSize;
+                ngtoList.push([item, offsetX, 0, offsetZ]);
+            }
+        }
+        if (ngtoList.length > 0) ngto = NGTOBuilderUtil.combineNGTO(ngtoList);
+    }
     const cancelBuild = dataMap.getBoolean("cancelBuild");
     if (receiveData) {
         const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");

@@ -5,10 +5,10 @@
         "textures": [
             ["mat1", "textures/ngtobuilder2/porp/prop.png", "AlphaBlend"]
         ],
-        "rendererPath": "scripts/ngtobuilder2/render_prop.js"
+        "rendererPath": "scripts/ngtobuilder2/porp/render_prop.js"
     },
     "buttonTexture": "textures/ngtobuilder2/porp/button_prop.png",
-    "serverScriptPath": "scripts/ngtobuilder2/server_prop.js",
+    "serverScriptPath": "scripts/ngtobuilder2/porp/server_prop.js",
     "playerPos": [[0, 0, 0]],
     "vehicleType": "Car",
     "size": [1, 1],

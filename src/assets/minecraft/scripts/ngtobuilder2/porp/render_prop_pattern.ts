@@ -15,7 +15,7 @@ import { HashMap } from "java.util";
 import { Entity } from "net.minecraft.entity";
 import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { Vec3 } from "jp.ngt.ngtlib.math";
-import { NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
+import { combineNGTOList, NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
 import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { Blocks } from "net.minecraft.init";
@@ -325,13 +325,12 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         pos: Pos
     }
     //NGTOを生成する
-    const ngto = NGTOBuilderUtil.getHeldNGTO(hostPlayer);
     const isBuilding = dataMap.getBoolean("isBuilding");
     const isUndo = dataMap.getBoolean("isUndo");
     let buildPos = null;
     if (collector.size(entity) > 0) buildPos = collector.getAll(entity)[0] as Pos;
     else if (lookingPos) buildPos = [lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ] as Pos;
-    if (buildPos?.length === 3 && !isBuilding && !isUndo && ngto && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.build)) {
+    if (buildPos?.length === 3 && !isBuilding && !isUndo && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.build)) {
         dataMap.setBoolean("isBuilding", true, 1);
         const sendData: SendData = {
             q: [quaternion.w, quaternion.x, quaternion.y, quaternion.z],
@@ -555,7 +554,27 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     }
 
     //NGTOを描画
-    const ngto = NGTOBuilderUtil.getHeldNGTO(player);
+    const ngtos = NGTOBuilderUtil.getAllInventoryNGTOs(player);
+    let ngto = null;
+    if (ngtos) {
+        const ngtoList: combineNGTOList[] = [];//[[ngto, offsetX, offsetY, offsetZ], ...]
+        //データ作成
+        let maxSize = 0;
+        for (let i = 9; i < ngtos.length; i++) {
+            const item = ngtos[i];
+            if (item) maxSize = Math.max(maxSize, item.xSize + 1, item.zSize + 1);
+        }
+        //配列作成
+        for (let i = 9; i < ngtos.length; i++) {
+            const item = ngtos[i];
+            if (item) {
+                const offsetX = (i % 9) * maxSize;
+                const offsetZ = Math.floor(i / 9) * maxSize;
+                ngtoList.push([item, offsetX, 0, offsetZ]);
+            }
+        }
+        if (ngtoList.length > 0) ngto = NGTOBuilderUtil.combineNGTO(ngtoList);
+    }
     const q = quaternionManager.get(entity);
     let prevNGTO = prevNGTOData.get(entity);
     prevNGTOData.put(entity, ngto);
@@ -579,7 +598,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             GL11.glTranslatef(-posX, -posY, -posZ);
             NGTOBuilderUtilClient.glApplyQuaternionMatrix(q);
             GL11.glTranslatef(-centerX, -0.5, -centerZ);
-            
+
             //NGTO 鏡像表示に対応する
             GL11.glPushMatrix();
             GL11.glDisable(GL11.GL_CULL_FACE);
@@ -617,7 +636,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         if (!posList || (prevNGTO !== ngto)) {
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
-            if ((ngto.xSize * ngto.ySize * ngto.zSize) > 20000 || 
+            if ((ngto.xSize * ngto.ySize * ngto.zSize) > 20000 ||
                 (interpolationMode === 1 && (ngto.xSize * ngto.ySize * ngto.zSize * 8) > 20000)) {
                 //巨大ブロックは代替表示
                 const hugePosList = NGTOBuilderUtilClient.getOutsideFramePosList(ngto);

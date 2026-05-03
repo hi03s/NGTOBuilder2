@@ -54,16 +54,16 @@ export class NGTOBuilderUtil {
     /**
      * プレイヤーのインベントリ内のすべてのミニチュアブロックからNGTOを取得する
      * @param player 
-     * @returns NGTOの配列。ない場合は空の配列
+     * @returns NGTOの配列。ない場合はnullが入る(indexがインベントリに対応する)
      */
-    static getAllInventoryNGTOs(player: EntityPlayer): NGTObject[] {
+    static getAllInventoryNGTOs(player: EntityPlayer): (NGTObject | null)[] {
         const inventory = player.inventory;
-        const ngtoList: NGTObject[] = [];
+        const ngtoList: (NGTObject | null)[] = [];
         for (let i = 0; i < inventory.mainInventory.length; i++) {
             const itemStack = inventory.mainInventory[i];
             if (itemStack) {
                 const nbt = itemStack.getTagCompound();
-                if (nbt) {
+                if (nbt && nbt.hasKey("BlocksData")) {
                     const cachedNGTO = this.ngtoCache.get(nbt);
                     if (cachedNGTO) {
                         ngtoList.push(cachedNGTO);
@@ -76,7 +76,9 @@ export class NGTOBuilderUtil {
                         continue;
                     }
                 }
+                else ngtoList.push(null);
             }
+            else ngtoList.push(null);
         }
         return ngtoList;
     }
