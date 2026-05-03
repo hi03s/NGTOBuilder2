@@ -2,13 +2,13 @@ import { RTMCore } from "jp.ngt.rtm";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { ScriptExecuter } from "jp.ngt.rtm.modelpack";
 import { WeakHashMap } from "java.util";
-import { NGTOBuilderUtil, Pos } from "../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
-import { RTMApiCompat } from "../lib_hi03toolkit_1_0/lib_RTMApiCompat";
-import { BlockBuilder } from "../lib_hi03toolkit_1_0/lib_BlockBuilder";
+import { NGTOBuilderUtil, Pos } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
+import { RTMApiCompat } from "../../lib_hi03toolkit_1_0/lib_RTMApiCompat";
+import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { EntityPlayer } from "net.minecraft.entity.player";
-import { UndoManager } from "../lib_hi03toolkit_1_0/lib_UndoManager";
-import { RotatableBlockObject } from "../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
-import { Quaternion } from "../lib_hi03toolkit_1_0/lib_Quaternion";
+import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
+import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
+import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 
 //#################################
