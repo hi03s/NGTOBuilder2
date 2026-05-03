@@ -306,8 +306,14 @@ export class RotatableBlockObject {
                 const currentDirIndex = directions.indexOf(blockDir);
                 if (currentDirIndex !== -1) {
                     let mappedIndex = currentDirIndex;
-                    if (currentDirIndex === 0) mappedIndex = 2;
-                    else if (currentDirIndex === 2) mappedIndex = 0;
+                    if (block instanceof BlockLadder || block instanceof BlockFenceGate) {
+                        if (currentDirIndex === 1) mappedIndex = 3;
+                        else if (currentDirIndex === 3) mappedIndex = 1;
+                    }
+                    else {
+                        if (currentDirIndex === 0) mappedIndex = 2;
+                        else if (currentDirIndex === 2) mappedIndex = 0;
+                    }
                     const newDir = directions[mappedIndex];
                     metadata = block instanceof BlockLadder ? newDir : option2 | option1 | newDir;
                     rbs.metadata = metadata;
@@ -365,8 +371,14 @@ export class RotatableBlockObject {
                 const currentDirIndex = directions.indexOf(blockDir);
                 if (currentDirIndex !== -1) {
                     let mappedIndex = currentDirIndex;
-                    if (currentDirIndex === 1) mappedIndex = 3;
-                    else if (currentDirIndex === 3) mappedIndex = 1;
+                    if (block instanceof BlockLadder || block instanceof BlockFenceGate) {
+                        if (currentDirIndex === 0) mappedIndex = 2;
+                        else if (currentDirIndex === 2) mappedIndex = 0;
+                    }
+                    else {
+                        if (currentDirIndex === 1) mappedIndex = 3;
+                        else if (currentDirIndex === 3) mappedIndex = 1;
+                    }
                     const newDir = directions[mappedIndex];
                     metadata = block instanceof BlockLadder ? newDir : option2 | option1 | newDir;
                     rbs.metadata = metadata;
