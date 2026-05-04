@@ -30,11 +30,9 @@ Version = "1.0";
 //#################
 //スポーン時や再使用時に実行されます
 
-declare global {
-    //## グローバル変数として使うための準備 ##
-    var builder: BlockBuilder;
-    var blockLimit: number;
-}
+//## グローバル変数として使うための準備 ##
+var builder: BlockBuilder;
+var blockLimit: number;
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     const dataMap = entity.getResourceState().getDataMap();
     const isInitializedServer = dataMap.getBoolean("isInitializedServer");
@@ -146,12 +144,10 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
 
 //#################################
 //#################################
-declare global {
-    var isKaizPatch: boolean;
-    var hostPlayerList: WeakHashMap;
-    var builderHashMap: WeakHashMap;
-    var Version: string;
-}
+var isKaizPatch: boolean;
+var hostPlayerList: WeakHashMap;
+var builderHashMap: WeakHashMap;
+var Version: string;
 isKaizPatch = RTMCore.VERSION.indexOf("KaizPatch") !== -1;
 hostPlayerList = new WeakHashMap();
 builderHashMap = new WeakHashMap();

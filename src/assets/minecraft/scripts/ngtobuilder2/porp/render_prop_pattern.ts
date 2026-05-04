@@ -120,45 +120,43 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
     prevNGTOData = new HashMap();
     initParts();
 }
-declare global {
-    var keyMap: {
-        option: number;
-        endEdit: number;
-        build: number;
-        undo: number;
-        showHelp: number;
-        posYUp: number;
-        posYDown: number;
-        rotationL: number;
-        rotationR: number;
-        changeSnap: number;
-        setRandomAngle: number;
-        setToPlayerAngle: number;
-        isPlaceAirBlock: number;
-        rotationYawL: number;
-        rotationYawR: number;
-        rotationPitchUp: number;
-        rotationPitchDown: number;
-        rotationRollL: number;
-        rotationRollR: number;
-        resetRotation: number;
-        isWorldAxis: number;
-        resetPos: number;
-        switchInterpolationMode: number;
-        diffusionRateUp: number;
-        diffusionRateDown: number;
-        cancelBuild: number;
-        mirrorX: number;
-        mirrorY: number;
-        mirrorZ: number;
-    };
-    var snapAngleList: number[];
-    var Version: string;
-    var collector: PositionCollector;
-    var quaternionManager: HashMap<Entity, Quaternion>;
-    var posListCache: HashMap<string, Pos[]>;
-    var prevNGTOData: HashMap<Entity, NGTObject | null>;
-}
+var keyMap: {
+    option: number;
+    endEdit: number;
+    build: number;
+    undo: number;
+    showHelp: number;
+    posYUp: number;
+    posYDown: number;
+    rotationL: number;
+    rotationR: number;
+    changeSnap: number;
+    setRandomAngle: number;
+    setToPlayerAngle: number;
+    isPlaceAirBlock: number;
+    rotationYawL: number;
+    rotationYawR: number;
+    rotationPitchUp: number;
+    rotationPitchDown: number;
+    rotationRollL: number;
+    rotationRollR: number;
+    resetRotation: number;
+    isWorldAxis: number;
+    resetPos: number;
+    switchInterpolationMode: number;
+    diffusionRateUp: number;
+    diffusionRateDown: number;
+    cancelBuild: number;
+    mirrorX: number;
+    mirrorY: number;
+    mirrorZ: number;
+};
+var snapAngleList: number[];
+var Version: string;
+var collector: PositionCollector;
+var quaternionManager: HashMap<Entity, Quaternion>;
+var posListCache: HashMap<string, Pos[]>;
+var prevNGTOData: HashMap<Entity, NGTObject | null>;
 
 function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick: boolean, isLeftClick: boolean): void {
     const sender = hostPlayer as unknown as ICommandSender;
@@ -484,23 +482,21 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 //#################
 //##  パーツ登録  ##
 //#################
-declare global {
-    //## グローバル変数として使うための準備 ##
-    var body: Parts;
-    var point: Parts;
-    var selected: Parts;
-    var placeBlockFrame: Parts;
-    var handleX: Parts;
-    var handleY: Parts;
-    var handleZ: Parts;
-    var axisX: Parts;
-    var axisY: Parts;
-    var axisZ: Parts;
-    var test: Parts;
-    var mirrorX: Parts;
-    var mirrorY: Parts;
-    var mirrorZ: Parts;
-}
+//## グローバル変数として使うための準備 ##
+var body: Parts;
+var point: Parts;
+var selected: Parts;
+var placeBlockFrame: Parts;
+var handleX: Parts;
+var handleY: Parts;
+var handleZ: Parts;
+var axisX: Parts;
+var axisY: Parts;
+var axisZ: Parts;
+var test: Parts;
+var mirrorX: Parts;
+var mirrorY: Parts;
+var mirrorZ: Parts;
 function initParts(): void {
     //## 描画パーツの設定 ##
     body = renderer.registerParts(new Parts("body"));
@@ -722,9 +718,7 @@ function renderInMenu(): void {
 
 //#################################
 //#################################
-declare global {
-    var isKaizPatch: boolean;
-}
+var isKaizPatch: boolean;
 isKaizPatch = RTMCore.VERSION.indexOf("KaizPatch") !== -1;
 function render(entity: EntityVehicle, pass: number, par3: number): void {
     renderInMenu();
