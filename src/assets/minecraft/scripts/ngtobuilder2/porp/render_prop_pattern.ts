@@ -213,7 +213,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     //設置位置を決定(回転モードに移行)
     if (lookingPos && isRightClick) {
         collector.clear(entity);
-        collector.add(entity, [lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ], true);
+        collector.add(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ, true);
     }
 
     //回転モードを解除

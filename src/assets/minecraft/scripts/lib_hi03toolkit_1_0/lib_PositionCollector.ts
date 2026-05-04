@@ -22,7 +22,7 @@ export class PositionCollector {
     private hashMap: HashMap<Entity, DuplicatePos[]>;
 
     constructor() {
-        this.hashMap = new HashMap;
+        this.hashMap = new HashMap();
     }
 
     /**
@@ -32,15 +32,16 @@ export class PositionCollector {
      * @param allowDuplicates 重複する座標の追加を許可するかどうか（デフォルトはfalse）
      * @returns 
      */
-    add(entity: Entity, pos: Pos, allowDuplicates: boolean = false): void {
+    //add(entity: Entity, pos: Pos, allowDuplicates: boolean = false): void {
+    add(entity: Entity, posX: number, posY: number, posZ:number, allowDuplicates: boolean = false): void {
         const posList = this.get(entity);
-        const key = pos.join(",");
+        const key = posX + "," + posY + "," + posZ;
         if (!allowDuplicates) {
             for (let i = 0; i < posList.length; i++) {
                 if (posList[i][0] === key) return;
             }
         }
-        posList.push([key, pos[0], pos[1], pos[2]]);
+        posList.push([key, posX, posY, posZ]);
     }
 
     /**
@@ -50,7 +51,7 @@ export class PositionCollector {
      * @param allowDuplicates 重複する座標の追加を許可するかどうか（デフォルトはfalse）
      */
     addAll(entity: Entity, posList: Pos[], allowDuplicates: boolean = false): void {
-        posList.forEach(pos => this.add(entity, pos, allowDuplicates));
+        posList.forEach(pos => this.add(entity, pos[0], pos[1], pos[2], allowDuplicates));
     }
 
     /**
