@@ -175,7 +175,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //ヘルプ表示
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.showHelp)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "showHelp", keyMap.showHelp)) {
         NGTLog.sendChatMessage(sender, `---NGTO Builder2 Prop設置 操作方法---`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.endEdit)}] ツールを終了`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.changeSnap)}] スナップ角度を変更`);
@@ -225,7 +225,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         snapAngle = snapAngleList[0];
         dataMap.setInt("snapAngle", snapAngle, 0);
     }
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.changeSnap)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "changeSnap", keyMap.changeSnap)) {
         //角度設定
         const currentIdx = snapAngleList.indexOf(snapAngle);
         const maxIdx = snapAngleList.length;
@@ -242,7 +242,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //Yaw角度をランダムにセット
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.setRandomAngle)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "setRandomAngle", keyMap.setRandomAngle)) {
         const randomAngle = Math.random() * 360;
         const newQuaternion = Quaternion.fromEuler(randomAngle, 0, 0);
         quaternion = newQuaternion.multiply(quaternion);//ワールド上のYaw回転
@@ -252,7 +252,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //角度をプレイヤーの方向にセット
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.setToPlayerAngle)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "setToPlayerAngle", keyMap.setToPlayerAngle)) {
         const currentQYaw = quaternion.extractYaw();
         if (collector.size(entity) > 0) {//すでに座標指定済み
             const pos = collector.getAll(entity)[0];
@@ -274,7 +274,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //空気ブロックの設置を切り替え
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.isPlaceAirBlock)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "isPlaceAirBlock", keyMap.isPlaceAirBlock)) {
         let isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
         isPlaceAirBlock = !isPlaceAirBlock;
         dataMap.setBoolean("isPlaceAirBlock", isPlaceAirBlock, 1);
@@ -283,7 +283,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //回転モードを切り替え
     let isWorldAxis = dataMap.getBoolean("isWorldAxis");
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.isWorldAxis)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "isWorldAxis", keyMap.isWorldAxis)) {
         isWorldAxis = !isWorldAxis;
         dataMap.setBoolean("isWorldAxis", isWorldAxis, 0);
         NGTLog.sendChatMessage(sender, `回転軸: ${isWorldAxis ? "ワールド軸" : "ローカル軸"}`);
@@ -291,7 +291,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //補間モードを切り替え
     let interpolationMode = dataMap.getInt("interpolationMode");
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.switchInterpolationMode)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "switchInterpolationMode", keyMap.switchInterpolationMode)) {
         interpolationMode = (interpolationMode + 1) % 3;
         dataMap.setInt("interpolationMode", interpolationMode, 1);
         let modeName = "";
@@ -307,12 +307,12 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         diffusionRate = 20;
         dataMap.setInt("diffusionRate", diffusionRate, 1);
     }
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.diffusionRateUp, keyMap.option) && diffusionRate < 100) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "diffusionRateUp", keyMap.diffusionRateUp) && Keyboard.isKeyDown(keyMap.option) && diffusionRate < 100) {
         diffusionRate = diffusionRate + 5;
         dataMap.setInt("diffusionRate", diffusionRate, 1);
         NGTLog.sendChatMessage(sender, `補間の拡散量: ${diffusionRate / 100}[m]`);
     }
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.diffusionRateDown, keyMap.option) && diffusionRate > 5) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "diffusionRateDown", keyMap.diffusionRateDown) && Keyboard.isKeyDown(keyMap.option) && diffusionRate > 5) {
         diffusionRate = diffusionRate - 5;
         dataMap.setInt("diffusionRate", diffusionRate, 1);
         NGTLog.sendChatMessage(sender, `補間の拡散量: ${diffusionRate / 100}[m]`);
@@ -329,7 +329,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     let buildPos = null;
     if (collector.size(entity) > 0) buildPos = collector.getAll(entity)[0] as Pos;
     else if (lookingPos) buildPos = [lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ] as Pos;
-    if (buildPos?.length === 3 && !isBuilding && !isUndo && ngto && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.build)) {
+    if (buildPos?.length === 3 && !isBuilding && !isUndo && ngto && NGTOBuilderUtilClient.isKeyDown(dataMap, "build", keyMap.build)) {
         dataMap.setBoolean("isBuilding", true, 1);
         const sendData: SendData = {
             q: [quaternion.w, quaternion.x, quaternion.y, quaternion.z],
@@ -340,21 +340,21 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //生成を中止する
-    if (isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.cancelBuild, keyMap.option)) {
+    if (isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, "cancelBuild", keyMap.cancelBuild) && Keyboard.isKeyDown(keyMap.option)) {
         NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成を中止");
         dataMap.setBoolean("cancelBuild", true, 1);
     }
 
     //Undo
     const canUndo = dataMap.getBoolean("canUndo");
-    if (canUndo && !isBuilding && !isUndo && NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.undo, keyMap.option)) {
+    if (canUndo && !isBuilding && !isUndo && NGTOBuilderUtilClient.isKeyDown(dataMap, "undo", keyMap.undo) && Keyboard.isKeyDown(keyMap.option)) {
         dataMap.setBoolean("isUndo", true, 1);
         NGTLog.sendChatMessage(sender, "[NGTO Builder2] Undo...");
     }
 
     //X鏡像
     let isMirrorX = dataMap.getBoolean("isMirrorX");
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.mirrorX)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorX", keyMap.mirrorX)) {
         isMirrorX = !isMirrorX
         dataMap.setBoolean("isMirrorX", isMirrorX, 1);
         NGTLog.sendChatMessage(sender, `[NGTO Builder2] X鏡像: ${isMirrorX}`);
@@ -362,7 +362,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //Y鏡像
     let isMirrorY = dataMap.getBoolean("isMirrorY");
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.mirrorY)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorY", keyMap.mirrorY)) {
         isMirrorY = !isMirrorY
         dataMap.setBoolean("isMirrorY", isMirrorY, 1);
         NGTLog.sendChatMessage(sender, `[NGTO Builder2] Y鏡像: ${isMirrorY}`);
@@ -370,7 +370,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //Z鏡像
     let isMirrorZ = dataMap.getBoolean("isMirrorZ");
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.mirrorZ)) {
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorZ", keyMap.mirrorZ)) {
         isMirrorZ = !isMirrorZ
         dataMap.setBoolean("isMirrorZ", isMirrorZ, 1);
         NGTLog.sendChatMessage(sender, `[NGTO Builder2] Z鏡像: ${isMirrorZ}`);
@@ -379,15 +379,15 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     //--設置モード--
     if (collector.size(entity) === 0) {
         //設置高さ変更
-        if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.posYUp)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "posYUp", keyMap.posYUp)) {
             dataMap.setInt("offsetY", offsetY + 1, 1);
         }
-        if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.posYDown)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "posYDown", keyMap.posYDown)) {
             dataMap.setInt("offsetY", offsetY - 1, 1);
         }
 
         //設置高さ/角度/鏡像リセット
-        if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.resetPos)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "resetPos", keyMap.resetPos)) {
             dataMap.setInt("offsetY", 0, 1);
             quaternion = new Quaternion();
             quaternionManager.put(entity, quaternion);
@@ -397,15 +397,15 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         }
 
         //回転
-        if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationL) ||
-            NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationL, 500)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationL", keyMap.rotationL) ||
+            NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationL", keyMap.rotationL, 500)) {
             const newQuaternion = Quaternion.fromEuler(snapAngle, 0, 0);
             quaternion = newQuaternion.multiply(quaternion);//ワールド上のYaw回転
             quaternion = Quaternion.snapYawDelta(quaternion, snapAngle, true);//Y軸スナップ
             quaternionManager.put(entity, quaternion.normalizeSelf());
         }
-        if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationR) ||
-            NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationR, 500)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationR", keyMap.rotationR) ||
+            NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationR", keyMap.rotationR, 500)) {
             const newQuaternion = Quaternion.fromEuler(-snapAngle, 0, 0);
             quaternion = newQuaternion.multiply(quaternion);//ワールド上のYaw回転
             quaternion = Quaternion.snapYawDelta(quaternion, snapAngle, true);//Y軸スナップ
@@ -416,23 +416,23 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     //--回転モード--
     else {
         //回転をリセット
-        if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.resetRotation)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "resetRotation", keyMap.resetRotation)) {
             quaternion = new Quaternion();
             quaternionManager.put(entity, quaternion);
         }
 
         if (Keyboard.isKeyDown(keyMap.option)) {
             //ロール回転
-            if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationRollL) ||
-                NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationRollL, 500)) {
+            if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationRollL", keyMap.rotationRollL) ||
+                NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationRollL", keyMap.rotationRollL, 500)) {
                 const newQuaternion = Quaternion.fromEuler(0, 0, -snapAngle);
                 if (isWorldAxis) quaternion = newQuaternion.multiply(quaternion);//ワールド軸の回転
                 else quaternion = quaternion.multiply(newQuaternion);//ローカル軸の回転
                 quaternion = Quaternion.snapRollDelta(quaternion, snapAngle, isWorldAxis);//Rollスナップ
                 quaternionManager.put(entity, quaternion.normalizeSelf());
             }
-            if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationRollR) ||
-                NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationRollR, 500)) {
+            if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationRollR", keyMap.rotationRollR) ||
+                NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationRollR", keyMap.rotationRollR, 500)) {
                 const newQuaternion = Quaternion.fromEuler(0, 0, snapAngle);
                 if (isWorldAxis) quaternion = newQuaternion.multiply(quaternion);//ワールド軸の回転
                 else quaternion = quaternion.multiply(newQuaternion);//ローカル軸の回転
@@ -442,16 +442,16 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         }
         else {
             //横回転
-            if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationYawL) ||
-                NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationYawL, 500)) {
+            if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationYawL", keyMap.rotationYawL) ||
+                NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationYawL", keyMap.rotationYawL, 500)) {
                 const newQuaternion = Quaternion.fromEuler(snapAngle, 0, 0);
                 if (isWorldAxis) quaternion = newQuaternion.multiply(quaternion);//ワールド軸の回転
                 else quaternion = quaternion.multiply(newQuaternion);//ローカル軸の回転
                 quaternion = Quaternion.snapYawDelta(quaternion, snapAngle, isWorldAxis);//Yawスナップ
                 quaternionManager.put(entity, quaternion.normalizeSelf());
             }
-            if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationYawR) ||
-                NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationYawR, 500)) {
+            if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationYawR", keyMap.rotationYawR) ||
+                NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationYawR", keyMap.rotationYawR, 500)) {
                 const newQuaternion = Quaternion.fromEuler(-snapAngle, 0, 0);
                 if (isWorldAxis) quaternion = newQuaternion.multiply(quaternion);//ワールド軸の回転
                 else quaternion = quaternion.multiply(newQuaternion);//ローカル軸の回転
@@ -460,16 +460,16 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
             }
 
             //縦回転
-            if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationPitchUp) ||
-                NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationPitchUp, 500)) {
+            if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationPitchUp", keyMap.rotationPitchUp) ||
+                NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationPitchUp", keyMap.rotationPitchUp, 500)) {
                 const newQuaternion = Quaternion.fromEuler(0, -snapAngle, 0);
                 if (isWorldAxis) quaternion = newQuaternion.multiply(quaternion);//ワールド軸の回転
                 else quaternion = quaternion.multiply(newQuaternion);//ローカル軸の回転
                 quaternion = Quaternion.snapPitchDelta(quaternion, snapAngle, isWorldAxis);//Pitchスナップ
                 quaternionManager.put(entity, quaternion.normalizeSelf());
             }
-            if (NGTOBuilderUtilClient.isKeyDown(dataMap, keyMap.rotationPitchDown) ||
-                NGTOBuilderUtilClient.isKeyDownLong(dataMap, keyMap.rotationPitchDown, 500)) {
+            if (NGTOBuilderUtilClient.isKeyDown(dataMap, "rotationPitchDown", keyMap.rotationPitchDown) ||
+                NGTOBuilderUtilClient.isKeyDownLong(dataMap, "rotationPitchDown", keyMap.rotationPitchDown, 500)) {
                 const newQuaternion = Quaternion.fromEuler(0, snapAngle, 0);
                 if (isWorldAxis) quaternion = newQuaternion.multiply(quaternion);//ワールド軸の回転
                 else quaternion = quaternion.multiply(newQuaternion);//ローカル軸の回転

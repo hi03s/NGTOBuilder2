@@ -61,16 +61,11 @@ export class NGTOBuilderUtilClient {
      * @param optionKeyCode 同時押しするキーを指定(省略可)
      * @returns 
      */
-    static isKeyDown(dataMap: DataMap, keyCode: number, optionKeyCode?: number): boolean {
-        let optionKeyDown = true;
-        if (optionKeyCode !== undefined && optionKeyCode !== null) optionKeyDown = Keyboard.isKeyDown(optionKeyCode);
-        if (optionKeyDown) {
-            const prevKeyDown = dataMap.getBoolean(`prevKeyDown_${keyCode}`);
-            const isKeyDown = Keyboard.isKeyDown(keyCode);
-            if (prevKeyDown !== isKeyDown) dataMap.setBoolean(`prevKeyDown_${keyCode}`, isKeyDown, 0);
-            return !prevKeyDown && isKeyDown;
-        }
-        return false;
+    static isKeyDown(dataMap: DataMap, name: string, keyCode: number): boolean {
+        const prevKeyDown = dataMap.getBoolean(`prevKeyDown_${name}`);
+        const isKeyDown = Keyboard.isKeyDown(keyCode);
+        if (prevKeyDown !== isKeyDown) dataMap.setBoolean(`prevKeyDown_${name}`, isKeyDown, 0);
+        return !prevKeyDown && isKeyDown;
     }
 
     /**
@@ -80,17 +75,17 @@ export class NGTOBuilderUtilClient {
      * @param requiredMillis 押され続けているとみなすために必要な時間[ms]
      * @returns 
      */
-    static isKeyDownLong(dataMap: DataMap, keyCode: number, requiredMillis: number): boolean {
+    static isKeyDownLong(dataMap: DataMap, name: string, keyCode: number, requiredMillis: number): boolean {
         const now = System.currentTimeMillis();
-        let pressStart = Number(dataMap.getString(`keyDownStartTime_${keyCode}`));
+        let pressStart = Number(dataMap.getString(`keyDownStartTime_${name}`));
         if (Keyboard.isKeyDown(keyCode)) {
             if (pressStart === 0) {
                 pressStart = now;
-                dataMap.setString(`keyDownStartTime_${keyCode}`, String(pressStart), 0);
+                dataMap.setString(`keyDownStartTime_${name}`, String(pressStart), 0);
             }
             return (now - pressStart) >= requiredMillis;
         }
-        if (pressStart !== 0) dataMap.setString(`keyDownStartTime_${keyCode}`, "0", 0);
+        if (pressStart !== 0) dataMap.setString(`keyDownStartTime_${name}`, "0", 0);
         return false;
     }
 
