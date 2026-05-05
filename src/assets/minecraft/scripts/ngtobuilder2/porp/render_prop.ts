@@ -649,7 +649,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             GL11.glPushMatrix();
             GL11.glTranslatef(selectedPos[0] + 0.5, selectedPos[1] + 0.5, selectedPos[2] + 0.5);
             GL11.glTranslatef(-posX, -posY, -posZ);
-            NGTOBuilderUtilClient.renderPlaceBlocksStatic(renderer, placeBlockFrame, entity, posList);
+            NGTOBuilderUtilClient.renderPosListStatic(renderer, placeBlockFrame, entity, posList);
             GL11.glPopMatrix();
         }
     }

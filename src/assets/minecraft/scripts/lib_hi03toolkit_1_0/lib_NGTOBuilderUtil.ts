@@ -8,6 +8,10 @@ import { EntityPlayer } from "net.minecraft.entity.player";
 import { ItemStack } from "net.minecraft.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
+import { World } from "net.minecraft.world";
+import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
+import { TileEntityLargeRailBase, TileEntityLargeRailCore, TileEntityLargeRailSwitchCore } from "jp.ngt.rtm.rail";
+import { Vec3 } from "jp.ngt.ngtlib.math";
 
 export type Pos = [
     x: number,
@@ -399,6 +403,81 @@ export class NGTOBuilderUtil {
      */
     static getNGTOHash(ngto: NGTObject): number {
         return ngto.xSize << 20 & 0x400 | ngto.ySize << 10 & 0x400 | ngto.zSize & 0x400;
+    }
+
+    static getRailMapAt(entity: Entity, posX: number, posY: number, posZ: number): RailMap | null {
+        const world = entity.worldObj;
+        const tile = RTMApiCompat.getTileEntity(world, posX, posY, posZ);
+        let railMap = null;
+        if (tile instanceof TileEntityLargeRailBase) {
+            const core = tile.getRailCore();
+            if (core) {
+                if (core instanceof TileEntityLargeRailSwitchCore) {
+                    //分岐器上
+                    let distance = Infinity;
+                    const railMapList = core.getAllRailMaps();
+                    railMapList.forEach(rm => {
+                        const split = Math.floor(rm.getLength() * 2);
+                        const nearestIdx = rm.getNearlestPoint(split, posX, posZ);
+                        const posZX = rm.getRailPos(split, nearestIdx);
+                        const vec = new Vec3(posZX[1] - posX, 0, posZX[0] - posZ);
+                        if (vec.length() < distance) {
+                            distance = vec.length();
+                            railMap = rm;
+                        }
+                    });
+                }
+                else {
+                    //通常レール
+                    railMap = core.getRailMap(entity);
+                }
+            }
+        }
+        if (railMap) return railMap;
+        return null;
+    }
+
+    static isConnectedRail(railMap1: RailMap, railMap2: RailMap) {
+        const rm1StartRP = railMap1.getStartRP();
+        const rm1EndRP = railMap1.getEndRP();
+        const rm2StartRP = railMap2.getStartRP();
+        const rm2EndRP = railMap2.getEndRP();
+        const connectPos1 = NGTOBuilderUtil.getConnectPos(rm1StartRP);
+        const connectPos2 = NGTOBuilderUtil.getConnectPos(rm1EndRP);
+        const rm2SPos: Pos = [rm2StartRP.blockX, rm2StartRP.blockY, rm2StartRP.blockZ];
+        const rm2EPos: Pos = [rm2EndRP.blockX, rm2EndRP.blockY, rm2EndRP.blockZ];
+        if (connectPos1 && (NGTOBuilderUtil.isSamePos(connectPos1, rm2SPos) || NGTOBuilderUtil.isSamePos(connectPos1, rm2EPos))) {
+            return true;
+        }
+        if (connectPos2 && (NGTOBuilderUtil.isSamePos(connectPos2, rm2SPos) || NGTOBuilderUtil.isSamePos(connectPos2, rm2EPos))) {
+            return true;
+        }
+        return false;
+    }
+
+    static getConnectPos(railPos: RailPosition): Pos | null {
+        if (!railPos || railPos.direction === null || railPos.direction === undefined) return null;
+        return [
+            Math.floor(railPos.blockX + 0.5 + RailPosition.REVISION[railPos.direction][0] * 2),
+            railPos.blockY,
+            Math.floor(railPos.blockZ + 0.5 + RailPosition.REVISION[railPos.direction][1] * 2)
+        ]
+    }
+
+    static isSamePos(pos1: Pos, pos2: Pos): boolean {
+        return Math.floor(pos1[0]) === Math.floor(pos2[0])
+            && Math.floor(pos1[1]) === Math.floor(pos2[1])
+            && Math.floor(pos1[2]) === Math.floor(pos2[2]);
+    }
+
+    static getRailCoreFromRailMap(world:World, railMap: RailMap): TileEntityLargeRailCore | null {
+        const startRP = railMap.getStartRP();
+        const tile = RTMApiCompat.getTileEntity(world, startRP.blockX, startRP.blockY, startRP.blockZ);
+        if (tile instanceof TileEntityLargeRailBase) {
+            const core = tile.getRailCore();
+            if (core) return core;
+        }
+        return null;
     }
 
     /**

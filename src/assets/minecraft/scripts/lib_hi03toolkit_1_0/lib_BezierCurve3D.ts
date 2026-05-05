@@ -46,7 +46,7 @@ export class BezierCurve3D {
      * @param split 曲線の分割数
      * @returns 曲線上の座標 [x, y, z]
      */
-    getPoint(index: number, split: number): Pos {
+    getPoint(split: number, index: number): Pos {
         if (split <= 0) return [this.p0[0], this.p0[1], this.p0[2]];
         index = Math.min(Math.max(index, 0), split);
         const t = index / split;
@@ -65,13 +65,13 @@ export class BezierCurve3D {
      * @param split 曲線の分割数
      * @returns ヨー角（度）
      */
-    getYaw(index: number, split: number): number {
+    getYaw(split: number, index: number): number {
         index = Math.min(Math.max(index, 0), split);
-        const point1 = this.getPoint(index, split);
-        const point2 = this.getPoint(index + 1, split);
+        const point1 = index >= split ? this.getPoint(split, index - 1) : this.getPoint(split, index);
+        const point2 = index >= split ? this.getPoint(split, index) : this.getPoint(split, index + 1);
         const dx = point2[0] - point1[0];
         const dz = point2[2] - point1[2];
-        const yaw = Math.atan2(dz, dx);
+        const yaw = Math.atan2(-dx, dz);//Minecraft用のyaw仕様
         return yaw * (180 / Math.PI);
     }
 
@@ -81,10 +81,10 @@ export class BezierCurve3D {
     * @param split 曲線の分割数
     * @returns ピッチ角（度）
     */
-    getPitch(index: number, split: number): number {
+    getPitch(split: number, index: number): number {
         index = Math.min(Math.max(index, 0), split);
-        const point1 = this.getPoint(index, split);
-        const point2 = this.getPoint(index + 1, split);
+        const point1 = index >= split ? this.getPoint(split, index - 1) : this.getPoint(split, index);
+        const point2 = index >= split ? this.getPoint(split, index) : this.getPoint(split, index + 1);
         const dy = point2[1] - point1[1];
         const dx = point2[0] - point1[0];
         const dz = point2[2] - point1[2];
@@ -103,12 +103,12 @@ export class BezierCurve3D {
         let dz = this.p3[2] - this.p0[2];
         //始点～終点直線距離の2倍を分割精度とする
         const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        const split = Math.ceil(distance * 2);
+        const split = Math.max(16, Math.ceil(distance * 2));
         if (split <= 0) return 0;
         let length = 0;
-        let previousPoint = this.getPoint(0, split);
+        let previousPoint = this.getPoint(split, 0);
         for (let i = 1; i <= split; i++) {
-            let currentPoint = this.getPoint(i, split);
+            let currentPoint = this.getPoint(split, i);
             dx = currentPoint[0] - previousPoint[0];
             dy = currentPoint[1] - previousPoint[1];
             dz = currentPoint[2] - previousPoint[2];
@@ -130,8 +130,16 @@ export class BezierCurve3D {
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 
+    getPosData(): Pos[] {
+        return [
+            [this.p0[0], this.p0[1], this.p0[2]],
+            [this.p1[0], this.p1[1], this.p1[2]],
+            [this.p2[0], this.p2[1], this.p2[2]],
+            [this.p3[0], this.p3[1], this.p3[2]]
+        ];
+    }
 
-    static lerpPoint(pos1: number[], pos2: number[], ratio: number): Pos {
+    static lerpPoint(pos1: Pos, pos2: Pos, ratio: number): Pos {
         return [
             pos1[0] + (pos2[0] - pos1[0]) * ratio,
             pos1[1] + (pos2[1] - pos1[1]) * ratio,
