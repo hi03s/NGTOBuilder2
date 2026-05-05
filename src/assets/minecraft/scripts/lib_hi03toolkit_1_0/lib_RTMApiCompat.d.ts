@@ -1,5 +1,6 @@
 import { BlockSet } from "jp.ngt.ngtlib.block";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
+import { RailMap } from "jp.ngt.rtm.rail.util";
 import { Block } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
 import { InventoryPlayer } from "net.minecraft.entity.player";
@@ -30,4 +31,5 @@ export class RTMApiCompat {
     static getItemStackAt(inventory: InventoryPlayer, index: number): ItemStack | null;
     static doFollowing(entity: Entity, hostPlayer: Entity): void;
     static startRiding(entity: Entity, targetEntity: Entity): void;
+    static getRailPitch(railMap: RailMap, split:number, index:number): number;
 }

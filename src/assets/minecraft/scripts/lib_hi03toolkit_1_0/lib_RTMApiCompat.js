@@ -1,6 +1,7 @@
 function RTMApiCompat() { }
 RTMApiCompat.prototype = {}
 RTMApiCompat.isOldVer = Packages.jp.ngt.rtm.RTMCore.VERSION.indexOf("1.7.10") >= 0;
+RTMApiCompat.isKaizPatch = Packages.jp.ngt.rtm.RTMCore.VERSION.indexOf("KaizPatch") !== -1;
 RTMApiCompat.getRider = function (entity) {
     if (RTMApiCompat.isOldVer) {
         return entity.field_70153_n;
@@ -92,4 +93,8 @@ RTMApiCompat.doFollowing = function (entity, hostPlayer) {//1.12専用
 }
 RTMApiCompat.startRiding = function (entity, targetEntity) {
     if (RTMApiCompat.isOldVer) entity.func_70078_a(targetEntity);
+}
+RTMApiCompat.getRailPitch = function (railMap, split, index) {
+    if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) railMap.getRailPitch();
+    else railMap.getRailPitch(split, index);
 }
