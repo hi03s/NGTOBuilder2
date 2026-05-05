@@ -95,6 +95,10 @@ RTMApiCompat.startRiding = function (entity, targetEntity) {
     if (RTMApiCompat.isOldVer) entity.func_70078_a(targetEntity);
 }
 RTMApiCompat.getRailPitch = function (railMap, split, index) {
-    if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) railMap.getRailPitch();
-    else railMap.getRailPitch(split, index);
+    if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return railMap.getRailPitch();
+    else return railMap.getRailPitch(split, index);
+}
+RTMApiCompat.getCant = function (railMap, split, index) {
+    if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return 0;
+    else return railMap.getCant(split, index);
 }

@@ -32,4 +32,5 @@ export class RTMApiCompat {
     static doFollowing(entity: Entity, hostPlayer: Entity): void;
     static startRiding(entity: Entity, targetEntity: Entity): void;
     static getRailPitch(railMap: RailMap, split:number, index:number): number;
+    static getCant(railMap: RailMap, split:number, index:number): number;
 }
