@@ -102,3 +102,11 @@ RTMApiCompat.getCant = function (railMap, split, index) {
     if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return 0;
     else return railMap.getCant(split, index);
 }
+RTMApiCompat.getHorizontalAnchorYaw = function (rp) {
+    if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return rp.anchorDirection;
+    else return rp.anchorYaw;
+}
+RTMApiCompat.getHorizontalAnchorLength = function (rp) {
+    if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return rp.anchorLength;
+    else return rp.anchorLengthHorizontal;
+}

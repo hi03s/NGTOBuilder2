@@ -1,6 +1,7 @@
 import { BlockSet } from "jp.ngt.ngtlib.block";
+import { Vec3 } from "jp.ngt.ngtlib.math";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
-import { RailMap } from "jp.ngt.rtm.rail.util";
+import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { Block } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
 import { InventoryPlayer } from "net.minecraft.entity.player";
@@ -33,4 +34,6 @@ export class RTMApiCompat {
     static startRiding(entity: Entity, targetEntity: Entity): void;
     static getRailPitch(railMap: RailMap, split:number, index:number): number;
     static getCant(railMap: RailMap, split:number, index:number): number;
+    static getHorizontalAnchorYaw(railpos:RailPosition): number;
+    static getHorizontalAnchorLength(railpos:RailPosition): number;
 }
