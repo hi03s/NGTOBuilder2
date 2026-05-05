@@ -5,7 +5,7 @@ import { Arrays, HashMap } from "java.util";
 import { Entity } from "net.minecraft.entity";
 import { GL11 } from "org.lwjgl.opengl";
 import { DisplayList, GLHelper, NGTRenderHelper } from "jp.ngt.ngtlib.renderer";
-import { ModelObject, PartsRenderer, VehiclePartsRenderer } from "jp.ngt.rtm.render";
+import { ModelObject, Parts, PartsRenderer, VehiclePartsRenderer } from "jp.ngt.rtm.render";
 import { NGTUtil } from "jp.ngt.ngtlib.util";
 import { ModelSetVehicleBaseClient } from "jp.ngt.rtm.modelpack.modelset";
 import { NGTOBuilderUtil } from "./lib_NGTOBuilderUtil";
@@ -17,6 +17,8 @@ import { System } from "java.lang";
 import { NGTObject } from "jp.ngt.ngtlib.block";
 import { RotatableBlockSet } from "./lib_RotatableBlockObject";
 import { OpenGlHelper } from "net.minecraft.client.renderer";
+import { RailMap } from "jp.ngt.rtm.rail.util";
+import { RTMApiCompat } from "./lib_RTMApiCompat";
 
 export type Pos = [
     x: number,
@@ -33,6 +35,8 @@ export class NGTOBuilderUtilClient {
     private static glCache: HashMap<string, DisplayList> = new HashMap();
 
     private static bufferCache: HashMap<string, FloatBuffer> = new HashMap();
+
+    private static renderRailMapCache: HashMap<RailMap, [DisplayList, string]> = new HashMap();
 
     /**
      * 視線の先の座標/ブロック座標/ブロック側面座標を取得する。
@@ -122,7 +126,7 @@ export class NGTOBuilderUtilClient {
      * @param entity 
      * @param posList 
      */
-    static renderPlaceBlocksStatic(renderer: PartsRenderer, partName: string, entity: Entity, posList: Pos[]): void {
+    static renderPlaceBlocksStatic(renderer: PartsRenderer, parts: Parts, entity: Entity, posList: Pos[]): void {
         if (posList.length <= 20000) {
             //posListをハッシュ化
             const posListHash = Arrays.deepHashCode(posList);
@@ -130,18 +134,18 @@ export class NGTOBuilderUtilClient {
             const glList = NGTOBuilderUtilClient.glCache.get(key);
             if (!glList) {
                 const glList = RTMApiCompatClient.generateGLList();
-                GL11.glPushMatrix();
                 GLHelper.startCompile(glList);
+                GL11.glPushMatrix();
 
                 posList.forEach(pos => {
                     GL11.glPushMatrix();
                     GL11.glTranslated(pos[0], pos[1], pos[2]);
-                    NGTOBuilderUtilClient.renderStaticPart(renderer, partName);
+                    NGTOBuilderUtilClient.renderStaticParts(renderer, parts);
                     GL11.glPopMatrix();
                 });
 
-                GLHelper.endCompile();
                 GL11.glPopMatrix();
+                GLHelper.endCompile();
 
                 NGTOBuilderUtilClient.glCache.put(key, glList);
             }
@@ -156,13 +160,53 @@ export class NGTOBuilderUtilClient {
      * @param renderer 
      * @param partsName 
      */
-    static renderStaticPart(renderer: PartsRenderer, partsName: string): void {
+    static renderStaticParts(renderer: PartsRenderer, parts: Parts): void {
         const modelSet: ModelSetVehicleBaseClient = NGTUtil.getField(NGTOBuilderUtil.getJavaClass(PartsRenderer), renderer, "modelSet");
         const modelObj: ModelObject = NGTUtil.getField(NGTOBuilderUtil.getJavaClass(PartsRenderer), renderer, "modelObj");
         const smoothing = modelSet.getConfig().smoothing;
         const model = modelObj.model;
         const currentMatId = renderer.currentMatId;
-        NGTRenderHelper.renderCustomModel(model, currentMatId, smoothing, partsName);
+        const partsName = parts.objNames;
+        partsName.forEach(name => { NGTRenderHelper.renderCustomModel(model, currentMatId, smoothing, name); });
+    }
+
+    //起点からの絶対描画
+    static renderRailMapStatic(renderer: PartsRenderer, parts: Parts, railMap: RailMap, modelName: string): void {
+        let cachedData = this.renderRailMapCache.get(railMap);//[displayList, modelName]
+        let isRecache = false;
+        if (!cachedData) {
+            cachedData = [RTMApiCompatClient.generateGLList(), ""];
+            this.renderRailMapCache.put(railMap, cachedData);
+            isRecache = true;
+        }
+        if (cachedData[1] !== modelName) isRecache = true;
+        const glList = cachedData[0];
+        if (isRecache) {
+            GLHelper.startCompile(glList);
+            GL11.glPushMatrix();
+
+            const split = Math.floor(railMap.getLength() * 2);
+            for (let rmIdx = 0; rmIdx < split; rmIdx++) {
+                const pos = railMap.getRailPos(split, rmIdx);//絶対座標
+                const posY = railMap.getRailHeight(split, rmIdx);
+                const yaw = railMap.getRailYaw(split, rmIdx);
+                const pitch = RTMApiCompat.getRailPitch(railMap, split, rmIdx);
+                const roll = RTMApiCompat.getCant(railMap, split, rmIdx);
+                GL11.glPushMatrix();
+                GL11.glTranslatef(pos[1], posY, pos[0]);
+                GL11.glRotatef(yaw, 0, 1, 0);
+                GL11.glRotatef(pitch, 1, 0, 0);
+                GL11.glRotatef(roll, 0, 0, 1);
+                NGTOBuilderUtilClient.renderStaticParts(renderer, parts);
+                GL11.glPopMatrix();
+            }
+
+            GL11.glPopMatrix();
+            GLHelper.endCompile();
+        }
+        else {
+            GLHelper.callList(glList);
+        }
     }
 
     /**
