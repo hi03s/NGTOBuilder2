@@ -27,4 +27,5 @@ export class RTMApiCompatClient {
     } | null;
     static generateGLList(): DisplayList;
     static renderNGTO(renderer:PartsRenderer, ngto: NGTObject, pass: number): void;
+    static getRendererWithScript(resource: ResourceLocation, ...args: string[]): PartsRenderer;
 }

@@ -1,6 +1,7 @@
 function RTMApiCompatClient() { }
 RTMApiCompatClient.prototype = {}
 RTMApiCompatClient.isOldVer = Packages.jp.ngt.rtm.RTMCore.VERSION.indexOf("1.7.10") >= 0;
+RTMApiCompatClient.isKaizPatch = Packages.jp.ngt.rtm.RTMCore.VERSION.indexOf("KaizPatch") !== -1;
 RTMApiCompatClient.getLookingPos = function () {
     var player = Packages.jp.ngt.ngtlib.util.MCWrapperClient.getPlayer();
     var mop = Packages.jp.ngt.ngtlib.block.BlockUtil.getMOPFromPlayer(player, 512, true);
@@ -84,4 +85,14 @@ RTMApiCompatClient.renderNGTO = function (renderer, ngto, pass) {
         }
         renderer.bindTexture(defaultTexture);
     }
+}
+RTMApiCompatClient.getRendererWithScript = function (resource) {
+    var callArgs = [resource];
+    for (var i = 1; i < arguments.length; i++) {
+        callArgs.push(arguments[i]);
+    }
+    var Renderer = null;
+    if (RTMApiCompatClient.isOldVer && !RTMApiCompatClient.isKaizPatch) Renderer = Packages.jp.ngt.rtm.render.RTMRenderers;
+    else Renderer = Packages.jp.ngt.rtm.render.PartsRenderer;
+    return Renderer.getRendererWithScript.apply(Renderer, callArgs);
 }
