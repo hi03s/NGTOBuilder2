@@ -18,7 +18,10 @@
       "org.lwjgl",
       "java.util",
       "java.nio",
-      "java.lang.System"
+      "java.lang.System",
+      "javax.script",
+      "java.lang.String",
+      "java.lang.Integer"
     ]
   },
   "compilerOptions": {

@@ -2,8 +2,8 @@ import { NGTLog } from "jp.ngt.ngtlib.io";
 import { MCWrapper, MCWrapperClient, NGTUtilClient } from "jp.ngt.ngtlib.util";
 import { RTMCore } from "jp.ngt.rtm";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
-import { ModelSetVehicle } from "jp.ngt.rtm.modelpack.modelset";
-import { ModelObject, Parts, VehiclePartsRenderer } from "jp.ngt.rtm.render";
+import { ModelSetRailClient, ModelSetVehicle } from "jp.ngt.rtm.modelpack.modelset";
+import { ModelObject, Parts, RailPartsRenderer, VehiclePartsRenderer } from "jp.ngt.rtm.render";
 import { ICommandSender } from "net.minecraft.command";
 import { EntityPlayer } from "net.minecraft.entity.player";
 import { Keyboard, Mouse } from "org.lwjgl.input";
@@ -16,9 +16,10 @@ import { Entity } from "net.minecraft.entity";
 import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { NGTObject } from "jp.ngt.ngtlib.block";
-import { TileEntityLargeRailBase } from "jp.ngt.rtm.rail";
+import { TileEntityLargeRailBase, TileEntityLargeRailSwitchCore } from "jp.ngt.rtm.rail";
 import { RailMapCollector } from "../../lib_hi03toolkit_1_0/lib_RailMapCollector";
 import { BezierCollector } from "../../lib_hi03toolkit_1_0/lib_BezierCollector";
+import { GLHelper } from "jp.ngt.ngtlib.renderer";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
@@ -134,7 +135,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         const tile = RTMApiCompat.getTileEntity(world, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ);
         if (railMapCollector.size(entity) > 0) {
             //レール選択中
-            if (tile instanceof TileEntityLargeRailBase) railMapCollector.addAt(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ, Keyboard.isKeyDown(keyMap.option));
+            if (tile instanceof TileEntityLargeRailBase) railMapCollector.addAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ, Keyboard.isKeyDown(keyMap.option));
         }
         else if (posCollector.size(entity) > 0) {
             //座標選択中
@@ -145,7 +146,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         }
         else {
             //初回選択
-            if (tile instanceof TileEntityLargeRailBase) railMapCollector.addAt(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ, Keyboard.isKeyDown(keyMap.option));
+            if (tile instanceof TileEntityLargeRailBase) railMapCollector.addAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ, Keyboard.isKeyDown(keyMap.option));
             else posCollector.add(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ);
         }
     }
@@ -229,12 +230,20 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     if (lookingPos) {
         if (railMapCollector.size(entity) > 0) {
             //レール選択中
-            const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ);
-            if (lookingRailMap) {
-                GL11.glPushMatrix();
-                GL11.glTranslatef(-posX, -posY, -posZ);
-                NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLine, lookingRailMap);
-                GL11.glPopMatrix();
+            const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
+            if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
+                const railCore = NGTOBuilderUtil.getRailCoreFromRailMap(world, lookingRailMap);
+                if (railCore) {
+                    let startRP = lookingRailMap.getStartRP();
+                    if (railCore instanceof TileEntityLargeRailSwitchCore && railCore.getSwitch()) {
+                        const points = railCore.getSwitch().getPoints();
+                        startRP = points[0].rpRoot;
+                    }
+                    GL11.glPushMatrix();
+                    GL11.glTranslatef(-posX, -posY, -posZ);
+                    NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
+                    GL11.glPopMatrix();
+                }
             }
         }
         else if (posCollector.size(entity) > 0) {
@@ -247,12 +256,20 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         }
         else {
             //初回選択
-            const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ);
+            const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
             if (lookingRailMap) {
-                GL11.glPushMatrix();
-                GL11.glTranslatef(-posX, -posY, -posZ);
-                NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLine, lookingRailMap);
-                GL11.glPopMatrix();
+                const railCore = NGTOBuilderUtil.getRailCoreFromRailMap(world, lookingRailMap);
+                if (railCore) {
+                    let startRP = lookingRailMap.getStartRP();
+                    if (railCore instanceof TileEntityLargeRailSwitchCore && railCore.getSwitch()) {
+                        const points = railCore.getSwitch().getPoints();
+                        startRP = points[0].rpRoot;
+                    }
+                    GL11.glPushMatrix();
+                    GL11.glTranslatef(-posX, -posY, -posZ);
+                    NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
+                    GL11.glPopMatrix();
+                }
             }
             else {
                 GL11.glPushMatrix();
@@ -270,7 +287,17 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         const railMapList = railMapCollector.getAllRailMap(entity);
         GL11.glPushMatrix();
         GL11.glTranslatef(-posX, -posY, -posZ);
-        railMapList.forEach(rm => { NGTOBuilderUtilClient.renderRailMapStatic(renderer, selectedLine, rm); });
+        railMapList.forEach(rm => {
+            const railCore = NGTOBuilderUtil.getRailCoreFromRailMap(world, rm);
+            if (railCore) {
+                let startRP = rm.getStartRP();
+                if (railCore instanceof TileEntityLargeRailSwitchCore && railCore.getSwitch()) {
+                    const points = railCore.getSwitch().getPoints();
+                    startRP = points[0].rpRoot;
+                }
+                NGTOBuilderUtilClient.renderRailMapHighlight(entity, rm, "#20d3ff", 0.3);
+            }
+        });
         GL11.glPopMatrix();
     }
     else if (posCollector.size(entity) > 0) {
@@ -290,8 +317,14 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
             NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLine, bezier);
             GL11.glPopMatrix();
+
+            //矢印付きで描画する(向きをわかるようにするため)
         });
     }
+
+    //ブロックフレーム表示
+
+
 }
 
 //本体の描画(モデル選択と画面併用)

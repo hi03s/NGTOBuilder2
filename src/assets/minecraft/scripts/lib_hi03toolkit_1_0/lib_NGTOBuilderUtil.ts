@@ -405,6 +405,7 @@ export class NGTOBuilderUtil {
         return ngto.xSize << 20 & 0x400 | ngto.ySize << 10 & 0x400 | ngto.zSize & 0x400;
     }
 
+    //小数点を含む座標を与えること(ブロック座標だとズレます)
     static getRailMapAt(entity: Entity, posX: number, posY: number, posZ: number): RailMap | null {
         const world = entity.worldObj;
         const tile = RTMApiCompat.getTileEntity(world, posX, posY, posZ);
@@ -416,16 +417,18 @@ export class NGTOBuilderUtil {
                     //分岐器上
                     let distance = Infinity;
                     const railMapList = core.getAllRailMaps();
-                    railMapList.forEach(rm => {
+                    for (let i = 0; i < railMapList.length; i++) {
+                        const rm = railMapList[i];
                         const split = Math.floor(rm.getLength() * 2);
                         const nearestIdx = rm.getNearlestPoint(split, posX, posZ);
                         const posZX = rm.getRailPos(split, nearestIdx);
                         const vec = new Vec3(posZX[1] - posX, 0, posZX[0] - posZ);
-                        if (vec.length() < distance) {
-                            distance = vec.length();
+                        const len = vec.length();
+                        if (len < distance) {
+                            distance = len;
                             railMap = rm;
                         }
-                    });
+                    }
                 }
                 else {
                     //通常レール

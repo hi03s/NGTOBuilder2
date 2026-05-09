@@ -34,6 +34,7 @@ export class RTMApiCompat {
     static startRiding(entity: Entity, targetEntity: Entity): void;
     static getRailPitch(railMap: RailMap, split:number, index:number): number;
     static getCant(railMap: RailMap, split:number, index:number): number;
-    static getHorizontalAnchorYaw(railpos:RailPosition): number;
-    static getHorizontalAnchorLength(railpos:RailPosition): number;
+    static getHorizontalAnchorYaw(rp:RailPosition): number;
+    static getHorizontalAnchorLength(rp:RailPosition): number;
+    static getRPAnchorPitch(rp:RailPosition): number;
 }

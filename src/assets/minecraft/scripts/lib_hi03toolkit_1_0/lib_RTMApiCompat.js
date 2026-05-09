@@ -110,3 +110,7 @@ RTMApiCompat.getHorizontalAnchorLength = function (rp) {
     if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return rp.anchorLength;
     else return rp.anchorLengthHorizontal;
 }
+RTMApiCompat.getRPAnchorPitch = function (rp) {
+    if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return (new Packages.jp.ngt.ngtlib.math.Vec3(endRP.posX - startRP.posX, endRP.posY - startRP.posY, endRP.posZ - startRP.posZ)).getPitch();
+    else return rp.anchorPitch;
+}

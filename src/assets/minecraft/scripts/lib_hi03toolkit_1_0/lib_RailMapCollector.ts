@@ -26,21 +26,22 @@ export class RailMapCollector {
 
     add(entity: Entity, railMap: RailMap, isReverse: boolean): void {
         const list = this.getOrCreateList(entity);
-        const rmList = list[0];
-        const boolList = list[1];
-
-        if (rmList.indexOf(railMap) === -1) {
+        if (!this.hasRailMap(entity, railMap)) {
+            const rmList = list[0];
+            const boolList = list[1];
             rmList.push(railMap);
             boolList.push(isReverse);
             this.set(entity, rmList, boolList);
         }
     }
 
+    //小数点を含む座標を与えること(ブロック座標だとズレます)
     addAt(entity: Entity, posX: number, posY: number, posZ: number, isReverse: boolean): void {
         let railMap = NGTOBuilderUtil.getRailMapAt(entity, posX, posY, posZ);
-        if (railMap) this.add(entity, railMap, isReverse);
+        if (railMap && !this.hasRailMap(entity, railMap)) this.add(entity, railMap, isReverse);
     }
 
+    //小数点を含む座標を与えること(ブロック座標だとズレます)
     isConnectedRailAt(entity: Entity, posX: number, posY: number, posZ: number): boolean {
         const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, posX, posY, posZ);
         if (!lookingRailMap) return false;
@@ -53,6 +54,11 @@ export class RailMapCollector {
             }
         }
         return false;
+    }
+
+    hasRailMap(entity: Entity, railMap: RailMap): boolean {
+        const railMapList = this.getOrCreateList(entity)[0];
+        return railMapList.indexOf(railMap) >= 0;
     }
 
     getLastRailMap(entity: Entity): RailMap | null {
