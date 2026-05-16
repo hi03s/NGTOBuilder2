@@ -20,6 +20,7 @@ import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { Blocks } from "net.minecraft.init";
 import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
 import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
+import { GuiItemMiniature } from "jp.ngt.mcte.gui";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
@@ -212,7 +213,8 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //設置位置を決定(回転モードに移行)
-    if (lookingPos && isRightClick) {
+    if (lookingPos && isRightClick && collector.size(entity) === 0) {
+        dataMap.setBoolean("isFirstSelect", true, 0);//ミニチュアブロックGUIをrenderでブロックする
         collector.clear(entity);
         collector.add(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ, true);
     }
@@ -529,6 +531,16 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const offsetY = dataMap.getInt("offsetY");
     const isBuilding = dataMap.getBoolean("isBuilding");
     const isUndo = dataMap.getBoolean("isUndo");
+
+    //初回選択時にミニチュアブロックのGUIが開くのをブロックする
+    const isFirstSelect = dataMap.getBoolean("isFirstSelect");
+    if (isFirstSelect) {
+        const mc = NGTUtilClient.getMinecraft();
+        if (mc.currentScreen && mc.currentScreen instanceof GuiItemMiniature) {
+            player.closeScreen();
+            dataMap.setBoolean("isFirstSelect", false, 0);
+        }
+    }
 
     //カーソル
     if (lookingPos) {
