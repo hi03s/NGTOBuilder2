@@ -9,7 +9,6 @@ export class UndoManager {
     static backupFromBlockBuilder(entity: Entity, builder: BlockBuilder): void {
         const backupBuilder = new BlockBuilder();
         const posList = builder.get(entity);
-        NGTLog.debug(`[NGTO Builder2]Undo block count: ${posList.length}`);
         for (let i = posList.length - 1; i >= 0; i--) {
             const pos = posList[i];
             backupBuilder.addBackup(entity, [pos[1], pos[2], pos[3]]);
