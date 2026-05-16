@@ -51,6 +51,9 @@ export class BezierCollector {
     }
 
     createFromPosList(entity: Entity, posList: Pos[]): void {
+        function toBlockCenterPosList(pos: Pos): Pos {
+            return [pos[0] + 0.5, pos[1] + 0.5, pos[2] + 0.5];
+        }
         this.clear(entity);
 
         //足りないときは消去のみ
@@ -60,8 +63,8 @@ export class BezierCollector {
 
         //2点は直線のベジェ曲線
         if (posList.length === 2) {
-            const sp = posList[0];
-            const ep = posList[1];
+            const sp = toBlockCenterPosList(posList[0]);
+            const ep = toBlockCenterPosList(posList[1]);
             const cp = BezierCurve3D.lerpPoint(sp, ep, 0.5);
             this.add(entity, new BezierCurve3D(sp, cp, ep));
             return;
@@ -69,32 +72,32 @@ export class BezierCollector {
 
         //3点は1本のベジェ曲線
         if (posList.length === 3) {
-            this.add(entity, new BezierCurve3D(posList[0], posList[1], posList[2]));
+            this.add(entity, new BezierCurve3D(toBlockCenterPosList(posList[0]), toBlockCenterPosList(posList[1]), toBlockCenterPosList(posList[2])));
             return;
         }
 
         //4点以上は複数のベジェ曲線
 
         {//最初のベジェ曲線
-            const sp = posList[0];
-            const ep = BezierCurve3D.lerpPoint(sp, posList[1], 0.5);
+            const sp = toBlockCenterPosList(posList[0]);
+            const ep = BezierCurve3D.lerpPoint(sp, toBlockCenterPosList(posList[1]), 0.5);
             const cp = BezierCurve3D.lerpPoint(sp, ep, 0.5);
             this.add(entity, new BezierCurve3D(sp, cp, ep));
         }
 
         //中間のベジェ曲線
         for (let i = 1; i < posList.length - 1; i++) {
-            const prevPos = posList[i - 1];
-            const currenPos = posList[i];
-            const nextPos = posList[i + 1];
+            const prevPos = toBlockCenterPosList(posList[i - 1]);
+            const currenPos = toBlockCenterPosList(posList[i]);
+            const nextPos = toBlockCenterPosList(posList[i + 1]);
             const sp = BezierCurve3D.lerpPoint(prevPos, currenPos, 0.5);
             const ep = BezierCurve3D.lerpPoint(currenPos, nextPos, 0.5);
             this.add(entity, new BezierCurve3D(sp, currenPos, ep));
         }
 
         {//最後のベジェ曲線
-            const ep = posList[posList.length - 1];
-            const sp = BezierCurve3D.lerpPoint(posList[posList.length - 2], ep, 0.5);
+            const ep = toBlockCenterPosList(posList[posList.length - 1]);
+            const sp = BezierCurve3D.lerpPoint(toBlockCenterPosList(posList[posList.length - 2]), ep, 0.5);
             const cp = BezierCurve3D.lerpPoint(sp, ep, 0.5);
             this.add(entity, new BezierCurve3D(sp, cp, ep));
         }

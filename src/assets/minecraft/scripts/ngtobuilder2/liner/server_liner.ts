@@ -4,7 +4,7 @@ import { ScriptExecuter } from "jp.ngt.rtm.modelpack";
 import { WeakHashMap } from "java.util";
 import { NGTOBuilderUtil, Pos } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { RTMApiCompat } from "../../lib_hi03toolkit_1_0/lib_RTMApiCompat";
-import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
+import { BlockBuilder, BlockSetPlacement } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { EntityPlayer } from "net.minecraft.entity.player";
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 import { NGTLog } from "jp.ngt.ngtlib.io";
@@ -69,6 +69,7 @@ export type ReceiveData_liner = {
 function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     const dataMap = entity.getResourceState().getDataMap();
     const hostPlayer = hostPlayerList.get(entity);
+    const world = entity.worldObj;
 
     //終了
     if (dataMap.getBoolean("isEndEdit")) {
@@ -90,6 +91,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             const offsetNGTOV = dataMap.getInt("offsetNGTOV");//垂直方向
             const offsetNGTOH = dataMap.getInt("offsetNGTOH");//水平方向
             const ngtoRotate = dataMap.getInt("ngtoRotate");//0:+Z, 1:+X, 2:-Z, 3:-X
+            const isMasking = dataMap.getBoolean("isMasking");
             const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
             let ngto = heldNGTO;
             //NGTOの変更を適用する
@@ -104,7 +106,6 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                 transformedObj.rotate(ngtoRotate * 90, 0, 0);
                 transformedObj.movePivotToBase();
                 ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
-                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, 0, 0);
             }
             //ベジェ曲線を構築する
             const bezierList: BezierCurve3D[] = [];
@@ -130,19 +131,22 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                     const pitch = bezier.getPitch(split, idx);
                     const centerX = Math.floor(ngto.xSize / 2) + 0.5;
                     rbo.setPivot(centerX, 0.5, 0.5);
+                    rbo.offsetExpanding(offsetNGTOH, 0, 0);
                     rbo.rotate(-yaw, -pitch, 0);
                     rbo.movePivotToBase();
                     rbo.offset(
-                        Math.round(pos[0]) - Math.round(origin[0]),
-                        Math.round(pos[1]) - Math.round(origin[1]) + offsetNGTOV,
-                        Math.round(pos[2]) - Math.round(origin[2])
+                        Math.floor(pos[0]) - Math.floor(origin[0]),
+                        Math.floor(pos[1]) - Math.floor(origin[1]) + offsetNGTOV,
+                        Math.floor(pos[2]) - Math.floor(origin[2])
                     );
                     margedRBO.marge(rbo);
                 }
             }
             RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
             RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
-            const placementBlocks = RotatableBlockObjectMapper.toBlockPlacements(margedRBO, origin[0], origin[1], origin[2]);
+            let placementBlocks:BlockSetPlacement[] = [];
+            if (isMasking) placementBlocks = RotatableBlockObjectMapper.toReplacePlacements(world, margedRBO, origin[0], origin[1], origin[2]);
+            else placementBlocks = RotatableBlockObjectMapper.toBlockPlacements(margedRBO, origin[0], origin[1], origin[2]);
             builder.addFromRotatableBlockObjectAt(entity, placementBlocks);
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);

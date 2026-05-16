@@ -341,7 +341,7 @@ export class NGTOBuilderUtilClient {
             GL11.glPushMatrix();
             const split = Math.floor(bezier.getLength() * 2);
             if (interval < 1) interval = 1;
-            for (let idx = 0; idx < split; idx += interval) {
+            for (let idx = 0; idx <= split; idx += interval) {
                 const pos = bezier.getPoint(split, idx);//絶対座標
                 const yaw = bezier.getYaw(split, idx);
                 const pitch = bezier.getPitch(split, idx);

@@ -72,7 +72,11 @@ export class RotatableBlockObjectMapper {
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
             if (!rbs) continue;
-            list.push([rbs.local_x + Math.round(x), rbs.local_y + Math.round(y), rbs.local_z + Math.round(z)]);
+            list.push([
+                RotatableBlockObjectMapper.toBlockCoord(rbs.local_x + x),
+                RotatableBlockObjectMapper.toBlockCoord(rbs.local_y + y),
+                RotatableBlockObjectMapper.toBlockCoord(rbs.local_z + z)
+            ]);
         }
         return list;
     }
@@ -83,9 +87,9 @@ export class RotatableBlockObjectMapper {
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
             if (!rbs) continue;
-            const worldX = rbs.local_x + Math.round(x);
-            const worldY = rbs.local_y + Math.round(y);
-            const worldZ = rbs.local_z + Math.round(z);
+            const worldX = RotatableBlockObjectMapper.toBlockCoord(rbs.local_x + x);
+            const worldY = RotatableBlockObjectMapper.toBlockCoord(rbs.local_y + y);
+            const worldZ = RotatableBlockObjectMapper.toBlockCoord(rbs.local_z + z);
             const block = RTMApiCompat.getBlock(world, worldX, worldY, worldZ);
             if (block !== Blocks.air) list.push([worldX, worldY, worldZ]);
         }
@@ -98,7 +102,13 @@ export class RotatableBlockObjectMapper {
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
             if (!rbs) continue;
-            list.push([rbs.blockSet, rbs.local_x + Math.round(x), rbs.local_y + Math.round(y), rbs.local_z + Math.round(z), rbs.yaw]);
+            list.push([
+                rbs.blockSet,
+                RotatableBlockObjectMapper.toBlockCoord(rbs.local_x + x), 
+                RotatableBlockObjectMapper.toBlockCoord(rbs.local_y + y), 
+                RotatableBlockObjectMapper.toBlockCoord(rbs.local_z + z),
+                rbs.yaw
+            ]);
         }
         return list;
     }
@@ -109,9 +119,9 @@ export class RotatableBlockObjectMapper {
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
             if (!rbs) continue;
-            const worldX = rbs.local_x + Math.round(x);
-            const worldY = rbs.local_y + Math.round(y);
-            const worldZ = rbs.local_z + Math.round(z);
+            const worldX = RotatableBlockObjectMapper.toBlockCoord(rbs.local_x + x);
+            const worldY = RotatableBlockObjectMapper.toBlockCoord(rbs.local_y + y);
+            const worldZ = RotatableBlockObjectMapper.toBlockCoord(rbs.local_z + z);
             const block = RTMApiCompat.getBlock(world, worldX, worldY, worldZ);
             if (block !== Blocks.air) list.push([rbs.blockSet, worldX, worldY, worldZ, rbs.yaw]);
         }

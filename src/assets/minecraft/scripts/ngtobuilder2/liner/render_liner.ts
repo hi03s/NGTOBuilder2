@@ -93,7 +93,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         reverseMarker: Keyboard.KEY_P,
 
         //ブロック置換モード
-        isMasking: Keyboard.KEY_U
+        isMasking: Keyboard.KEY_O
     }
 
     //-------------------
@@ -170,6 +170,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelected)}] すべての選択とNGTOの状態をリセットする`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.reverseMarker)}] マーカーを反転する`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.isMasking)}] 置換モード切り替え(旧:マスク機能)`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYUp)}] 選択のY高さを上げる`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYDown)}] 選択のY高さを下げる`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelectY)}] 選択のY高さをリセットする`);
@@ -430,6 +431,7 @@ declare global {
     var lookingLineArrow: Parts;
     var selectedLineArrowF: Parts;
     var lookingLineArrowF: Parts;
+    var maskFrame: Parts;
 }
 function initParts(): void {
     //## 描画パーツの設定 ##
@@ -443,6 +445,7 @@ function initParts(): void {
     lookingLineArrow = renderer.registerParts(new Parts("lookingLineArrow"));
     selectedLineArrowF = renderer.registerParts(new Parts("selectedLineArrowF"));
     lookingLineArrowF = renderer.registerParts(new Parts("lookingLineArrowF"));
+    maskFrame = renderer.registerParts(new Parts("maskFrame"));
 }
 
 //############
@@ -491,20 +494,22 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     }
 
     //ブロック選択でベジェ曲線を表示
-    if (railMapCollector.size(entity) === 0 && bezierCollector.size(entity) > 0) {
+    if (bezierCollector.size(entity) > 0) {
         const bezierList = bezierCollector.getAll(entity);
         const cullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL11.glEnable(GL11.GL_CULL_FACE);
         bezierList.forEach(bezier => {
             GL11.glPushMatrix();
-            GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
+            GL11.glTranslatef(-posX, -posY, -posZ);
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            GL11.glEnable(GL11.GL_CULL_FACE);
+            NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLine, bezier);
+            NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLineArrow, bezier, 10);
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            if (!cullEnabled) GL11.glDisable(GL11.GL_CULL_FACE);
             NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLine, bezier);
             NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLineArrow, bezier, 10);
             GL11.glPopMatrix();
         });
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        if (!cullEnabled) GL11.glDisable(GL11.GL_CULL_FACE);
     }
 
     //選択済みの描画
@@ -528,8 +533,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const offsetNGTOH = dataMap.getInt("offsetNGTOH");//水平方向
     const ngtoRotate = dataMap.getInt("ngtoRotate");//0:+Z, 1:+X, 2:-Z, 3:-X
     const isMasking = dataMap.getBoolean("isMasking");
-    let isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
-    if (isMasking) isPlaceAirBlock = !isPlaceAirBlock;
+    const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
     if (heldNGTO && bezierCollector.size(entity) > 0) {
         const hash = String(entity.getEntityId()) + "|" + NGTOBuilderUtil.getNGTOHash(heldNGTO) + "|" + String(interpolationMode) + "|" + String(diffusionRate) + "|" + bezierCollector.getCacheKey(entity) + "|"
             + String(isMirrorX) + String(isMirrorY) + String(isMirrorZ) + String(offsetNGTOV) + String(offsetNGTOH) + String(ngtoRotate) + String(isPlaceAirBlock) + String(isMasking);
@@ -547,7 +551,6 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 transformedObj.rotate(ngtoRotate * 90, 0, 0);
                 transformedObj.movePivotToBase();
                 ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
-                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, 0, 0);
             }
             //NGTOをスライスしたRotatableBlockObject[]をベジェ曲線上に展開する(繰り返し展開/2indexで1ブロック)
             const slicedRBO = NGTOBuilderUtil.sliceByZ(ngto, isPlaceAirBlock);
@@ -568,12 +571,13 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                     const pitch = bezier.getPitch(split, idx);
                     const centerX = Math.floor(ngto.xSize / 2) + 0.5;
                     rbo.setPivot(centerX, 0.5, 0.5);
+                    rbo.offsetExpanding(offsetNGTOH, 0, 0);
                     rbo.rotate(-yaw, -pitch, 0);
                     rbo.movePivotToBase();
                     rbo.offset(
-                        Math.round(pos[0]) - Math.round(origin[0]),
-                        Math.round(pos[1]) - Math.round(origin[1]) + offsetNGTOV,
-                        Math.round(pos[2]) - Math.round(origin[2])
+                        Math.floor(pos[0]) - Math.floor(origin[0]),
+                        Math.floor(pos[1]) - Math.floor(origin[1]) + offsetNGTOV,
+                        Math.floor(pos[2]) - Math.floor(origin[2])
                     );
                     margedRBO.marge(rbo);
                 }
@@ -587,7 +591,8 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         //描画
         GL11.glPushMatrix();
         GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
-        NGTOBuilderUtilClient.renderPosListStatic(renderer, placeBlockFrame, entity, posList, true);
+        const renderFrame = isMasking ? maskFrame : placeBlockFrame;
+        NGTOBuilderUtilClient.renderPosListStatic(renderer, renderFrame, entity, posList, true);
         GL11.glPopMatrix();
     }
 
