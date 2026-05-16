@@ -7,6 +7,8 @@ import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
 import { RotatableBlockObject } from "./lib_RotatableBlockObject";
+import { RotatableBlockObjectMapper } from "./lib_RotatableBlockObjectMapper";
+import { NGTLog } from "jp.ngt.ngtlib.io";
 
 export type BlockSetPlacement = [
     blockSet: BlockSet,
@@ -91,9 +93,9 @@ export class BlockBuilder {
      * @param y 
      * @param z 
      */
-    add(entity: Entity, blockSet: BlockSet, x: number, y: number, z: number): void {
+    add(entity: Entity, blockSet: BlockSet, x: number, y: number, z: number, yaw: number = 0): void {
         const posList = this.get(entity);
-        posList.push([blockSet, x, y, z, 0]);
+        posList.push([blockSet, x, y, z, yaw]);
         this.set(entity, posList);
     }
 
@@ -107,11 +109,12 @@ export class BlockBuilder {
         posList.forEach(([x, y, z]: Pos): void => { this.add(entity, blockSet, x, y, z); });
     }
 
-    addFromRotatableBlockObject(entity: Entity, rbo: RotatableBlockObject, placeX: number, placeY: number, placeZ: number): void {
-        for (let i = 0; i < rbo.rotatableBlockSetList.length; i++) {
-            const rbs = rbo.rotatableBlockSetList[i];
-            if (!rbs) continue;
-            this.add(entity, rbs.blockSet, rbs.local_x + placeX, rbs.local_y + placeY, rbs.local_z + placeZ);
+    addFromRotatableBlockObjectAt(entity: Entity, rbo: RotatableBlockObject, placeX: number, placeY: number, placeZ: number): void {
+        const list = RotatableBlockObjectMapper.toBlockPlacements(rbo);
+        for (let i = 0; i < list.length; i++) {
+            const placeData = list[i];
+            if (!placeData) continue;
+            this.add(entity, placeData[0], placeData[1] + placeX, placeData[2] + placeY, placeData[3] + placeZ);
         }
     }
 

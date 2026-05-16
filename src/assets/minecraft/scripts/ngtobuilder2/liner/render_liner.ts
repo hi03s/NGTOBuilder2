@@ -58,11 +58,35 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         resetSelected: Keyboard.KEY_C,
 
         //高さ変更
-        offsetYUp: Keyboard.KEY_UP,
-        offsetYDown: Keyboard.KEY_DOWN,
+        selectYUp: Keyboard.KEY_UP,
+        selectYDown: Keyboard.KEY_DOWN,
 
-        //Y座標オフセットをリセット/Y座標オフセットをスナップ(+オプション)
-        resetOffsetY: Keyboard.KEY_F
+        //Y座標オフセットをリセット / Y座標オフセットをスナップ[+optionキー]
+        resetSelectY: Keyboard.KEY_F,
+
+        //空気ブロックの設置を切り替え
+        isPlaceAirBlock: Keyboard.KEY_I,
+
+        //NGTOオフセット操作[+optionキー]
+        offsetUp: Keyboard.KEY_UP,
+        offsetDown: Keyboard.KEY_DOWN,
+        offsetLeft: Keyboard.KEY_LEFT,
+        offsetRight: Keyboard.KEY_RIGHT,
+
+        //NGTOを90度回転
+        ngtoRotate: Keyboard.KEY_R,
+
+        //ミラー
+        mirrorX: Keyboard.KEY_J,
+        mirrorY: Keyboard.KEY_K,
+        mirrorZ: Keyboard.KEY_L,
+
+        //補間モード切り替え
+        switchInterpolationMode: Keyboard.KEY_U,
+
+        //補間の拡散量を変更 [+optionキー]
+        diffusionRateUp: Keyboard.KEY_UP,
+        diffusionRateDown: Keyboard.KEY_DOWN
     }
 
     //-------------------
@@ -86,9 +110,21 @@ var keyMap: {
     showHelp: number;
     cancelBuild: number;
     resetSelected: number;
-    offsetYUp: number;
-    offsetYDown: number;
-    resetOffsetY: number;
+    selectYUp: number;
+    selectYDown: number;
+    resetSelectY: number;
+    offsetUp: number;
+    offsetDown: number;
+    offsetLeft: number;
+    offsetRight: number;
+    ngtoRotate: number;
+    mirrorX: number;
+    mirrorY: number;
+    mirrorZ: number;
+    isPlaceAirBlock: number;
+    switchInterpolationMode: number;
+    diffusionRateUp: number;
+    diffusionRateDown: number;
 };
 var Version: string;
 var posCollector: PositionCollector;
@@ -117,25 +153,37 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //ヘルプ表示
     if (NGTOBuilderUtilClient.isKeyDown(dataMap, "showHelp", keyMap.showHelp)) {
-        NGTLog.sendChatMessage(sender, `---NGTO Builder2 Prop設置 操作方法---`);
+        NGTLog.sendChatMessage(sender, `---NGTO Builder2 Liner設置 操作方法---`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.endEdit)}] ツールを終了`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.build)}] NGTOを生成する`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.build)}] 手に持っているNGTOを生成する`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.undo)}] Undo`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.cancelBuild)}] 生成を中止する`);
         NGTLog.sendChatMessage(sender, `[右クリック] 座標を選択/レールを選択`);
         NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.offsetYUp)}] 選択のY高さを上げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.offsetYDown)}] 選択のY高さを下げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetOffsetY)}] 選択のY高さをリセットする`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.resetOffsetY)}] 選択のY高さを最後の選択に合わせる`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYUp)}] 選択のY高さを上げる`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYDown)}] 選択のY高さを下げる`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelectY)}] 選択のY高さをリセットする`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.switchInterpolationMode)}] ブロック補間モードを切り替え`);
+        //NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateUp)}] 補間の拡散量を増やす`);
+        //NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateDown)}] 補間の拡散量を減らす`);
+        NGTLog.sendChatMessage(sender, `---NGTOを操作---`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.offsetUp)}] NGTOを上に動かす`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.offsetDown)}] NGTOを下に動かす`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.offsetRight)}] NGTOを右に動かす`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.offsetLeft)}] NGTOを左に動かす`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.ngtoRotate)}] NGTOを右に90度回す`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.ngtoRotate)}] NGTOを左に90度回す`);
     }
 
     //座標を追加/レールを収集
     if (lookingPos && isRightClick) {
-        const tile = RTMApiCompat.getTileEntity(world, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ);
+        const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
         if (railMapCollector.size(entity) > 0) {
             //レール選択中
-            if (tile instanceof TileEntityLargeRailBase) railMapCollector.addAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ, Keyboard.isKeyDown(keyMap.option));
+            if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
+                railMapCollector.add(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
+                bezierCollector.addFromRailMap(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
+            }
         }
         else if (posCollector.size(entity) > 0) {
             //座標選択中
@@ -146,18 +194,25 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         }
         else {
             //初回選択
-            if (tile instanceof TileEntityLargeRailBase) railMapCollector.addAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ, Keyboard.isKeyDown(keyMap.option));
+            if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
+                railMapCollector.add(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
+                bezierCollector.addFromRailMap(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
+            }
             else posCollector.add(entity, lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ);
         }
     }
 
     //選択を解除
     if (isLeftClick) {
-        railMapCollector.pop(entity);
-        posCollector.pop(entity);
-        //ベジェ曲線を構築する
-        const posList = posCollector.getAll(entity);
-        bezierCollector.createFromPosList(entity, posList);
+        if (railMapCollector.size(entity) > 0) {
+            railMapCollector.pop(entity);
+            bezierCollector.pop(entity);
+        }
+        else if (posCollector.size(entity) > 0) {
+            posCollector.pop(entity);
+            const posList = posCollector.getAll(entity);
+            bezierCollector.createFromPosList(entity, posList);
+        }
     }
 
     //選択をすべて解除
@@ -167,24 +222,117 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         bezierCollector.clear(entity);
     }
 
-    //オフセットY
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "offsetYUp", keyMap.offsetYUp)) {
-        dataMap.setInt("offsetY", offsetY + 1, 1);
-    }
-    else if (NGTOBuilderUtilClient.isKeyDown(dataMap, "offsetYDown", keyMap.offsetYDown)) {
-        dataMap.setInt("offsetY", offsetY - 1, 1);
-    }
-    else if (NGTOBuilderUtilClient.isKeyDown(dataMap, "resetOffsetY", keyMap.resetOffsetY)) {
-        if (Keyboard.isKeyDown(keyMap.option)) {
-            if (lookingPos && posCollector.size(entity) > 0) {
-                const lastPos = posCollector.getLastPos(entity);
-                if (lastPos) dataMap.setInt("offsetY", lastPos[1] - lookingPos.blockY, 1);
+    //選択Y座標
+    if (!Keyboard.isKeyDown(keyMap.option)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "selectYUp", keyMap.selectYUp)) {
+            dataMap.setInt("offsetY", offsetY + 1, 1);
+        }
+        else if (NGTOBuilderUtilClient.isKeyDown(dataMap, "selectYDown", keyMap.selectYDown)) {
+            dataMap.setInt("offsetY", offsetY - 1, 1);
+        }
+        else if (NGTOBuilderUtilClient.isKeyDown(dataMap, "resetSelectY", keyMap.resetSelectY)) {
+            if (Keyboard.isKeyDown(keyMap.option)) {
+                if (lookingPos && posCollector.size(entity) > 0) {
+                    const lastPos = posCollector.getLastPos(entity);
+                    if (lastPos) dataMap.setInt("offsetY", lastPos[1] - lookingPos.blockY, 1);
+                }
+            }
+            else {
+                dataMap.setInt("offsetY", 0, 1);
             }
         }
-        else {
-            dataMap.setInt("offsetY", 0, 1);
+    }
+
+    //NGTO操作
+    const offsetNGTOV = dataMap.getInt("offsetNGTOV");//垂直方向
+    const offsetNGTOH = dataMap.getInt("offsetNGTOH");//水平方向
+    if (Keyboard.isKeyDown(keyMap.option)) {
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "offsetUp", keyMap.offsetUp)) {
+            dataMap.setInt("offsetNGTOV", offsetNGTOV + 1, 1);
+        }
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "offsetDown", keyMap.offsetDown)) {
+            dataMap.setInt("offsetNGTOV", offsetNGTOV - 1, 1);
+        }
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "offsetRight", keyMap.offsetRight)) {
+            dataMap.setInt("offsetNGTOH", offsetNGTOH + 1, 1);
+        }
+        if (NGTOBuilderUtilClient.isKeyDown(dataMap, "offsetLeft", keyMap.offsetLeft)) {
+            dataMap.setInt("offsetNGTOH", offsetNGTOH - 1, 1);
         }
     }
+
+    //NGTO回転
+    let ngtoRotate = dataMap.getInt("ngtoRotate");//0:+Z, 1:+X, 2:-Z, 3:-X
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "ngtoRotate", keyMap.ngtoRotate)) {
+        if (Keyboard.isKeyDown(keyMap.option)) ngtoRotate -= 1;
+        else ngtoRotate += 1;
+        if (ngtoRotate === 4) ngtoRotate = 0;
+        else if (ngtoRotate === -1) ngtoRotate = 3;
+        dataMap.setInt("ngtoRotate", ngtoRotate, 1);
+    }
+
+    //X鏡像
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorX", keyMap.mirrorX)) {
+        let isMirrorX = dataMap.getBoolean("isMirrorX");
+        isMirrorX = !isMirrorX
+        dataMap.setBoolean("isMirrorX", isMirrorX, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] X鏡像: ${isMirrorX}`);
+    }
+
+    //Y鏡像
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorY", keyMap.mirrorY)) {
+        let isMirrorY = dataMap.getBoolean("isMirrorY");
+        isMirrorY = !isMirrorY
+        dataMap.setBoolean("isMirrorY", isMirrorY, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] Y鏡像: ${isMirrorY}`);
+    }
+
+    //Z鏡像
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorZ", keyMap.mirrorZ)) {
+        let isMirrorZ = dataMap.getBoolean("isMirrorZ");
+        isMirrorZ = !isMirrorZ
+        dataMap.setBoolean("isMirrorZ", isMirrorZ, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] Z鏡像: ${isMirrorZ}`);
+    }
+
+    //空気ブロックの設置を切り替え
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "isPlaceAirBlock", keyMap.isPlaceAirBlock)) {
+        let isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
+        isPlaceAirBlock = !isPlaceAirBlock;
+        dataMap.setBoolean("isPlaceAirBlock", isPlaceAirBlock, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] 空気ブロック設置: ${isPlaceAirBlock}`);
+    }
+
+    //補間モードを切り替え
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "switchInterpolationMode", keyMap.switchInterpolationMode)) {
+        let interpolationMode = dataMap.getInt("interpolationMode");
+        interpolationMode = (interpolationMode + 1) % 3;
+        dataMap.setInt("interpolationMode", interpolationMode, 1);
+        let modeName = "";
+        if (interpolationMode === 0) modeName = "XZ拡散 [Medium]";
+        if (interpolationMode === 1) modeName = "XYZ拡散 [High]";
+        if (interpolationMode === 2) modeName = "補間なし [Low]";
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間モード: ${modeName}`);
+    }
+
+    /*
+    //補間の拡散量を変更
+    let diffusionRate = dataMap.getInt("diffusionRate");
+    if (diffusionRate === 0) {
+        diffusionRate = 20;
+        dataMap.setInt("diffusionRate", diffusionRate, 1);
+    }
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "diffusionRateUp", keyMap.diffusionRateUp) && Keyboard.isKeyDown(keyMap.option) && diffusionRate < 100) {
+        diffusionRate = diffusionRate + 5;
+        dataMap.setInt("diffusionRate", diffusionRate, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間の拡散量: ${diffusionRate / 100}[m]`);
+    }
+    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "diffusionRateDown", keyMap.diffusionRateDown) && Keyboard.isKeyDown(keyMap.option) && diffusionRate > 5) {
+        diffusionRate = diffusionRate - 5;
+        dataMap.setInt("diffusionRate", diffusionRate, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間の拡散量: ${diffusionRate / 100}[m]`);
+    }
+    */
 }
 
 //#################
@@ -198,7 +346,10 @@ declare global {
     var placeBlockFrame: Parts;
     var selectedLine: Parts;
     var lookingLine: Parts;
-
+    var selectedLineArrow: Parts;
+    var lookingLineArrow: Parts;
+    var selectedLineArrowF: Parts;
+    var lookingLineArrowF: Parts;
 }
 function initParts(): void {
     //## 描画パーツの設定 ##
@@ -208,6 +359,10 @@ function initParts(): void {
     placeBlockFrame = renderer.registerParts(new Parts("placeBlockFrame"));
     selectedLine = renderer.registerParts(new Parts("selectedLine"));
     lookingLine = renderer.registerParts(new Parts("lookingLine"));
+    selectedLineArrow = renderer.registerParts(new Parts("selectedLineArrow"));
+    lookingLineArrow = renderer.registerParts(new Parts("lookingLineArrow"));
+    selectedLineArrowF = renderer.registerParts(new Parts("selectedLineArrowF"));
+    lookingLineArrowF = renderer.registerParts(new Parts("lookingLineArrowF"));
 }
 
 //############
@@ -232,18 +387,12 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             //レール選択中
             const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
             if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
-                const railCore = NGTOBuilderUtil.getRailCoreFromRailMap(world, lookingRailMap);
-                if (railCore) {
-                    let startRP = lookingRailMap.getStartRP();
-                    if (railCore instanceof TileEntityLargeRailSwitchCore && railCore.getSwitch()) {
-                        const points = railCore.getSwitch().getPoints();
-                        startRP = points[0].rpRoot;
-                    }
-                    GL11.glPushMatrix();
-                    GL11.glTranslatef(-posX, -posY, -posZ);
-                    NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
-                    GL11.glPopMatrix();
-                }
+                GL11.glPushMatrix();
+                GL11.glTranslatef(-posX, -posY, -posZ);
+                NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
+                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
+                else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
+                GL11.glPopMatrix();
             }
         }
         else if (posCollector.size(entity) > 0) {
@@ -258,18 +407,12 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             //初回選択
             const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
             if (lookingRailMap) {
-                const railCore = NGTOBuilderUtil.getRailCoreFromRailMap(world, lookingRailMap);
-                if (railCore) {
-                    let startRP = lookingRailMap.getStartRP();
-                    if (railCore instanceof TileEntityLargeRailSwitchCore && railCore.getSwitch()) {
-                        const points = railCore.getSwitch().getPoints();
-                        startRP = points[0].rpRoot;
-                    }
-                    GL11.glPushMatrix();
-                    GL11.glTranslatef(-posX, -posY, -posZ);
-                    NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
-                    GL11.glPopMatrix();
-                }
+                GL11.glPushMatrix();
+                GL11.glTranslatef(-posX, -posY, -posZ);
+                NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
+                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
+                else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
+                GL11.glPopMatrix();
             }
             else {
                 GL11.glPushMatrix();
@@ -284,20 +427,18 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     //選択済みの描画
     if (railMapCollector.size(entity) > 0) {
         //レール選択中
-        const railMapList = railMapCollector.getAllRailMap(entity);
+        const collectList = railMapCollector.getAll(entity);
+        const railMapList = collectList[0];
+        const dirList = collectList[1];
         GL11.glPushMatrix();
         GL11.glTranslatef(-posX, -posY, -posZ);
-        railMapList.forEach(rm => {
-            const railCore = NGTOBuilderUtil.getRailCoreFromRailMap(world, rm);
-            if (railCore) {
-                let startRP = rm.getStartRP();
-                if (railCore instanceof TileEntityLargeRailSwitchCore && railCore.getSwitch()) {
-                    const points = railCore.getSwitch().getPoints();
-                    startRP = points[0].rpRoot;
-                }
-                NGTOBuilderUtilClient.renderRailMapHighlight(entity, rm, "#20d3ff", 0.3);
-            }
-        });
+        for (let rmIdx = 0; rmIdx < railMapList.length; rmIdx++) {
+            const rm = railMapList[rmIdx];
+            const isReverse = dirList[rmIdx];
+            NGTOBuilderUtilClient.renderRailMapHighlight(entity, rm, "#20d3ff", 0.3);
+            if (isReverse) NGTOBuilderUtilClient.renderRailMapStatic(renderer, selectedLineArrowF, rm, 10);
+            else NGTOBuilderUtilClient.renderRailMapStatic(renderer, selectedLineArrow, rm, 10);
+        }
         GL11.glPopMatrix();
     }
     else if (posCollector.size(entity) > 0) {
@@ -316,15 +457,64 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             GL11.glPushMatrix();
             GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
             NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLine, bezier);
+            NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLineArrow, bezier, 10);
             GL11.glPopMatrix();
-
-            //矢印付きで描画する(向きをわかるようにするため)
         });
     }
 
     //ブロックフレーム表示
-
-
+    const heldNGTO = NGTOBuilderUtil.getHeldNGTO(player);
+    let prevNGTO = prevNGTOData.get(entity);
+    prevNGTOData.put(entity, heldNGTO);
+    const interpolationMode = dataMap.getInt("interpolationMode");
+    //const diffusionRate = dataMap.getInt("diffusionRate");
+    const isMirrorX = dataMap.getBoolean("isMirrorX");
+    const isMirrorY = dataMap.getBoolean("isMirrorY");
+    const isMirrorZ = dataMap.getBoolean("isMirrorZ");
+    const offsetNGTOV = dataMap.getInt("offsetNGTOV");//垂直方向
+    const offsetNGTOH = dataMap.getInt("offsetNGTOH");//水平方向
+    const ngtoRotate = dataMap.getInt("ngtoRotate");//0:+Z, 1:+X, 2:-Z, 3:-X
+    const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
+    if (heldNGTO && bezierCollector.size(entity) > 0) {
+        const entityId = String(entity.getEntityId());
+        const ngtoHash = NGTOBuilderUtil.getNGTOHash(heldNGTO);
+        const hash = entityId + ngtoHash + String(interpolationMode) + String(bezierCollector.size(entity))
+            + String(isMirrorX) + String(isMirrorY) + String(isMirrorZ) + String(offsetNGTOV) + String(offsetNGTOH) + String(ngtoRotate) + String(isPlaceAirBlock);
+        let posList: Pos[] = posListCache.get(hash);
+        //同じサイズのNGTOは同一ハッシュになり検出ができないため(prevNGTO !== heldNGTO)ならハッシュをすべて破棄する
+        if (prevNGTO !== heldNGTO) {
+            posList = [];
+            posListCache.put(hash, []);
+        }
+        if (!posList || posList.length === 0) {
+            const centerX = Math.floor(heldNGTO.xSize / 2) + 0.5;
+            const centerZ = Math.floor(heldNGTO.zSize / 2) + 0.5;
+            
+            /*
+            const blockObj = RotatableBlockObject_old.createFromNGTO(heldNGTO, isPlaceAirBlock);
+            if (isMirrorX) blockObj.mirrorX();
+            if (isMirrorZ) blockObj.mirrorZ();
+            if (isMirrorY) blockObj.mirrorY();
+            blockObj.setRotationAxisPos(centerX, 0.5, centerZ);
+            //blockObj.rotate(0, 0, ngtoRotate * 90);
+            //blockObj.toBlockPos();
+            const newPosList: Pos[][] = [];
+            const bezierList = bezierCollector.getAll(entity);
+            for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
+                const bezier = bezierList[bezierIdx];
+                const posListWithBezier = blockObj.getPlacePosListWithBezier(bezier, interpolationMode, 0.2, offsetNGTOV, offsetNGTOH);
+                newPosList.push(posListWithBezier);
+            }
+            posList = ([] as Pos[]).concat(...newPosList);
+            posListCache.put(hash, posList);
+            */
+        }
+        //描画
+        GL11.glPushMatrix();
+        GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
+        NGTOBuilderUtilClient.renderPosListStatic(renderer, placeBlockFrame, entity, posList);
+        GL11.glPopMatrix();
+    }
 }
 
 //本体の描画(モデル選択と画面併用)

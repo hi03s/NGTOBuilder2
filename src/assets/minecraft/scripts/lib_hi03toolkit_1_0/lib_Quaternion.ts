@@ -27,12 +27,12 @@ export class Quaternion {
         public y: number = 0,
         public z: number = 0
     ) { }
-    
+
     /**
      * ハッシュを返す
      * @returns
      */
-    getHash(): string{
+    getHash(): string {
         return `${this.w}_${this.x}_${this.y}_${this.z}`
     }
 
@@ -228,6 +228,18 @@ export class Quaternion {
             Quaternion.snapDeg(euler.pitch, pitchStepDeg),
             Quaternion.snapDeg(euler.roll, rollStepDeg)
         );
+    }
+
+    /**
+     * クォータニオンが90度の角度を取っているか判定する
+     */
+    isRightAngleRotation(): boolean {
+        const e = this.toEuler();
+        const EPS = 1e-5;
+        function near90(v: number): boolean {
+            return Math.abs(v - Math.round(v / 90) * 90) < EPS;
+        }
+        return near90(e.yaw) && near90(e.pitch) && near90(e.roll);
     }
 
     /**

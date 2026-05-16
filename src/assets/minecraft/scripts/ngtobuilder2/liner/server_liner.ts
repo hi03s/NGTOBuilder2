@@ -7,7 +7,7 @@ import { RTMApiCompat } from "../../lib_hi03toolkit_1_0/lib_RTMApiCompat";
 import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { EntityPlayer } from "net.minecraft.entity.player";
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
-import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
+//import { RotatableBlockObject_old } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject_old";
 import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 
@@ -94,17 +94,19 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
             dataMap.setBoolean("isInitializedBuild", true, 1);
-            const blockObj = RotatableBlockObject.createFromNGTO(ngto, isPlaceAirBlock);
+            /*
+            const blockObj = RotatableBlockObject_old.createFromNGTO(ngto, isPlaceAirBlock);
             if (isMirrorX) blockObj.mirrorX();
             if (isMirrorZ) blockObj.mirrorZ();
             if (isMirrorY) blockObj.mirrorY();
             blockObj.setRotationAxisPos(centerX, 0, centerZ);
             blockObj.rotate(interpolationMode, diffusionRate / 100, q);
             blockObj.toBlockPos();
-            builder.addFromRotatableBlockObject(entity, blockObj, receiveData.pos[0], receiveData.pos[1], receiveData.pos[2]);
+            builder.addFromRotatableBlockObject_OldAt(entity, blockObj, receiveData.pos[0], receiveData.pos[1], receiveData.pos[2]);
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
             if (isHuge) NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成開始...");
+            */
         }
         //生成を中止
         if (cancelBuild) {

@@ -16,9 +16,10 @@ import { Entity } from "net.minecraft.entity";
 import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { Vec3 } from "jp.ngt.ngtlib.math";
 import { combineNGTOList, NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
-import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
 import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { Blocks } from "net.minecraft.init";
+import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
+import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
@@ -176,7 +177,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //ヘルプ表示
     if (NGTOBuilderUtilClient.isKeyDown(dataMap, "showHelp", keyMap.showHelp)) {
-        NGTLog.sendChatMessage(sender, `---NGTO Builder2 Prop設置 操作方法---`);
+        NGTLog.sendChatMessage(sender, `---NGTO Builder2 プロップ配列設置 操作方法---`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.endEdit)}] ツールを終了`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.changeSnap)}] スナップ角度を変更`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.setRandomAngle)}] Yaw角度をランダムにセット`);
@@ -186,7 +187,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.switchInterpolationMode)}] ブロック補間モードを切り替え`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateUp)}] 補間の拡散量を増やす`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateDown)}] 補間の拡散量を減らす`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.build)}] NGTOを生成する`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.build)}] インベントリに入れたNGTOを生成する`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.undo)}] Undo`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.cancelBuild)}] 生成を中止する`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.mirrorX)}] X軸の鏡像の切り替え`);
@@ -636,25 +637,29 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 (interpolationMode === 1 && (ngto.xSize * ngto.ySize * ngto.zSize * 8) > 20000)) {
                 //巨大ブロックは代替表示
                 const hugePosList = NGTOBuilderUtilClient.getOutsideFramePosList(ngto);
-                const blockObj = RotatableBlockObject.createFromPosList(new BlockSet(Blocks.stone, 0), hugePosList);
+                const blockObj = RotatableBlockObject.createFromPosList(hugePosList);
                 if (isMirrorX) blockObj.mirrorX();
                 if (isMirrorZ) blockObj.mirrorZ();
                 if (isMirrorY) blockObj.mirrorY();
-                blockObj.setRotationAxisPos(centerX, 0, centerZ);
-                blockObj.rotate(0, diffusionRate / 100, q);
-                blockObj.toBlockPos();
-                posList = blockObj.getPlacePosList(0, 0, 0);//(0, 0, 0)で相対座標として生成
+                blockObj.setPivot(centerX, 0.5, centerZ);
+                blockObj.rotateQ(q);
+                blockObj.movePivotToBaseXZ();
+                RotatableBlockObjectMapper.toBlockCoordSelf(blockObj);
+                posList = RotatableBlockObjectMapper.getPosList(blockObj);
             }
             else {
                 //posListを生成
+                const diffusion = BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100);
                 const blockObj = RotatableBlockObject.createFromNGTO(ngto, isPlaceAirBlock);
                 if (isMirrorX) blockObj.mirrorX();
                 if (isMirrorZ) blockObj.mirrorZ();
                 if (isMirrorY) blockObj.mirrorY();
-                blockObj.setRotationAxisPos(centerX, 0, centerZ);
-                blockObj.rotate(interpolationMode, diffusionRate / 100, q);
-                blockObj.toBlockPos();
-                posList = blockObj.getPlacePosList(0, 0, 0);//(0, 0, 0)で相対座標として生成
+                blockObj.setPivot(centerX, 0.5, centerZ);
+                blockObj.rotateQ(q);
+                blockObj.movePivotToBaseXZ();
+                if (!q.isRightAngleRotation()) RotatableBlockObjectMapper.applyDiffusionSelf(blockObj, diffusion);
+                RotatableBlockObjectMapper.toBlockCoordSelf(blockObj);
+                posList = RotatableBlockObjectMapper.getPosList(blockObj);
             }
             posListCache.put(hash, posList);
         }

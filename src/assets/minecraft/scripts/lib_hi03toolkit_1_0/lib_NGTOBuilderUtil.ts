@@ -402,7 +402,7 @@ export class NGTOBuilderUtil {
      * @returns 
      */
     static getNGTOHash(ngto: NGTObject): number {
-        return ngto.xSize << 20 & 0x400 | ngto.ySize << 10 & 0x400 | ngto.zSize & 0x400;
+        return ((ngto.xSize & 0x3ff) << 20) | ((ngto.ySize & 0x3ff) << 10) | (ngto.zSize & 0x3ff);
     }
 
     //小数点を含む座標を与えること(ブロック座標だとズレます)

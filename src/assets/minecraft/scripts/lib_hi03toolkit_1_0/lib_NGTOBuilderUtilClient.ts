@@ -278,7 +278,7 @@ export class NGTOBuilderUtilClient {
         }
     }
 
-    static renderRailMapStatic(renderer: PartsRenderer, parts: Parts, railMap: RailMap): void {
+    static renderRailMapStatic(renderer: PartsRenderer, parts: Parts, railMap: RailMap, interval:number = 1): void {
         const startRP = railMap.getStartRP();
         const endRP = railMap.getEndRP();
         const partsNames = parts.objNames;//Java String[]
@@ -298,12 +298,13 @@ export class NGTOBuilderUtilClient {
             GLHelper.startCompile(glList);
             GL11.glPushMatrix();
             const split = Math.floor(railMap.getLength() * 2);
-            for (let rmIdx = 0; rmIdx < split; rmIdx++) {
-                const pos = railMap.getRailPos(split, rmIdx);//絶対座標
-                const posY = railMap.getRailHeight(split, rmIdx);
-                const yaw = railMap.getRailYaw(split, rmIdx);
-                const pitch = RTMApiCompat.getRailPitch(railMap, split, rmIdx);
-                const roll = RTMApiCompat.getCant(railMap, split, rmIdx);
+            if (interval < 1) interval = 1;
+            for (let idx = 0; idx < split; idx += interval) {
+                const pos = railMap.getRailPos(split, idx);//絶対座標
+                const posY = railMap.getRailHeight(split, idx);
+                const yaw = railMap.getRailYaw(split, idx);
+                const pitch = RTMApiCompat.getRailPitch(railMap, split, idx);
+                const roll = RTMApiCompat.getCant(railMap, split, idx);
                 GL11.glPushMatrix();
                 GL11.glTranslatef(pos[1], posY, pos[0]);
                 GL11.glRotatef(yaw, 0, 1, 0);
@@ -320,7 +321,7 @@ export class NGTOBuilderUtilClient {
         }
     }
 
-    static renderBezierStatic(renderer: PartsRenderer, parts: Parts, bezier: BezierCurve3D): void {
+    static renderBezierStatic(renderer: PartsRenderer, parts: Parts, bezier: BezierCurve3D, interval:number = 1): void {
         const posList = bezier.getPosData();
         const partsNames = parts.objNames;//Java String[]
         let joindNames = partsNames[0];
@@ -339,10 +340,11 @@ export class NGTOBuilderUtilClient {
             GLHelper.startCompile(glList);
             GL11.glPushMatrix();
             const split = Math.floor(bezier.getLength() * 2);
-            for (let rmIdx = 0; rmIdx < split; rmIdx++) {
-                const pos = bezier.getPoint(split, rmIdx);//絶対座標
-                const yaw = bezier.getYaw(split, rmIdx);
-                const pitch = bezier.getPitch(split, rmIdx);
+            if (interval < 1) interval = 1;
+            for (let idx = 0; idx < split; idx += interval) {
+                const pos = bezier.getPoint(split, idx);//絶対座標
+                const yaw = bezier.getYaw(split, idx);
+                const pitch = bezier.getPitch(split, idx);
                 GL11.glPushMatrix();
                 GL11.glTranslatef(pos[0], pos[1], pos[2]);
                 GL11.glRotatef(-yaw, 0, 1, 0);
