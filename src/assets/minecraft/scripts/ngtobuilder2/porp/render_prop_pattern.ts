@@ -103,8 +103,8 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         rotationRollR: Keyboard.KEY_RIGHT,
 
         //補間の拡散量を変更 [+optionキー]
-        diffusionRateUp: Keyboard.KEY_UP,
-        diffusionRateDown: Keyboard.KEY_DOWN,
+        diffusionRateUp: Keyboard.KEY_O,
+        diffusionRateDown: Keyboard.KEY_P,
 
         //ミラー
         mirrorX: Keyboard.KEY_J,

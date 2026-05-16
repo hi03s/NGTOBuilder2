@@ -106,7 +106,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                 transformedObj.rotate(ngtoRotate * 90, 0, 0);
                 transformedObj.movePivotToBase();
                 ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
-                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, offsetNGTOV, 0);
+                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, 0, 0);
             }
             //ベジェ曲線を構築する
             const bezierList: BezierCurve3D[] = [];
@@ -136,7 +136,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                     rbo.movePivotToBase();
                     rbo.offset(
                         Math.round(pos[0]) - Math.round(origin[0]),
-                        Math.round(pos[1]) - Math.round(origin[1]),
+                        Math.round(pos[1]) - Math.round(origin[1]) + offsetNGTOV,
                         Math.round(pos[2]) - Math.round(origin[2])
                     );
                     margedRBO.marge(rbo);

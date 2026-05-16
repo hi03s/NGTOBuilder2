@@ -72,10 +72,10 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         isPlaceAirBlock: Keyboard.KEY_I,
 
         //NGTOオフセット操作[+optionキー]
-        offsetUp: Keyboard.KEY_I,
-        offsetDown: Keyboard.KEY_K,
-        offsetLeft: Keyboard.KEY_J,
-        offsetRight: Keyboard.KEY_L,
+        offsetUp: Keyboard.KEY_UP,
+        offsetDown: Keyboard.KEY_DOWN,
+        offsetLeft: Keyboard.KEY_LEFT,
+        offsetRight: Keyboard.KEY_RIGHT,
 
         //NGTOを90度回転
         ngtoRotate: Keyboard.KEY_R,
@@ -89,8 +89,11 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         switchInterpolationMode: Keyboard.KEY_U,
 
         //補間の拡散量を変更 [+optionキー]
-        diffusionRateUp: Keyboard.KEY_UP,
-        diffusionRateDown: Keyboard.KEY_DOWN
+        diffusionRateUp: Keyboard.KEY_O,
+        diffusionRateDown: Keyboard.KEY_P,
+
+        //マーカーを反転する
+        reverseMarker: Keyboard.KEY_P
     }
 
     //-------------------
@@ -128,6 +131,7 @@ var keyMap: {
     switchInterpolationMode: number;
     diffusionRateUp: number;
     diffusionRateDown: number;
+    reverseMarker: number;
 };
 var Version: string;
 var posCollector: PositionCollector;
@@ -315,6 +319,24 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[NGTO Builder2] 空気ブロック設置: ${isPlaceAirBlock}`);
     }
 
+    //マーカー反転
+    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "reverseMarker", keyMap.reverseMarker)) {
+        if (railMapCollector.size(entity) > 0) {
+            railMapCollector.reverse(entity);
+            const list = railMapCollector.getAll(entity);
+            const rmList = list[0];
+            const dirList = list[1];
+            bezierCollector.clear(entity);
+            for (let rmIdx = 0; rmIdx < rmList.length; rmIdx++) {
+                bezierCollector.addFromRailMap(entity, rmList[rmIdx], dirList[rmIdx]);
+            }
+        }
+        else if (posCollector.size(entity) > 0) {
+            posCollector.reverse(entity);
+            bezierCollector.createFromPosList(entity, posCollector.getAll(entity));
+        }
+    }
+
     //補間モードを切り替え
     if (NGTOBuilderUtilClient.isKeyDown(dataMap, "switchInterpolationMode", keyMap.switchInterpolationMode)) {
         const interpolationMode = dataMap.getInt("interpolationMode");
@@ -424,16 +446,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     //カーソル
     if (lookingPos) {
         if (railMapCollector.size(entity) > 0) {
-            //レール選択中
-            const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
-            if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
-                GL11.glPushMatrix();
-                GL11.glTranslatef(-posX, -posY, -posZ);
-                NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
-                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
-                else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
-                GL11.glPopMatrix();
-            }
+            //## ハイライト描画
         }
         else if (posCollector.size(entity) > 0) {
             //ブロック選択中
@@ -447,12 +460,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             //初回選択
             const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
             if (lookingRailMap) {
-                GL11.glPushMatrix();
-                GL11.glTranslatef(-posX, -posY, -posZ);
-                NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
-                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
-                else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
-                GL11.glPopMatrix();
+                //## ハイライト描画
             }
             else {
                 GL11.glPushMatrix();
@@ -464,35 +472,12 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         }
     }
 
-    //選択済みの描画
-    if (railMapCollector.size(entity) > 0) {
-        //レール選択中
-        const collectList = railMapCollector.getAll(entity);
-        const railMapList = collectList[0];
-        const dirList = collectList[1];
-        GL11.glPushMatrix();
-        GL11.glTranslatef(-posX, -posY, -posZ);
-        for (let rmIdx = 0; rmIdx < railMapList.length; rmIdx++) {
-            const rm = railMapList[rmIdx];
-            const isReverse = dirList[rmIdx];
-            NGTOBuilderUtilClient.renderRailMapHighlight(entity, rm, "#20d3ff", 0.3);
-            if (isReverse) NGTOBuilderUtilClient.renderRailMapStatic(renderer, selectedLineArrowF, rm, 10);
-            else NGTOBuilderUtilClient.renderRailMapStatic(renderer, selectedLineArrow, rm, 10);
-        }
-        GL11.glPopMatrix();
-    }
-    else if (posCollector.size(entity) > 0) {
-        //ブロック選択中
-        const posList = posCollector.getAll(entity);
-        GL11.glPushMatrix();
-        GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
-        NGTOBuilderUtilClient.renderPosListStatic(renderer, selected, entity, posList);
-        GL11.glPopMatrix();
-    }
-
     //ブロック選択でベジェ曲線を表示
-    if (bezierCollector.size(entity) > 0) {
+    if (railMapCollector.size(entity) === 0 && bezierCollector.size(entity) > 0) {
         const bezierList = bezierCollector.getAll(entity);
+        const cullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GL11.glEnable(GL11.GL_CULL_FACE);
         bezierList.forEach(bezier => {
             GL11.glPushMatrix();
             GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
@@ -500,6 +485,18 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             NGTOBuilderUtilClient.renderBezierStatic(renderer, selectedLineArrow, bezier, 10);
             GL11.glPopMatrix();
         });
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        if (!cullEnabled) GL11.glDisable(GL11.GL_CULL_FACE);
+    }
+
+    //選択済みの描画
+    if (railMapCollector.size(entity) === 0 && posCollector.size(entity) > 0) {
+        //ブロック選択中
+        const posList = posCollector.getAll(entity);
+        GL11.glPushMatrix();
+        GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
+        NGTOBuilderUtilClient.renderPosListStatic(renderer, selected, entity, posList);
+        GL11.glPopMatrix();
     }
 
     //ブロックフレーム表示
@@ -530,7 +527,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 transformedObj.rotate(ngtoRotate * 90, 0, 0);
                 transformedObj.movePivotToBase();
                 ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
-                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, offsetNGTOV, 0);
+                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, 0, 0);
             }
             //NGTOをスライスしたRotatableBlockObject[]をベジェ曲線上に展開する(繰り返し展開/2indexで1ブロック)
             const slicedRBO = NGTOBuilderUtil.sliceByZ(ngto, isPlaceAirBlock);
@@ -555,7 +552,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                     rbo.movePivotToBase();
                     rbo.offset(
                         Math.round(pos[0]) - Math.round(origin[0]),
-                        Math.round(pos[1]) - Math.round(origin[1]),
+                        Math.round(pos[1]) - Math.round(origin[1]) + offsetNGTOV,
                         Math.round(pos[2]) - Math.round(origin[2])
                     );
                     margedRBO.marge(rbo);
@@ -571,6 +568,58 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         GL11.glTranslatef(-posX + 0.5, -posY + 0.5, -posZ + 0.5);
         NGTOBuilderUtilClient.renderPosListStatic(renderer, placeBlockFrame, entity, posList, true);
         GL11.glPopMatrix();
+    }
+
+    //ハイライト描画 テクスチャが壊れるためこれ以降では通常描画しない
+    if (railMapCollector.size(entity) > 0) {
+        //レール選択中
+        const collectList = railMapCollector.getAll(entity);
+        const railMapList = collectList[0];
+        const dirList = collectList[1];
+        GL11.glPushMatrix();
+        GL11.glTranslatef(-posX, -posY, -posZ);
+        for (let rmIdx = 0; rmIdx < railMapList.length; rmIdx++) {
+            const rm = railMapList[rmIdx];
+            const isReverse = dirList[rmIdx];
+            NGTOBuilderUtilClient.renderRailMapHighlight(entity, rm, "#20d3ff", 0.3);
+            if (isReverse) NGTOBuilderUtilClient.renderRailMapStatic(renderer, selectedLineArrowF, rm, 10);
+            else NGTOBuilderUtilClient.renderRailMapStatic(renderer, selectedLineArrow, rm, 10);
+        }
+        GL11.glPopMatrix();
+    }
+
+    //カーソル
+    if (lookingPos) {
+        if (railMapCollector.size(entity) > 0) {
+            //レール選択中
+            const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
+            if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
+                GL11.glPushMatrix();
+                GL11.glTranslatef(-posX, -posY, -posZ);
+                NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
+                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
+                else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
+                GL11.glPopMatrix();
+            }
+        }
+        else if (posCollector.size(entity) > 0) {
+            //## 通常描画
+        }
+        else {
+            //初回選択
+            const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY + offsetY, lookingPos.posZ);
+            if (lookingRailMap) {
+                GL11.glPushMatrix();
+                GL11.glTranslatef(-posX, -posY, -posZ);
+                NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
+                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
+                else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
+                GL11.glPopMatrix();
+            }
+            else {
+                //## 通常描画
+            }
+        }
     }
 }
 
