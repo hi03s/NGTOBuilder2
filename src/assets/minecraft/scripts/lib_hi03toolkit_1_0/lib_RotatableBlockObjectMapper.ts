@@ -77,12 +77,13 @@ export class RotatableBlockObjectMapper {
     }
 
     //描画フレーム用データ
-    static getPosList(rbo: RotatableBlockObject): Pos[] {
+    //x, y, zを入れた場合は絶対座標になる
+    static getPosList(rbo: RotatableBlockObject, x:number = 0, y:number = 0, z:number = 0): Pos[] {
         const list: Pos[] = [];
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
             if (!rbs) continue;
-            list.push([rbs.local_x, rbs.local_y, rbs.local_z]);
+            list.push([rbs.local_x + Math.round(x), rbs.local_y + Math.round(y), rbs.local_z + Math.round(z)]);
         }
         return list;
     }

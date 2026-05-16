@@ -139,6 +139,20 @@ export class BezierCurve3D {
         ];
     }
 
+    getCacheKey(precision: number = 1000): string {
+        const posData = this.getPosData();
+        const parts: string[] = [];
+        for (let i = 0; i < posData.length; i++) {
+            const pos = posData[i];
+            parts.push(
+                Math.round(pos[0] * precision) + "," +
+                Math.round(pos[1] * precision) + "," +
+                Math.round(pos[2] * precision)
+            );
+        }
+        return parts.join("|");
+    }
+
     static lerpPoint(pos1: Pos, pos2: Pos, ratio: number): Pos {
         return [
             pos1[0] + (pos2[0] - pos1[0]) * ratio,

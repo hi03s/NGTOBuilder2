@@ -12,6 +12,9 @@ import { World } from "net.minecraft.world";
 import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { TileEntityLargeRailBase, TileEntityLargeRailCore, TileEntityLargeRailSwitchCore } from "jp.ngt.rtm.rail";
 import { Vec3 } from "jp.ngt.ngtlib.math";
+import { RotatableBlockObject } from "./lib_RotatableBlockObject";
+import { RotatableBlockObjectMapper } from "./lib_RotatableBlockObjectMapper";
+import { RotatableBlockSet } from "./lib_RotatableBlockSet";
 
 export type Pos = [
     x: number,
@@ -117,12 +120,80 @@ export class NGTOBuilderUtil {
     }
 
     /**
+     * RotatableBlockObjectからNGTOを作成する
+     * 範囲内でリストにない座標は空気ブロックで満たされる
+     * @param rbo 
+     * @returns 
+     */
+    static createNGTOWithRotatableBlockObject(rbo: RotatableBlockObject): NGTObject {
+        RotatableBlockObjectMapper.toBlockCoordSelf(rbo);
+        let minX = rbo.minX;
+        let minY = rbo.minY;
+        let minZ = rbo.minZ;
+        let maxX = rbo.maxX;
+        let maxY = rbo.maxY;
+        let maxZ = rbo.maxZ;
+        // 最小座標が0になるように補正
+        const offsetX = -minX;
+        const offsetY = -minY;
+        const offsetZ = -minZ;
+
+        const width = maxX - minX + 1;
+        const height = maxY - minY + 1;
+        const depth = maxZ - minZ + 1;
+
+        const total = width * height * depth;
+        const list: List<BlockSet> = new ArrayList();
+        // まず全部AIRで埋める
+        for (let i = 0; i < total; i++) {
+            list.add(BlockSet.AIR);
+        }
+        // rbsにあるブロックで上書き
+        for (let i = 0; i < rbo.blockSetList.length; i++) {
+            const rbs = rbo.blockSetList[i];
+            if (!rbs) continue;
+            const x = rbs.local_x + offsetX;
+            const y = rbs.local_y + offsetY;
+            const z = rbs.local_z + offsetZ;
+            //範囲外はスキップ
+            if (x < 0 || x >= width || y < 0 || y >= height || z < 0 || z >= depth) continue;
+            const index = (x * height + y) * depth + z;
+            list.set(index, rbs.blockSet);
+        }
+        return NGTObject.createNGTO(list, width, height, depth, Math.floor(width / 2), 0, Math.floor(depth / 2));
+    }
+
+    static sliceByZ(ngto: NGTObject, isPlaceAirBlock: boolean): RotatableBlockObject[] {
+        const rboList: RotatableBlockObject[] = [];
+        for (let zIdx = 0; zIdx < ngto.zSize; zIdx++) {
+            const sliceRBO = new RotatableBlockObject();
+            sliceRBO.sourceLayerCounts = [];
+            for (let yIdx = 0; yIdx < ngto.ySize; yIdx++) {
+                let layerCount = 0;
+                for (let xIdx = 0; xIdx < ngto.xSize; xIdx++) {
+                    const blockSet = ngto.getBlockSet(xIdx, yIdx, zIdx);
+                    if (!isPlaceAirBlock && Block.getIdFromBlock(blockSet.block) === 0) continue;
+                    const rbs = new RotatableBlockSet(blockSet, xIdx, yIdx, 0);
+                    const nbt = blockSet.writeToNBT();
+                    if (nbt) rbs.yaw = nbt.getFloat("Yaw");
+                    sliceRBO.blockSetList.push(rbs);
+                    layerCount++;
+                }
+                sliceRBO.sourceLayerCounts.push(layerCount);
+            }
+            sliceRBO.calcSize();
+            rboList.push(sliceRBO);
+        }
+        return rboList;
+    }
+
+    /**
      * BlockSetと相対座標リストからNGTOを作成する
      * 範囲内でリストにない座標は空気ブロックで満たされる
      * @param blockSet 
      * @param relativePosList 相対座標リスト [[x, y, z], ...]
      */
-    static createNGTO(blockSet: BlockSet, relativePosList: Pos[]): NGTObject {
+    static createNGTOWithPosList(blockSet: BlockSet, relativePosList: Pos[]): NGTObject {
         if (relativePosList.length === 0) relativePosList = [[0, 0, 0]];
         let minX = relativePosList[0][0];
         let minY = relativePosList[0][1];
@@ -332,7 +403,7 @@ export class NGTOBuilderUtil {
      * @returns 
      */
     static combineNGTO(ngtoList: combineNGTOList[]): NGTObject {//[[ngto, offsetX, offsetY, offsetZ], ...]
-        if (ngtoList.length === 0) return NGTOBuilderUtil.createNGTO(BlockSet.AIR, [[0, 0, 0]]);
+        if (ngtoList.length === 0) return NGTOBuilderUtil.createNGTOWithPosList(BlockSet.AIR, [[0, 0, 0]]);
 
         // 結合後の境界を計算
         let minX = Number.POSITIVE_INFINITY;
@@ -473,7 +544,7 @@ export class NGTOBuilderUtil {
             && Math.floor(pos1[2]) === Math.floor(pos2[2]);
     }
 
-    static getRailCoreFromRailMap(world:World, railMap: RailMap): TileEntityLargeRailCore | null {
+    static getRailCoreFromRailMap(world: World, railMap: RailMap): TileEntityLargeRailCore | null {
         const startRP = railMap.getStartRP();
         const tile = RTMApiCompat.getTileEntity(world, startRP.blockX, startRP.blockY, startRP.blockZ);
         if (tile instanceof TileEntityLargeRailBase) {

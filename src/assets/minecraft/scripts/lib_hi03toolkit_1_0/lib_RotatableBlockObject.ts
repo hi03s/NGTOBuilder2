@@ -224,7 +224,7 @@ export class RotatableBlockObject {
         return this;
     }
 
-    private calcSize(): RotatableBlockObject {
+    calcSize(): RotatableBlockObject {
         this.minX = Number.POSITIVE_INFINITY;
         this.minY = Number.POSITIVE_INFINITY;
         this.minZ = Number.POSITIVE_INFINITY;

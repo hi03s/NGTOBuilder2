@@ -20,6 +20,8 @@ import { TileEntityLargeRailBase, TileEntityLargeRailSwitchCore } from "jp.ngt.r
 import { RailMapCollector } from "../../lib_hi03toolkit_1_0/lib_RailMapCollector";
 import { BezierCollector } from "../../lib_hi03toolkit_1_0/lib_BezierCollector";
 import { GLHelper } from "jp.ngt.ngtlib.renderer";
+import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
+import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
@@ -467,7 +469,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     let prevNGTO = prevNGTOData.get(entity);
     prevNGTOData.put(entity, heldNGTO);
     const interpolationMode = dataMap.getInt("interpolationMode");
-    //const diffusionRate = dataMap.getInt("diffusionRate");
+    const diffusionRate = dataMap.getInt("diffusionRate");
     const isMirrorX = dataMap.getBoolean("isMirrorX");
     const isMirrorY = dataMap.getBoolean("isMirrorY");
     const isMirrorZ = dataMap.getBoolean("isMirrorZ");
@@ -476,38 +478,52 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const ngtoRotate = dataMap.getInt("ngtoRotate");//0:+Z, 1:+X, 2:-Z, 3:-X
     const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
     if (heldNGTO && bezierCollector.size(entity) > 0) {
-        const entityId = String(entity.getEntityId());
-        const ngtoHash = NGTOBuilderUtil.getNGTOHash(heldNGTO);
-        const hash = entityId + ngtoHash + String(interpolationMode) + String(bezierCollector.size(entity))
+        const hash = String(entity.getEntityId()) + "|" + NGTOBuilderUtil.getNGTOHash(heldNGTO) + "|" + String(interpolationMode) + "|" + String(diffusionRate) + "|" + bezierCollector.getCacheKey(entity) + "|"
             + String(isMirrorX) + String(isMirrorY) + String(isMirrorZ) + String(offsetNGTOV) + String(offsetNGTOH) + String(ngtoRotate) + String(isPlaceAirBlock);
         let posList: Pos[] = posListCache.get(hash);
-        //同じサイズのNGTOは同一ハッシュになり検出ができないため(prevNGTO !== heldNGTO)ならハッシュをすべて破棄する
-        if (prevNGTO !== heldNGTO) {
-            posList = [];
-            posListCache.put(hash, []);
-        }
         if (!posList || posList.length === 0) {
-            const centerX = Math.floor(heldNGTO.xSize / 2) + 0.5;
-            const centerZ = Math.floor(heldNGTO.zSize / 2) + 0.5;
-            
-            /*
-            const blockObj = RotatableBlockObject_old.createFromNGTO(heldNGTO, isPlaceAirBlock);
-            if (isMirrorX) blockObj.mirrorX();
-            if (isMirrorZ) blockObj.mirrorZ();
-            if (isMirrorY) blockObj.mirrorY();
-            blockObj.setRotationAxisPos(centerX, 0.5, centerZ);
-            //blockObj.rotate(0, 0, ngtoRotate * 90);
-            //blockObj.toBlockPos();
+            let ngto = heldNGTO;
+            if (ngtoRotate !== 0 || isMirrorX || isMirrorZ || isMirrorY || offsetNGTOV !== 0 || offsetNGTOH !== 0) {
+                const centerX = Math.floor(heldNGTO.xSize / 2) + 0.5;
+                const centerZ = Math.floor(heldNGTO.zSize / 2) + 0.5;
+                const transformedObj = RotatableBlockObject.createFromNGTO(heldNGTO, isPlaceAirBlock);
+                if (isMirrorX) transformedObj.mirrorX();
+                if (isMirrorZ) transformedObj.mirrorZ();
+                if (isMirrorY) transformedObj.mirrorY();
+                transformedObj.setPivot(centerX, 0.5, centerZ);
+                transformedObj.rotate(0, 0, ngtoRotate * 90);
+                transformedObj.movePivotToBase();
+                transformedObj.offset(offsetNGTOH, 0, offsetNGTOV);
+                ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
+            }
+            //NGTOをスライスしたRotatableBlockObject[]をベジェ曲線上に展開する
+            const slicedRBO = NGTOBuilderUtil.sliceByZ(ngto, isPlaceAirBlock);
             const newPosList: Pos[][] = [];
             const bezierList = bezierCollector.getAll(entity);
             for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
                 const bezier = bezierList[bezierIdx];
-                const posListWithBezier = blockObj.getPlacePosListWithBezier(bezier, interpolationMode, 0.2, offsetNGTOV, offsetNGTOH);
-                newPosList.push(posListWithBezier);
+                const split = Math.max(1, Math.floor(bezier.getLength() * 2))
+                for (let idx = 0; idx <= split; idx++) {
+                    const t = idx / split;
+                    const sliceIndex = Math.min(slicedRBO.length - 1, Math.floor(t * slicedRBO.length));
+                    const baseRbo = slicedRBO[sliceIndex];
+                    if (!baseRbo) continue;
+                    const rbo = baseRbo.copy();
+                    const pos = bezier.getPoint(split, idx);
+                    const yaw = bezier.getYaw(split, idx);
+                    const pitch = bezier.getPitch(split, idx);
+                    const centerX = Math.floor(baseRbo.maxX / 2) + 0.5;
+                    const centerY = Math.floor(baseRbo.maxY / 2) + 0.5;
+                    rbo.setPivot(centerX, centerY, 0.5);
+                    rbo.rotate(-yaw, -pitch, 0);
+                    rbo.movePivotToBase();
+                    RotatableBlockObjectMapper.applyDiffusionSelf(rbo, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
+                    RotatableBlockObjectMapper.toBlockCoordSelf(rbo);
+                    newPosList.push(RotatableBlockObjectMapper.getPosList(rbo, pos[0], pos[1], pos[2]));
+                }
             }
             posList = ([] as Pos[]).concat(...newPosList);
             posListCache.put(hash, posList);
-            */
         }
         //描画
         GL11.glPushMatrix();

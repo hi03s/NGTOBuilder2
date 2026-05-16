@@ -133,6 +133,16 @@ export class BezierCollector {
         return list.length;
     }
 
+    getCacheKey(entity: Entity, precision: number = 1000): string {
+        const list = this.getAll(entity);
+        const parts: string[] = [];
+        parts.push("BezierCollector");
+        for (let i = 0; i < list.length; i++) {
+            parts.push(list[i].getCacheKey(precision));
+        }
+        return parts.join(";");
+    }
+
     private getOrCreateList(entity: Entity): BezierCurve3D[] {
         let list = this.bezierHashMap.get(entity);
         if (!list) {
