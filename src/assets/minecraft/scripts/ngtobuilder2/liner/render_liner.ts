@@ -349,14 +349,6 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[NGTO Builder2] ブロック置換: ${isMasking}`);
     }
 
-    //Z鏡像
-    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorZ", keyMap.mirrorZ)) {
-        let isMirrorZ = dataMap.getBoolean("isMirrorZ");
-        isMirrorZ = !isMirrorZ
-        dataMap.setBoolean("isMirrorZ", isMirrorZ, 1);
-        NGTLog.sendChatMessage(sender, `[NGTO Builder2] Z鏡像: ${isMirrorZ}`);
-    }
-
     //補間モードを切り替え
     if (NGTOBuilderUtilClient.isKeyDown(dataMap, "switchInterpolationMode", keyMap.switchInterpolationMode)) {
         const interpolationMode = dataMap.getInt("interpolationMode");
