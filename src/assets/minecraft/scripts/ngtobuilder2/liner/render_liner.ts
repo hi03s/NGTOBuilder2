@@ -412,20 +412,18 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 //#################
 //##  パーツ登録  ##
 //#################
-declare global {
-    //## グローバル変数として使うための準備 ##
-    var body: Parts;
-    var point: Parts;
-    var selected: Parts;
-    var placeBlockFrame: Parts;
-    var selectedLine: Parts;
-    var lookingLine: Parts;
-    var selectedLineArrow: Parts;
-    var lookingLineArrow: Parts;
-    var selectedLineArrowF: Parts;
-    var lookingLineArrowF: Parts;
-    var maskFrame: Parts;
-}
+//## グローバル変数として使うための準備 ##
+var body: Parts;
+var point: Parts;
+var selected: Parts;
+var placeBlockFrame: Parts;
+var selectedLine: Parts;
+var lookingLine: Parts;
+var selectedLineArrow: Parts;
+var lookingLineArrow: Parts;
+var selectedLineArrowF: Parts;
+var lookingLineArrowF: Parts;
+var maskFrame: Parts;
 function initParts(): void {
     //## 描画パーツの設定 ##
     body = renderer.registerParts(new Parts("body"));
@@ -649,10 +647,6 @@ function renderInMenu(): void {
 
 //#################################
 //#################################
-declare global {
-    var isKaizPatch: boolean;
-}
-isKaizPatch = RTMCore.VERSION.indexOf("KaizPatch") !== -1;
 function render(entity: EntityVehicle, pass: number, par3: number): void {
     renderInMenu();
     if (!entity) return;

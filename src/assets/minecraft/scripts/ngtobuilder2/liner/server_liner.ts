@@ -31,11 +31,9 @@ Version = "1.0";
 //#################
 //スポーン時や再使用時に実行されます
 
-declare global {
-    //## グローバル変数として使うための準備 ##
-    var builder: BlockBuilder;
-    var blockLimit: number;
-}
+//## グローバル変数として使うための準備 ##
+var builder: BlockBuilder;
+var blockLimit: number;
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     const dataMap = entity.getResourceState().getDataMap();
     const isInitializedServer = dataMap.getBoolean("isInitializedServer");
@@ -144,7 +142,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             }
             RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
             RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
-            let placementBlocks:BlockSetPlacement[] = [];
+            let placementBlocks: BlockSetPlacement[] = [];
             if (isMasking) placementBlocks = RotatableBlockObjectMapper.toReplacePlacements(world, margedRBO, origin[0], origin[1], origin[2]);
             else placementBlocks = RotatableBlockObjectMapper.toBlockPlacements(margedRBO, origin[0], origin[1], origin[2]);
             builder.addFromRotatableBlockObjectAt(entity, placementBlocks);
@@ -192,13 +190,9 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
 
 //#################################
 //#################################
-declare global {
-    var isKaizPatch: boolean;
-    var hostPlayerList: WeakHashMap;
-    var builderHashMap: WeakHashMap;
-    var Version: string;
-}
-isKaizPatch = RTMCore.VERSION.indexOf("KaizPatch") !== -1;
+var hostPlayerList: WeakHashMap;
+var builderHashMap: WeakHashMap;
+var Version: string;
 hostPlayerList = new WeakHashMap();
 builderHashMap = new WeakHashMap();
 function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
