@@ -125,8 +125,10 @@ export class NGTOBuilderUtil {
      * @param rbo 
      * @returns 
      */
-    static createNGTOWithRotatableBlockObject(rbo: RotatableBlockObject): NGTObject {
+    static createNGTOWithRotatableBlockObject(src: RotatableBlockObject): NGTObject {
+        const rbo = src.copy();
         RotatableBlockObjectMapper.toBlockCoordSelf(rbo);
+        rbo.calcSize();
         let minX = rbo.minX;
         let minY = rbo.minY;
         let minZ = rbo.minZ;
@@ -158,6 +160,8 @@ export class NGTOBuilderUtil {
             //範囲外はスキップ
             if (x < 0 || x >= width || y < 0 || y >= height || z < 0 || z >= depth) continue;
             const index = (x * height + y) * depth + z;
+            const nbt = rbs.blockSet.writeToNBT();
+            if (nbt) rbs.yaw = nbt.getFloat("Yaw");
             list.set(index, rbs.blockSet);
         }
         return NGTObject.createNGTO(list, width, height, depth, Math.floor(width / 2), 0, Math.floor(depth / 2));

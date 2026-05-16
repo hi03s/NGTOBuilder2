@@ -114,7 +114,7 @@ export class BlockBuilder {
         for (let i = 0; i < list.length; i++) {
             const placeData = list[i];
             if (!placeData) continue;
-            this.add(entity, placeData[0], placeData[1] + placeX, placeData[2] + placeY, placeData[3] + placeZ);
+            this.add(entity, placeData[0], placeData[1] + Math.round(placeX), placeData[2] + Math.round(placeY), placeData[3] + Math.round(placeZ), placeData[4]);
         }
     }
 

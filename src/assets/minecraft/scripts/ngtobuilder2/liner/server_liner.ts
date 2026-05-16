@@ -10,6 +10,9 @@ import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 //import { RotatableBlockObject_old } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject_old";
 import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { NGTLog } from "jp.ngt.ngtlib.io";
+import { BezierControlPoints, BezierCurve3D } from "../../lib_hi03toolkit_1_0/lib_BezierCurve3D";
+import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
+import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
 
 //#################################
 //##  hi03式エディターツール v1.0  ##
@@ -61,9 +64,8 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 //##  処理  ##
 //############
 //JSON(sendData)から送られてくるデータの型
-type ReceiveData = {
-    q: [w: number, x: number, y: number, z: number],
-    pos: Pos
+export type ReceiveData_liner = {
+    bezierList: BezierControlPoints[]
 }
 
 function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
@@ -76,37 +78,69 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
     }
 
     //生成
-    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData>(dataMap, "sendData");
-    const ngto = NGTOBuilderUtil.getHeldNGTO(hostPlayer);
+    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData_liner>(dataMap, "sendData");
+    const heldNGTO = NGTOBuilderUtil.getHeldNGTO(hostPlayer);
     const cancelBuild = dataMap.getBoolean("cancelBuild");
     if (receiveData) {
         const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");
-        if (!isInitializedBuild && ngto) {
-            const isHuge = (ngto.xSize * ngto.ySize * ngto.zSize) > 20000;
-            if (isHuge) NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 計算中...");
-            const q = new Quaternion(...receiveData.q);
+        if (!isInitializedBuild && heldNGTO) {
             const interpolationMode = dataMap.getInt("interpolationMode");
-            const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
             const diffusionRate = dataMap.getInt("diffusionRate");
             const isMirrorX = dataMap.getBoolean("isMirrorX");
             const isMirrorY = dataMap.getBoolean("isMirrorY");
             const isMirrorZ = dataMap.getBoolean("isMirrorZ");
-            let centerX = Math.floor(ngto.xSize / 2) + 0.5;
-            let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
-            dataMap.setBoolean("isInitializedBuild", true, 1);
-            /*
-            const blockObj = RotatableBlockObject_old.createFromNGTO(ngto, isPlaceAirBlock);
-            if (isMirrorX) blockObj.mirrorX();
-            if (isMirrorZ) blockObj.mirrorZ();
-            if (isMirrorY) blockObj.mirrorY();
-            blockObj.setRotationAxisPos(centerX, 0, centerZ);
-            blockObj.rotate(interpolationMode, diffusionRate / 100, q);
-            blockObj.toBlockPos();
-            builder.addFromRotatableBlockObject_OldAt(entity, blockObj, receiveData.pos[0], receiveData.pos[1], receiveData.pos[2]);
+            const offsetNGTOV = dataMap.getInt("offsetNGTOV");//垂直方向
+            const offsetNGTOH = dataMap.getInt("offsetNGTOH");//水平方向
+            const ngtoRotate = dataMap.getInt("ngtoRotate");//0:+Z, 1:+X, 2:-Z, 3:-X
+            const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
+            let ngto = heldNGTO;
+            //NGTOの変更を適用する
+            if (ngtoRotate !== 0 || isMirrorX || isMirrorZ || isMirrorY || offsetNGTOV !== 0 || offsetNGTOH !== 0) {
+                const centerX = Math.floor(heldNGTO.xSize / 2) + 0.5;
+                const centerZ = Math.floor(heldNGTO.zSize / 2) + 0.5;
+                const transformedObj = RotatableBlockObject.createFromNGTO(heldNGTO, isPlaceAirBlock);
+                if (isMirrorX) transformedObj.mirrorX();
+                if (isMirrorZ) transformedObj.mirrorZ();
+                if (isMirrorY) transformedObj.mirrorY();
+                transformedObj.setPivot(centerX, 0.5, centerZ);
+                transformedObj.rotate(0, 0, ngtoRotate * 90);
+                transformedObj.movePivotToBase();
+                transformedObj.offset(offsetNGTOH, 0, offsetNGTOV);
+                ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
+            }
+            //ベジェ曲線を構築する
+            const bezierList: BezierCurve3D[] = [];
+            for (let i = 0; i < receiveData.bezierList.length; i++) {
+                const bezier = receiveData.bezierList[i];
+                bezierList.push(new BezierCurve3D(...bezier));
+            }
+            //NGTOをスライスしたRotatableBlockObject[]をベジェ曲線上に展開する
+            const slicedRBO = NGTOBuilderUtil.sliceByZ(ngto, isPlaceAirBlock);
+            for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
+                const bezier = bezierList[bezierIdx];
+                const split = Math.max(1, Math.floor(bezier.getLength() * 2))
+                for (let idx = 0; idx <= split; idx++) {
+                    const sliceIndex = Math.floor(idx / 2) % slicedRBO.length;
+                    const baseRbo = slicedRBO[sliceIndex];
+                    if (!baseRbo) continue;
+                    const rbo = baseRbo.copy();
+                    const pos = bezier.getPoint(split, idx);
+                    const yaw = bezier.getYaw(split, idx);
+                    const pitch = bezier.getPitch(split, idx);
+                    const centerX = Math.floor(baseRbo.maxX / 2) + 0.5;
+                    const centerY = Math.floor(baseRbo.maxY / 2) + 0.5;
+                    const diffusion = BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100);
+                    rbo.setPivot(centerX, centerY, 0.5);
+                    rbo.rotate(-yaw, -pitch, 0);
+                    rbo.movePivotToBase();
+                    RotatableBlockObjectMapper.applyDiffusionSelf(rbo, diffusion);
+                    RotatableBlockObjectMapper.toBlockCoordSelf(rbo);
+                    builder.addFromRotatableBlockObjectAt(entity, rbo, pos[0], pos[1], pos[2]);
+                }
+            }
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
-            if (isHuge) NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成開始...");
-            */
+            dataMap.setBoolean("isInitializedBuild", true, 1);
         }
         //生成を中止
         if (cancelBuild) {

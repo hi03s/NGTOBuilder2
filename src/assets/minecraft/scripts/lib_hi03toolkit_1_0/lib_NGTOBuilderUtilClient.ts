@@ -227,8 +227,8 @@ export class NGTOBuilderUtilClient {
      * @param entity 
      * @param posList 
      */
-    static renderPosListStatic(renderer: PartsRenderer, parts: Parts, entity: Entity, posList: Pos[]): void {
-        if (posList.length <= 20000) {
+    static renderPosListStatic(renderer: PartsRenderer, parts: Parts, entity: Entity, posList: Pos[], forceRender:boolean = false): void {
+        if (posList.length <= 20000 || forceRender) {
             //posListをハッシュ化
             const partsNames = parts.objNames;
             let partsKey = partsNames[0];
@@ -322,7 +322,7 @@ export class NGTOBuilderUtilClient {
     }
 
     static renderBezierStatic(renderer: PartsRenderer, parts: Parts, bezier: BezierCurve3D, interval:number = 1): void {
-        const posList = bezier.getPosData();
+        const posList = bezier.getControlPoints();
         const partsNames = parts.objNames;//Java String[]
         let joindNames = partsNames[0];
         for (let i = 1; i < partsNames.length; i++) {

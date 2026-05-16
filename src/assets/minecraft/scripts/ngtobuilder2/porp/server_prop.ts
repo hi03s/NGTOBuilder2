@@ -92,7 +92,6 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             const isMirrorZ = dataMap.getBoolean("isMirrorZ");
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
-            dataMap.setBoolean("isInitializedBuild", true, 1);
             const diffusion = BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100);
             const blockObj = RotatableBlockObject.createFromNGTO(ngto, isPlaceAirBlock);
             if (isMirrorX) blockObj.mirrorX();
@@ -107,6 +106,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
             if (isHuge) NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成開始...");
+            dataMap.setBoolean("isInitializedBuild", true, 1);
         }
         //生成を中止
         if (cancelBuild) {

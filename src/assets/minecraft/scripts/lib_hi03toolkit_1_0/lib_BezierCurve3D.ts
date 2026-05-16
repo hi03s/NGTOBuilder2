@@ -4,6 +4,13 @@ export type Pos = [
     z: number
 ]
 
+export type BezierControlPoints = [
+    p0: Pos,
+    p1: Pos,
+    p2: Pos,
+    p3: Pos
+];
+
 //###  BezierCurve3D  ###
 /**
  * 3次元のベジェ曲線を表すクラス。
@@ -130,7 +137,7 @@ export class BezierCurve3D {
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 
-    getPosData(): Pos[] {
+    getControlPoints(): BezierControlPoints {
         return [
             [this.p0[0], this.p0[1], this.p0[2]],
             [this.p1[0], this.p1[1], this.p1[2]],
@@ -140,7 +147,7 @@ export class BezierCurve3D {
     }
 
     getCacheKey(precision: number = 1000): string {
-        const posData = this.getPosData();
+        const posData = this.getControlPoints();
         const parts: string[] = [];
         for (let i = 0; i < posData.length; i++) {
             const pos = posData[i];
