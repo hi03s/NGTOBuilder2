@@ -51,8 +51,12 @@ export class BezierCollector {
     }
 
     createFromPosList(entity: Entity, posList: Pos[]): void {
-        if (posList.length < 2) return;
         this.clear(entity);
+
+        //足りないときは消去のみ
+        if (posList.length < 2) {
+            return;
+        }
 
         //2点は直線のベジェ曲線
         if (posList.length === 2) {

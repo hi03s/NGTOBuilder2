@@ -13,6 +13,7 @@ export class RotatableBlockSet {
     pivot_y: number;
     pivot_z: number;
     yaw: number;
+    isDiffused: boolean;
 
     constructor(blockSet: BlockSet, localX: number, localY: number, localZ: number) {
         this.blockSet = blockSet;
@@ -23,6 +24,7 @@ export class RotatableBlockSet {
         this.pivot_y = 0.5;
         this.pivot_z = 0.5;
         this.yaw = 0;//TileEntityPlaceable用
+        this.isDiffused = false;
     }
 
     copy(): RotatableBlockSet {

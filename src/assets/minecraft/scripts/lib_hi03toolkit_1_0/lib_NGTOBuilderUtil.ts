@@ -171,7 +171,6 @@ export class NGTOBuilderUtil {
         const rboList: RotatableBlockObject[] = [];
         for (let zIdx = 0; zIdx < ngto.zSize; zIdx++) {
             const sliceRBO = new RotatableBlockObject();
-            sliceRBO.sourceLayerCounts = [];
             for (let yIdx = 0; yIdx < ngto.ySize; yIdx++) {
                 let layerCount = 0;
                 for (let xIdx = 0; xIdx < ngto.xSize; xIdx++) {
@@ -183,7 +182,6 @@ export class NGTOBuilderUtil {
                     sliceRBO.blockSetList.push(rbs);
                     layerCount++;
                 }
-                sliceRBO.sourceLayerCounts.push(layerCount);
             }
             sliceRBO.calcSize();
             rboList.push(sliceRBO);

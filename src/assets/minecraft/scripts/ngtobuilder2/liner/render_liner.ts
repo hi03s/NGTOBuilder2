@@ -163,13 +163,18 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.cancelBuild)}] 生成を中止する`);
         NGTLog.sendChatMessage(sender, `[右クリック] 座標を選択/レールを選択`);
         NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelected)}] すべての選択とNGTOの状態をリセットする`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYUp)}] 選択のY高さを上げる`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYDown)}] 選択のY高さを下げる`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelectY)}] 選択のY高さをリセットする`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.isPlaceAirBlock)}] 空気ブロックの設置を切り替え`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.switchInterpolationMode)}] ブロック補間モードを切り替え`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateUp)}] 補間の拡散量を増やす`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateDown)}] 補間の拡散量を減らす`);
         NGTLog.sendChatMessage(sender, `---NGTOを操作---`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.mirrorX)}] X軸の鏡像の切り替え`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.mirrorY)}] Y軸の鏡像の切り替え`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.mirrorZ)}] Z軸の鏡像の切り替え`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.offsetUp)}] NGTOを上に動かす`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.offsetDown)}] NGTOを下に動かす`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.offsetRight)}] NGTOを右に動かす`);
@@ -218,11 +223,17 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         }
     }
 
-    //選択をすべて解除
+    //すべての選択とNGTOの鏡像/回転状態をリセットする
     if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "resetSelected", keyMap.resetSelected)) {
         railMapCollector.clear(entity);
         posCollector.clear(entity);
         bezierCollector.clear(entity);
+        dataMap.setInt("offsetNGTOV", 0, 1);
+        dataMap.setInt("offsetNGTOH", 0, 1);
+        dataMap.setInt("ngtoRotate", 0, 1);
+        dataMap.setBoolean("isMirrorX", false, 1);
+        dataMap.setBoolean("isMirrorY", false, 1);
+        dataMap.setBoolean("isMirrorZ", false, 1);
     }
 
     //選択Y座標
@@ -333,9 +344,9 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     const heldNGTO = NGTOBuilderUtil.getHeldNGTO(hostPlayer);
     const isBuilding = dataMap.getBoolean("isBuilding");
     const isUndo = dataMap.getBoolean("isUndo");
-    if (!isKeyDownOption && heldNGTO && !isUndo && !isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, "build", keyMap.build)) {
+    const bezierList = bezierCollector.getAll(entity);
+    if (!isKeyDownOption && bezierList.length > 0 && heldNGTO && !isUndo && !isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, "build", keyMap.build)) {
         dataMap.setBoolean("isBuilding", true, 1);
-        const bezierList = bezierCollector.getAll(entity);
         const ctrlPosList: BezierControlPoints[] = [];
         for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
             const bezier = bezierList[bezierIdx];
@@ -343,7 +354,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
             ctrlPosList.push(bezier.getControlPoints());
         }
         //送信
-        const sendData:ReceiveData_liner = {
+        const sendData: ReceiveData_liner = {
             bezierList: ctrlPosList
         }
         NGTOBuilderUtil.sendJsonData(dataMap, "sendData", sendData);
@@ -516,15 +527,17 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 if (isMirrorZ) transformedObj.mirrorZ();
                 if (isMirrorY) transformedObj.mirrorY();
                 transformedObj.setPivot(centerX, 0.5, centerZ);
-                transformedObj.rotate(0, 0, ngtoRotate * 90);
+                transformedObj.rotate(ngtoRotate * 90, 0, 0);
                 transformedObj.movePivotToBase();
-                transformedObj.offset(offsetNGTOH, 0, offsetNGTOV);
                 ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
+                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, offsetNGTOV, 0);
             }
             //NGTOをスライスしたRotatableBlockObject[]をベジェ曲線上に展開する(繰り返し展開/2indexで1ブロック)
             const slicedRBO = NGTOBuilderUtil.sliceByZ(ngto, isPlaceAirBlock);
-            const newPosList: Pos[][] = [];
             const bezierList = bezierCollector.getAll(entity);
+            const margedRBO = new RotatableBlockObject();
+            //ベジェ曲線ごとにRBOを作って合成する
+            const origin = bezierList[0].getPoint(1, 0);
             for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
                 const bezier = bezierList[bezierIdx];
                 const split = Math.max(1, Math.floor(bezier.getLength() * 2))
@@ -536,17 +549,21 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                     const pos = bezier.getPoint(split, idx);
                     const yaw = bezier.getYaw(split, idx);
                     const pitch = bezier.getPitch(split, idx);
-                    const centerX = Math.floor(baseRbo.maxX / 2) + 0.5;
-                    const centerY = Math.floor(baseRbo.maxY / 2) + 0.5;
-                    rbo.setPivot(centerX, centerY, 0.5);
+                    const centerX = Math.floor(ngto.xSize / 2) + 0.5;
+                    rbo.setPivot(centerX, 0.5, 0.5);
                     rbo.rotate(-yaw, -pitch, 0);
                     rbo.movePivotToBase();
-                    RotatableBlockObjectMapper.applyDiffusionSelf(rbo, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
-                    RotatableBlockObjectMapper.toBlockCoordSelf(rbo);
-                    newPosList.push(RotatableBlockObjectMapper.getPosList(rbo, pos[0], pos[1], pos[2]));
+                    rbo.offset(
+                        Math.round(pos[0]) - Math.round(origin[0]),
+                        Math.round(pos[1]) - Math.round(origin[1]),
+                        Math.round(pos[2]) - Math.round(origin[2])
+                    );
+                    margedRBO.marge(rbo);
                 }
             }
-            posList = ([] as Pos[]).concat(...newPosList);
+            RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
+            RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
+            posList = RotatableBlockObjectMapper.getPosList(margedRBO, origin[0], origin[1], origin[2]);
             posListCache.put(hash, posList);
         }
         //描画

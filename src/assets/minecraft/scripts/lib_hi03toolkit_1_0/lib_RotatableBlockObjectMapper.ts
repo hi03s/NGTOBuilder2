@@ -12,53 +12,27 @@ export class RotatableBlockObjectMapper {
     static applyDiffusionSelf(rbo: RotatableBlockObject, mode: BlockDiffusionMode): void {
         const baseList = rbo.blockSetList;
         const newList: RotatableBlockSet[] = [];
-        const layerCounts = rbo.sourceLayerCounts;
-        //配列の末尾に補間ブロックを追加
-        if (!layerCounts || layerCounts.length === 0) {
-            for (let i = baseList.length - 1; i >= 0; i--) {
-                const rbs = baseList[i];
-                if (!rbs) continue;
-                mode.forEachDiffusedPosition(rbs.local_x, rbs.local_y, rbs.local_z, (x, y, z) => {
-                    const newRBS = rbs.copy();
-                    newRBS.local_x = x;
-                    newRBS.local_y = y;
-                    newRBS.local_z = z;
-                    baseList.push(newRBS);
-                });
-            }
-            return;
-        }
-        //NGTO由来の場合は1層ごとに補間ブロックを挿入する
-        let layerStart = 0;
-        for (let layerIdx = 0; layerIdx < layerCounts.length; layerIdx++) {
-            const layerCount = layerCounts[layerIdx];
-            const layerEnd = layerStart + layerCount;
-            //このY段のベースブロックを追加
-            for (let i = layerStart; i < layerEnd; i++) {
-                const rbs = baseList[i];
-                if (!rbs) continue;
-                newList.push(rbs);
-            }
-            //このY段の補間ブロックを追加
-            for (let i = layerStart; i < layerEnd; i++) {
-                const rbs = baseList[i];
-                if (!rbs) continue;
-                mode.forEachDiffusedPosition(rbs.local_x, rbs.local_y, rbs.local_z, (x, y, z) => {
-                    const newRBS = rbs.copy();
-                    newRBS.local_x = x;
-                    newRBS.local_y = y;
-                    newRBS.local_z = z;
-                    newList.push(newRBS);
-                });
-            }
-            layerStart = layerEnd;
+        for (let i = 0; i < baseList.length; i++) {
+            const rbs = baseList[i];
+            if (!rbs) continue;
+            rbs.isDiffused = false;
+            newList.push(rbs);
+            //補間ブロック
+            mode.forEachDiffusedPosition(rbs.local_x, rbs.local_y, rbs.local_z, (x, y, z) => {
+                const newRBS = rbs.copy();
+                newRBS.local_x = x;
+                newRBS.local_y = y;
+                newRBS.local_z = z;
+                newRBS.isDiffused = true;
+                newList.push(newRBS);
+            });
         }
         rbo.blockSetList = newList;
     }
 
     //ブロック座標化
     static toBlockCoordSelf(rbo: RotatableBlockObject): void {
-        const posKeyMap: HashSet<string> = new HashSet();
+        const posIndexMap: HashMap<string, number> = new HashMap();
         const newList: RotatableBlockSet[] = [];
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
@@ -67,18 +41,34 @@ export class RotatableBlockObjectMapper {
             const y = RotatableBlockObjectMapper.toBlockCoord(rbs.local_y);
             const z = RotatableBlockObjectMapper.toBlockCoord(rbs.local_z);
             const key = x + "," + y + "," + z;
-            if (!posKeyMap.add(key)) continue;
             rbs.local_x = x;
             rbs.local_y = y;
             rbs.local_z = z;
-            newList.push(rbs);
+            const existingIndex = posIndexMap.get(key);
+
+            // まだその座標にブロックがない
+            if (existingIndex === null || existingIndex === undefined) {
+                posIndexMap.put(key, newList.length);
+                newList.push(rbs);
+                continue;
+            }
+            
+            // すでにあるブロックが補間ブロックで追加分がベースなら置き換える
+            const existing = newList[existingIndex];
+            if (!existing) continue;
+            if (existing.isDiffused === true && rbs.isDiffused === false) {
+                newList[existingIndex] = rbs;
+                continue;
+            }
         }
+
         rbo.blockSetList = newList;
+        rbo.calcSize();
     }
 
     //描画フレーム用データ
     //x, y, zを入れた場合は絶対座標になる
-    static getPosList(rbo: RotatableBlockObject, x:number = 0, y:number = 0, z:number = 0): Pos[] {
+    static getPosList(rbo: RotatableBlockObject, x: number = 0, y: number = 0, z: number = 0): Pos[] {
         const list: Pos[] = [];
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];

@@ -103,10 +103,10 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                 if (isMirrorZ) transformedObj.mirrorZ();
                 if (isMirrorY) transformedObj.mirrorY();
                 transformedObj.setPivot(centerX, 0.5, centerZ);
-                transformedObj.rotate(0, 0, ngtoRotate * 90);
+                transformedObj.rotate(ngtoRotate * 90, 0, 0);
                 transformedObj.movePivotToBase();
-                transformedObj.offset(offsetNGTOH, 0, offsetNGTOV);
                 ngto = NGTOBuilderUtil.createNGTOWithRotatableBlockObject(transformedObj);
+                ngto = NGTOBuilderUtil.offsetNGTO(ngto, -offsetNGTOH * 2, offsetNGTOV, 0);
             }
             //ベジェ曲線を構築する
             const bezierList: BezierCurve3D[] = [];
@@ -114,8 +114,11 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                 const bezier = receiveData.bezierList[i];
                 bezierList.push(new BezierCurve3D(...bezier));
             }
-            //NGTOをスライスしたRotatableBlockObject[]をベジェ曲線上に展開する
+            //NGTOをスライスしたRotatableBlockObject[]をベジェ曲線上に展開する(繰り返し展開/2indexで1ブロック)
             const slicedRBO = NGTOBuilderUtil.sliceByZ(ngto, isPlaceAirBlock);
+            const margedRBO = new RotatableBlockObject();
+            //ベジェ曲線ごとにRBOを作って合成する
+            const origin = bezierList[0].getPoint(1, 0);
             for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
                 const bezier = bezierList[bezierIdx];
                 const split = Math.max(1, Math.floor(bezier.getLength() * 2))
@@ -127,17 +130,21 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                     const pos = bezier.getPoint(split, idx);
                     const yaw = bezier.getYaw(split, idx);
                     const pitch = bezier.getPitch(split, idx);
-                    const centerX = Math.floor(baseRbo.maxX / 2) + 0.5;
-                    const centerY = Math.floor(baseRbo.maxY / 2) + 0.5;
-                    const diffusion = BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100);
-                    rbo.setPivot(centerX, centerY, 0.5);
+                    const centerX = Math.floor(ngto.xSize / 2) + 0.5;
+                    rbo.setPivot(centerX, 0.5, 0.5);
                     rbo.rotate(-yaw, -pitch, 0);
                     rbo.movePivotToBase();
-                    RotatableBlockObjectMapper.applyDiffusionSelf(rbo, diffusion);
-                    RotatableBlockObjectMapper.toBlockCoordSelf(rbo);
-                    builder.addFromRotatableBlockObjectAt(entity, rbo, pos[0], pos[1], pos[2]);
+                    rbo.offset(
+                        Math.round(pos[0]) - Math.round(origin[0]),
+                        Math.round(pos[1]) - Math.round(origin[1]),
+                        Math.round(pos[2]) - Math.round(origin[2])
+                    );
+                    margedRBO.marge(rbo);
                 }
             }
+            RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
+            RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
+            builder.addFromRotatableBlockObjectAt(entity, margedRBO, origin[0], origin[1], origin[2]);
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
             dataMap.setBoolean("isInitializedBuild", true, 1);

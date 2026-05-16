@@ -19,7 +19,6 @@ export type Pos = [
  */
 export class RotatableBlockObject {
     public blockSetList: RotatableBlockSet[];
-    public sourceLayerCounts: number[];
     public minX: number;
     public minY: number;
     public minZ: number;
@@ -30,9 +29,15 @@ export class RotatableBlockObject {
     public pivotY: number;
     public pivotZ: number;
 
+    explicitMinX: number | null = null;
+    explicitMinY: number | null = null;
+    explicitMinZ: number | null = null;
+    explicitMaxX: number | null = null;
+    explicitMaxY: number | null = null;
+    explicitMaxZ: number | null = null;
+
     constructor() {
         this.blockSetList = [];
-        this.sourceLayerCounts = [];
         this.minX = 0;
         this.minY = 0;
         this.minZ = 0;
@@ -56,7 +61,6 @@ export class RotatableBlockObject {
     static createFromNGTO(ngto: NGTObject, isPlaceAirBlock: boolean): RotatableBlockObject {
         const newRBO = new RotatableBlockObject();
         for (let yIdx = 0; yIdx < ngto.ySize; yIdx++) {
-            let layerCount = 0;
             for (let xIdx = 0; xIdx < ngto.xSize; xIdx++) {
                 for (let zIdx = 0; zIdx < ngto.zSize; zIdx++) {
                     const blockSet = ngto.getBlockSet(xIdx, yIdx, zIdx);
@@ -65,11 +69,9 @@ export class RotatableBlockObject {
                         const nbt = blockSet.writeToNBT();
                         if (nbt) rotatableBlockSet.yaw = nbt.getFloat("Yaw");
                         newRBO.blockSetList.push(rotatableBlockSet);
-                        layerCount++;
                     }
                 }
             }
-            newRBO.sourceLayerCounts.push(layerCount);
         }
         newRBO.calcSize();
         return newRBO;
@@ -80,6 +82,16 @@ export class RotatableBlockObject {
         return this;
     }
 
+    marge(rbo: RotatableBlockObject): RotatableBlockObject {
+        for (let i = 0; i < rbo.blockSetList.length; i++) {
+            const rbs = rbo.blockSetList[i];
+            if (!rbs) continue;
+            this.blockSetList.push(rbs.copy());
+        }
+        this.calcSize();
+        return this;
+    }
+
     copy(): RotatableBlockObject {
         const newRBO = new RotatableBlockObject();
         this.blockSetList.forEach(rbs => {
@@ -87,6 +99,12 @@ export class RotatableBlockObject {
             const newRBS = rbs.copy();
             newRBO.add(newRBS);
         });
+        newRBO.explicitMinX = this.explicitMinX;
+        newRBO.explicitMinY = this.explicitMinY;
+        newRBO.explicitMinZ = this.explicitMinZ;
+        newRBO.explicitMaxX = this.explicitMaxX;
+        newRBO.explicitMaxY = this.explicitMaxY;
+        newRBO.explicitMaxZ = this.explicitMaxZ;
         newRBO.calcSize();
         return newRBO;
     }
@@ -174,6 +192,30 @@ export class RotatableBlockObject {
         return this;
     }
 
+    offsetExpanding(offsetX: number, offsetY: number, offsetZ: number): void {
+        this.calcSize();
+        
+        const oldMinX = this.minX;
+        const oldMinY = this.minY;
+        const oldMinZ = this.minZ;
+        const oldMaxX = this.maxX;
+        const oldMaxY = this.maxY;
+        const oldMaxZ = this.maxZ;
+
+        this.offset(offsetX, offsetY, offsetZ);
+
+        // 正方向にずらした場合: min側に空白を残す
+        // 負方向にずらした場合: max側に空白を残す
+        this.explicitMinX = Math.min(oldMinX, oldMinX + offsetX);
+        this.explicitMinY = Math.min(oldMinY, oldMinY + offsetY);
+        this.explicitMinZ = Math.min(oldMinZ, oldMinZ + offsetZ);
+        this.explicitMaxX = Math.max(oldMaxX, oldMaxX + offsetX);
+        this.explicitMaxY = Math.max(oldMaxY, oldMaxY + offsetY);
+        this.explicitMaxZ = Math.max(oldMaxZ, oldMaxZ + offsetZ);
+
+        this.calcSize();
+    }
+
     movePivotToBase(): RotatableBlockObject {
         const dx = 0.5 - this.pivotX;
         const dy = 0.5 - this.pivotY;
@@ -240,6 +282,12 @@ export class RotatableBlockObject {
             this.maxY = Math.max(this.maxY, rbs.local_y);
             this.maxZ = Math.max(this.maxZ, rbs.local_z);
         });
+        if (this.explicitMinX !== null && this.explicitMinX < this.minX) this.minX = this.explicitMinX;
+        if (this.explicitMinY !== null && this.explicitMinY < this.minY) this.minY = this.explicitMinY;
+        if (this.explicitMinZ !== null && this.explicitMinZ < this.minZ) this.minZ = this.explicitMinZ;
+        if (this.explicitMaxX !== null && this.explicitMaxX > this.maxX) this.maxX = this.explicitMaxX;
+        if (this.explicitMaxY !== null && this.explicitMaxY > this.maxY) this.maxY = this.explicitMaxY;
+        if (this.explicitMaxZ !== null && this.explicitMaxZ > this.maxZ) this.maxZ = this.explicitMaxZ;
         return this;
     }
 
