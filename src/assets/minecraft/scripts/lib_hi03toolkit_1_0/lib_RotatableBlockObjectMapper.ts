@@ -1,11 +1,10 @@
 import { HashMap, HashSet } from "java.util";
 import { Pos, RotatableBlockObject } from "./lib_RotatableBlockObject";
 import { RotatableBlockSet } from "./lib_RotatableBlockSet";
-import { BlockSet } from "jp.ngt.ngtlib.block";
 import { BlockSetPlacement } from "./lib_BlockBuilder";
-import { NGTLog } from "jp.ngt.ngtlib.io";
-import { Block } from "net.minecraft.block";
-import { Quaternion } from "./lib_Quaternion";
+import { World } from "net.minecraft.world";
+import { RTMApiCompat } from "./lib_RTMApiCompat";
+import { Blocks } from "net.minecraft.init";
 
 export class RotatableBlockObjectMapper {
     //補間ブロックを追加
@@ -52,7 +51,7 @@ export class RotatableBlockObjectMapper {
                 newList.push(rbs);
                 continue;
             }
-            
+
             // すでにあるブロックが補間ブロックで追加分がベースなら置き換える
             const existing = newList[existingIndex];
             if (!existing) continue;
@@ -78,13 +77,43 @@ export class RotatableBlockObjectMapper {
         return list;
     }
 
+    //ブロック置き換えの描画フレーム用データ
+    static getReplacePosList(world:World, rbo: RotatableBlockObject, x: number, y: number, z: number): Pos[] {
+        const list: Pos[] = [];
+        for (let i = 0; i < rbo.blockSetList.length; i++) {
+            const rbs = rbo.blockSetList[i];
+            if (!rbs) continue;
+            const worldX = rbs.local_x + Math.round(x);
+            const worldY = rbs.local_y + Math.round(y);
+            const worldZ = rbs.local_z + Math.round(z);
+            const block = RTMApiCompat.getBlock(world, worldX, worldY, worldZ);
+            if (block !== Blocks.air) list.push([worldX, worldY, worldZ]);
+        }
+        return list;
+    }
+
     //BlockBuilder用データ
-    static toBlockPlacements(rbo: RotatableBlockObject): BlockSetPlacement[] {
+    static toBlockPlacements(rbo: RotatableBlockObject, x: number = 0, y: number = 0, z: number = 0): BlockSetPlacement[] {
         const list: BlockSetPlacement[] = [];
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
             if (!rbs) continue;
-            list.push([rbs.blockSet, rbs.local_x, rbs.local_y, rbs.local_z, rbs.yaw]);
+            list.push([rbs.blockSet, rbs.local_x + Math.round(x), rbs.local_y + Math.round(y), rbs.local_z + Math.round(z), rbs.yaw]);
+        }
+        return list;
+    }
+
+    //ブロック置き換えのBlockBuilder用データ
+    static toReplacePlacements(world:World, rbo: RotatableBlockObject, x: number, y: number, z: number): BlockSetPlacement[] {
+        const list: BlockSetPlacement[] = [];
+        for (let i = 0; i < rbo.blockSetList.length; i++) {
+            const rbs = rbo.blockSetList[i];
+            if (!rbs) continue;
+            const worldX = rbs.local_x + Math.round(x);
+            const worldY = rbs.local_y + Math.round(y);
+            const worldZ = rbs.local_z + Math.round(z);
+            const block = RTMApiCompat.getBlock(world, worldX, worldY, worldZ);
+            if (block !== Blocks.air) list.push([rbs.blockSet, worldX, worldY, worldZ, rbs.yaw]);
         }
         return list;
     }

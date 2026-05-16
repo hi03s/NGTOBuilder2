@@ -7,8 +7,6 @@ import { RTMApiCompat } from "../../lib_hi03toolkit_1_0/lib_RTMApiCompat";
 import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { EntityPlayer } from "net.minecraft.entity.player";
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
-//import { RotatableBlockObject_old } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject_old";
-import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 import { BezierControlPoints, BezierCurve3D } from "../../lib_hi03toolkit_1_0/lib_BezierCurve3D";
 import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
@@ -144,7 +142,8 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             }
             RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
             RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
-            builder.addFromRotatableBlockObjectAt(entity, margedRBO, origin[0], origin[1], origin[2]);
+            const placementBlocks = RotatableBlockObjectMapper.toBlockPlacements(margedRBO, origin[0], origin[1], origin[2]);
+            builder.addFromRotatableBlockObjectAt(entity, placementBlocks);
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
             dataMap.setBoolean("isInitializedBuild", true, 1);

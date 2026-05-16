@@ -2,8 +2,8 @@ import { NGTLog } from "jp.ngt.ngtlib.io";
 import { MCWrapper, MCWrapperClient, NGTUtilClient } from "jp.ngt.ngtlib.util";
 import { RTMCore } from "jp.ngt.rtm";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
-import { ModelSetRailClient, ModelSetVehicle } from "jp.ngt.rtm.modelpack.modelset";
-import { ModelObject, Parts, RailPartsRenderer, VehiclePartsRenderer } from "jp.ngt.rtm.render";
+import { ModelSetVehicle } from "jp.ngt.rtm.modelpack.modelset";
+import { ModelObject, Parts, VehiclePartsRenderer } from "jp.ngt.rtm.render";
 import { ICommandSender } from "net.minecraft.command";
 import { EntityPlayer } from "net.minecraft.entity.player";
 import { Keyboard, Mouse } from "org.lwjgl.input";
@@ -15,11 +15,8 @@ import { HashMap } from "java.util";
 import { Entity } from "net.minecraft.entity";
 import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
-import { NGTObject } from "jp.ngt.ngtlib.block";
-import { TileEntityLargeRailBase, TileEntityLargeRailSwitchCore } from "jp.ngt.rtm.rail";
 import { RailMapCollector } from "../../lib_hi03toolkit_1_0/lib_RailMapCollector";
 import { BezierCollector } from "../../lib_hi03toolkit_1_0/lib_BezierCollector";
-import { GLHelper } from "jp.ngt.ngtlib.renderer";
 import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
 import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
 import { BezierControlPoints } from "../../lib_hi03toolkit_1_0/lib_BezierCurve3D";
@@ -93,7 +90,10 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
         diffusionRateDown: Keyboard.KEY_P,
 
         //マーカーを反転する
-        reverseMarker: Keyboard.KEY_P
+        reverseMarker: Keyboard.KEY_P,
+
+        //ブロック置換モード
+        isMasking: Keyboard.KEY_U
     }
 
     //-------------------
@@ -132,6 +132,7 @@ var keyMap: {
     diffusionRateUp: number;
     diffusionRateDown: number;
     reverseMarker: number;
+    isMasking: number;
 };
 var Version: string;
 var posCollector: PositionCollector;
@@ -168,6 +169,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[右クリック] 座標を選択/レールを選択`);
         NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelected)}] すべての選択とNGTOの状態をリセットする`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.reverseMarker)}] マーカーを反転する`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYUp)}] 選択のY高さを上げる`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYDown)}] 選択のY高さを下げる`);
         NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelectY)}] 選択のY高さをリセットする`);
@@ -335,6 +337,22 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
             posCollector.reverse(entity);
             bezierCollector.createFromPosList(entity, posCollector.getAll(entity));
         }
+    }
+
+    //ブロック置換モード
+    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "isMasking", keyMap.isMasking)) {
+        let isMasking = dataMap.getBoolean("isMasking");
+        isMasking = !isMasking
+        dataMap.setBoolean("isMasking", isMasking, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] ブロック置換: ${isMasking}`);
+    }
+
+    //Z鏡像
+    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "mirrorZ", keyMap.mirrorZ)) {
+        let isMirrorZ = dataMap.getBoolean("isMirrorZ");
+        isMirrorZ = !isMirrorZ
+        dataMap.setBoolean("isMirrorZ", isMirrorZ, 1);
+        NGTLog.sendChatMessage(sender, `[NGTO Builder2] Z鏡像: ${isMirrorZ}`);
     }
 
     //補間モードを切り替え
@@ -509,10 +527,12 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const offsetNGTOV = dataMap.getInt("offsetNGTOV");//垂直方向
     const offsetNGTOH = dataMap.getInt("offsetNGTOH");//水平方向
     const ngtoRotate = dataMap.getInt("ngtoRotate");//0:+Z, 1:+X, 2:-Z, 3:-X
-    const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
+    const isMasking = dataMap.getBoolean("isMasking");
+    let isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
+    if (isMasking) isPlaceAirBlock = !isPlaceAirBlock;
     if (heldNGTO && bezierCollector.size(entity) > 0) {
         const hash = String(entity.getEntityId()) + "|" + NGTOBuilderUtil.getNGTOHash(heldNGTO) + "|" + String(interpolationMode) + "|" + String(diffusionRate) + "|" + bezierCollector.getCacheKey(entity) + "|"
-            + String(isMirrorX) + String(isMirrorY) + String(isMirrorZ) + String(offsetNGTOV) + String(offsetNGTOH) + String(ngtoRotate) + String(isPlaceAirBlock);
+            + String(isMirrorX) + String(isMirrorY) + String(isMirrorZ) + String(offsetNGTOV) + String(offsetNGTOH) + String(ngtoRotate) + String(isPlaceAirBlock) + String(isMasking);
         let posList: Pos[] = posListCache.get(hash);
         if (!posList || posList.length === 0) {
             let ngto = heldNGTO;
@@ -560,7 +580,8 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             }
             RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
             RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
-            posList = RotatableBlockObjectMapper.getPosList(margedRBO, origin[0], origin[1], origin[2]);
+            if (isMasking) posList = RotatableBlockObjectMapper.getReplacePosList(world, margedRBO, origin[0], origin[1], origin[2]);
+            else posList = RotatableBlockObjectMapper.getPosList(margedRBO, origin[0], origin[1], origin[2]);
             posListCache.put(hash, posList);
         }
         //描画

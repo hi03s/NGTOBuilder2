@@ -8,7 +8,6 @@ import { TileEntity } from "net.minecraft.tileentity";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
 import { RotatableBlockObject } from "./lib_RotatableBlockObject";
 import { RotatableBlockObjectMapper } from "./lib_RotatableBlockObjectMapper";
-import { NGTLog } from "jp.ngt.ngtlib.io";
 
 export type BlockSetPlacement = [
     blockSet: BlockSet,
@@ -109,12 +108,11 @@ export class BlockBuilder {
         posList.forEach(([x, y, z]: Pos): void => { this.add(entity, blockSet, x, y, z); });
     }
 
-    addFromRotatableBlockObjectAt(entity: Entity, rbo: RotatableBlockObject, placeX: number, placeY: number, placeZ: number): void {
-        const list = RotatableBlockObjectMapper.toBlockPlacements(rbo);
+    addFromRotatableBlockObjectAt(entity: Entity, list:BlockSetPlacement[]): void {
         for (let i = 0; i < list.length; i++) {
             const placeData = list[i];
             if (!placeData) continue;
-            this.add(entity, placeData[0], placeData[1] + Math.round(placeX), placeData[2] + Math.round(placeY), placeData[3] + Math.round(placeZ), placeData[4]);
+            this.add(entity, placeData[0], placeData[1], placeData[2], placeData[3], placeData[4]);
         }
     }
 

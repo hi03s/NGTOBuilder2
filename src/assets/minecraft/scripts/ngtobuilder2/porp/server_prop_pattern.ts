@@ -121,7 +121,8 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             blockObj.movePivotToBaseXZ();
             if (!q.isRightAngleRotation()) RotatableBlockObjectMapper.applyDiffusionSelf(blockObj, diffusion);
             RotatableBlockObjectMapper.toBlockCoordSelf(blockObj);
-            builder.addFromRotatableBlockObjectAt(entity, blockObj, receiveData.pos[0], receiveData.pos[1], receiveData.pos[2]);
+            const placementBlocks = RotatableBlockObjectMapper.toBlockPlacements(blockObj, receiveData.pos[0], receiveData.pos[1], receiveData.pos[2]);
+            builder.addFromRotatableBlockObjectAt(entity, placementBlocks);
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
             if (isHuge) NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成開始...");
