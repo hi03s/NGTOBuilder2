@@ -108,6 +108,13 @@ export class RailMapCollector {
         return this.getOrCreateList(entity)[0];
     }
 
+    reverse(entity: Entity): void {
+        const list = this.getAll(entity)[1];
+        for (let i = 0; i < list.length; i++) {
+            list[i] = !list[i];
+        }
+    }
+
     private getOrCreateList(entity: Entity): [RailMap[], boolean[]] {
         let rmList = this.railMapList.get(entity);
         let boolList = this.reverseList.get(entity);

@@ -94,6 +94,11 @@ export class PositionCollector {
         return posList[posList.length - 1];
     }
 
+    reverse(entity:Entity): void {
+        const list = this.getAll(entity);
+        list.reverse();
+    }
+
     /**
      * すべての座標を消去する
      * @param entity 
