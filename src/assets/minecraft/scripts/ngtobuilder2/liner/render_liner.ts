@@ -345,6 +345,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         let isMasking = dataMap.getBoolean("isMasking");
         isMasking = !isMasking
         dataMap.setBoolean("isMasking", isMasking, 1);
+        dataMap.setBoolean("isPlaceAirBlock", true, 1);
         NGTLog.sendChatMessage(sender, `[NGTO Builder2] ブロック置換: ${isMasking}`);
     }
 
