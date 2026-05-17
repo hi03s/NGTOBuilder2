@@ -7,7 +7,7 @@ import { RTMApiCompat } from "./lib_RTMApiCompat";
 
 export class BezierCollector {
     private bezierHashMap: HashMap<Entity, BezierCurve3D[]>;
-    private totalLength: number;
+    totalLength: number;
 
     constructor() {
         this.bezierHashMap = new HashMap();
