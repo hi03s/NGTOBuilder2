@@ -11,6 +11,9 @@ import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
 import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
+import { RotatableBlockObjectFactory } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectFactory";
+import { BlockSet } from "jp.ngt.ngtlib.block";
+import { Blocks } from "net.minecraft.init";
 
 //#################################
 //##  hi03式エディターツール v1.0  ##
@@ -90,10 +93,19 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             const isMirrorX = dataMap.getBoolean("isMirrorX");
             const isMirrorY = dataMap.getBoolean("isMirrorY");
             const isMirrorZ = dataMap.getBoolean("isMirrorZ");
+            const offsetY = dataMap.getInt("offsetY");
+            const isBuildSupportBlocks = dataMap.getBoolean("isBuildSupportBlocks");
+            const supportY = dataMap.getInt("supportY");
+            let supportRBO = new RotatableBlockObject();
+            if (isBuildSupportBlocks && (offsetY - 1 + supportY) >= 2) {
+                supportRBO = RotatableBlockObjectFactory.createBox(new BlockSet(Blocks.stone, 0), ngto.xSize, offsetY - 1 + supportY, ngto.zSize);
+                supportRBO.offset(0, -offsetY + 1 - supportY, 0);
+            }
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
             const diffusion = BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100);
             const blockObj = RotatableBlockObject.createFromNGTO(ngto, isPlaceAirBlock);
+            blockObj.mergeBefore(supportRBO);
             if (isMirrorX) blockObj.mirrorX();
             if (isMirrorZ) blockObj.mirrorZ();
             if (isMirrorY) blockObj.mirrorY();
