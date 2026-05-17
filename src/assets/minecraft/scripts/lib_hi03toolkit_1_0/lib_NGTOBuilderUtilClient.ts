@@ -254,6 +254,8 @@ export class NGTOBuilderUtilClient {
                 GLHelper.endCompile();
 
                 NGTOBuilderUtilClient.glCache.put(key, glList);
+
+                GLHelper.callList(glList);
             }
             else {
                 GLHelper.callList(glList);
