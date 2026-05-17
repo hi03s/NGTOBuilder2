@@ -148,7 +148,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                             Math.floor(pos[1]) - Math.floor(origin[1]) - diffY,//起点が壁の底
                             Math.floor(pos[2]) - Math.floor(origin[2])
                         );
-                        margedRBO.marge(rbo);
+                        margedRBO.merge(rbo);
                     }
                 }
                 if (margedRBO.blockSetList.length > totalBlockLimit) {

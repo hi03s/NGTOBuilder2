@@ -82,12 +82,31 @@ export class RotatableBlockObject {
         return this;
     }
 
-    marge(rbo: RotatableBlockObject): RotatableBlockObject {
+    merge(rbo: RotatableBlockObject): RotatableBlockObject {
         for (let i = 0; i < rbo.blockSetList.length; i++) {
             const rbs = rbo.blockSetList[i];
             if (!rbs) continue;
             this.blockSetList.push(rbs.copy());
         }
+        this.calcSize();
+        return this;
+    }
+
+    mergeBefore(rbo: RotatableBlockObject): RotatableBlockObject {
+        const newList: RotatableBlockSet[] = [];
+        // 先に追加したいRBO
+        for (let i = 0; i < rbo.blockSetList.length; i++) {
+            const rbs = rbo.blockSetList[i];
+            if (!rbs) continue;
+            newList.push(rbs.copy());
+        }
+        // 既存のRBO
+        for (let i = 0; i < this.blockSetList.length; i++) {
+            const rbs = this.blockSetList[i];
+            if (!rbs) continue;
+            newList.push(rbs);
+        }
+        this.blockSetList = newList;
         this.calcSize();
         return this;
     }
@@ -194,7 +213,7 @@ export class RotatableBlockObject {
 
     offsetExpanding(offsetX: number, offsetY: number, offsetZ: number): void {
         this.calcSize();
-        
+
         const oldMinX = this.minX;
         const oldMinY = this.minY;
         const oldMinZ = this.minZ;

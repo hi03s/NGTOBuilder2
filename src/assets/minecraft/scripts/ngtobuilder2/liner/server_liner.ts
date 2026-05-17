@@ -137,7 +137,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
                         Math.floor(pos[1]) - Math.floor(origin[1]) + offsetNGTOV,
                         Math.floor(pos[2]) - Math.floor(origin[2])
                     );
-                    margedRBO.marge(rbo);
+                    margedRBO.merge(rbo);
                 }
             }
             RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));

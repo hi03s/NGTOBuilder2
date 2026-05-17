@@ -495,7 +495,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                         RotatableBlockObjectFactory.createBox(new BlockSet(Blocks.stone, 0), boxWidth, 1, 1);
                     topRBO.offset(0, boxHeight - 1, 0);
                     const bottomRBO = RotatableBlockObjectFactory.createSideWalls(new BlockSet(Blocks.stone, 0), boxWidth, (isEdge ? boxHeight : 1));
-                    rbo.marge(topRBO).marge(bottomRBO);
+                    rbo.merge(topRBO).merge(bottomRBO);
                     const centerX = Math.floor(boxWidth / 2) + 0.5;
                     rbo.setPivot(centerX, 0.5, 0.5);
                     rbo.rotate(-yaw, 0, 0);
@@ -505,7 +505,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                         Math.floor(pos[1]) - Math.floor(origin[1]) - diffY,//起点が壁の底
                         Math.floor(pos[2]) - Math.floor(origin[2])
                     );
-                    margedRBO.marge(rbo);
+                    margedRBO.merge(rbo);
                 }
             }
             RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
