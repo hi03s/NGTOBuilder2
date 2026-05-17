@@ -241,6 +241,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         dataMap.setBoolean("isMirrorX", false, 1);
         dataMap.setBoolean("isMirrorY", false, 1);
         dataMap.setBoolean("isMirrorZ", false, 1);
+        dataMap.setInt("offsetY", 0, 1);
     }
 
     //選択Y座標
