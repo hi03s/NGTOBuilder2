@@ -205,8 +205,10 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         if (railMapCollector.size(entity) > 0) {
             railMapCollector.pop(entity);
             bezierCollector.pop(entity);
-            //surfaceYが-1なら0にする
-            if (surfaceY === -1) dataMap.setInt("surfaceY", 0, 1);
+            if (railMapCollector.size(entity) === 0) {
+                //surfaceYが-1なら0にする
+                if (surfaceY === -1) dataMap.setInt("surfaceY", 0, 1);
+            }
         }
         else if (posCollector.size(entity) > 0) {
             posCollector.pop(entity);
@@ -315,26 +317,19 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     const hasTileEntity = RTMApiCompat.hasTileEntity(blockSet);
     const bezierList = bezierCollector.getAll(entity);
     if (!isKeyDownOption && bezierList.length > 0 && blockSet && !hasTileEntity && !isUndo && !isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, "build", keyMap.build)) {
-        const depth = surfaceY - minY;
-        const size = (bezierCollector.totalLength * depth * fieldWidth);
-        if (size > 100000) {
-            NGTLog.sendChatMessage(sender, `[NGTO Builder2] サイズが大きすぎます`);
+        dataMap.setBoolean("isBuilding", true, 1);
+        const ctrlPosList: BezierControlPoints[] = [];
+        for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
+            const bezier = bezierList[bezierIdx];
+            if (!bezier) continue;
+            ctrlPosList.push(bezier.getControlPoints());
         }
-        else {
-            dataMap.setBoolean("isBuilding", true, 1);
-            const ctrlPosList: BezierControlPoints[] = [];
-            for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
-                const bezier = bezierList[bezierIdx];
-                if (!bezier) continue;
-                ctrlPosList.push(bezier.getControlPoints());
-            }
-            //送信
-            const sendData: ReceiveData_liner = {
-                bezierList: ctrlPosList
-            }
-            NGTOBuilderUtil.sendJsonData(dataMap, "sendData", sendData);
-            NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成中...");
+        //送信
+        const sendData: ReceiveData_liner = {
+            bezierList: ctrlPosList
         }
+        NGTOBuilderUtil.sendJsonData(dataMap, "sendData", sendData);
+        NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成中...");
     }
 
     //生成を中止する
