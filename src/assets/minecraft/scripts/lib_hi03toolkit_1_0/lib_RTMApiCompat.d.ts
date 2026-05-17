@@ -26,7 +26,7 @@ export class RTMApiCompat {
     static getBlock(world: World, x: number, y: number, z: number): Block | null;
     static getMetadata(world: World, x: number, y: number, z: number): number | null;
     static getTileEntity(world: World, x: number, y: number, z: number): TileEntity | null;
-    static hasTileEntity(blockSet: BlockSet): boolean;
+    static hasTileEntity(blockSet: BlockSet | null): boolean;
     static setResourceName(tileEntity: TileEntity, nbt: NBTTagCompound): void;
     static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void;
     static getItemStackAt(inventory: InventoryPlayer, index: number): ItemStack | null;
