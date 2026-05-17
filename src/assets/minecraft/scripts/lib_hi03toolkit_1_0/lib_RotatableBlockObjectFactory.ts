@@ -23,7 +23,7 @@ export class RotatableBlockObjectFactory {
         return RotatableBlockObject.createFromPosList(posList, blockSet);
     }
 
-    static createBox(blockSet: BlockSet, width: number, height: number, depth:number): RotatableBlockObject {
+    static createBox(blockSet: BlockSet, width: number, height: number, depth: number): RotatableBlockObject {
         width = width <= 1 ? 1 : Math.round(width);
         height = height <= 1 ? 1 : Math.round(height);
         depth = depth <= 1 ? 1 : Math.round(depth);
@@ -38,7 +38,28 @@ export class RotatableBlockObjectFactory {
         return RotatableBlockObject.createFromPosList(posList, blockSet);
     }
 
-    static createSideWall(blockSet: BlockSet, width: number, height: number): RotatableBlockObject {
+    static createWalls(blockSet: BlockSet, width: number, height: number, depth: number): RotatableBlockObject {
+        width = width <= 1 ? 1 : Math.round(width);
+        height = height <= 1 ? 1 : Math.round(height);
+        depth = depth <= 1 ? 1 : Math.round(depth);
+        const posList: Pos[] = [];
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (x !== 0 && x !== width - 1) {
+                    posList.push([x, y, 0]);
+                    posList.push([x, y, depth - 1]);
+                }
+                else {
+                    for (let z = 0; z < depth; z++) {
+                        posList.push([x, y, z]);
+                    }
+                }
+            }
+        }
+        return RotatableBlockObject.createFromPosList(posList, blockSet);
+    }
+
+    static createSideWalls(blockSet: BlockSet, width: number, height: number): RotatableBlockObject {
         width = width <= 1 ? 1 : Math.round(width);
         height = height <= 1 ? 1 : Math.round(height);
         const posList: Pos[] = [];
