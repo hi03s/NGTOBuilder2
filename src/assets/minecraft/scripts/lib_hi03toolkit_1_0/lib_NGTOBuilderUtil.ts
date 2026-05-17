@@ -268,52 +268,6 @@ export class NGTOBuilderUtil {
     }
 
     /**
-     * 直径と高さから、中身が詰まった円柱のrelativePosListを作る。
-     * @param diameter 円柱の直径。ブロック数
-     * @param height 円柱の高さ。ブロック数
-     * @returns [[x, y, z], ...] ブロックを構成する配列(relativePosList)
-     */
-    static createCylinderPosList(diameter: number, height: number): Pos[] {
-        const posList: Pos[] = [];
-        if (diameter <= 0 || height <= 0) return posList;
-        const radius = diameter / 2;
-        // ブロック中心基準で円判定する
-        const center = (diameter - 1) / 2;
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < diameter; x++) {
-                for (let z = 0; z < diameter; z++) {
-                    const dx = x - center;
-                    const dz = z - center;
-                    const distanceSq = dx * dx + dz * dz;
-                    if (distanceSq <= radius * radius) {
-                        posList.push([x, y, z]);
-                    }
-                }
-            }
-        }
-        return posList;
-    }
-
-    /**
-     * 幅と高さから、中身が詰まった正方形断面の箱を作る。
-     * @param width 幅。x方向・z方向のブロック数
-     * @param height 高さ。y方向のブロック数
-     * @returns [[x, y, z], ...] ブロックを構成する配列(relativePosList)
-     */
-    static createBoxPosList(width: number, height: number): Pos[] {
-        const posList: Pos[] = [];
-        if (width <= 0 || height <= 0) return posList;
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                for (let z = 0; z < width; z++) {
-                    posList.push([x, y, z]);
-                }
-            }
-        }
-        return posList;
-    }
-
-    /**
      * 連想配列/配列をJson文字列に変換してdataMapを経由してサーバー/クライアント側に送る
      * @param dataMap 
      * @param key 
