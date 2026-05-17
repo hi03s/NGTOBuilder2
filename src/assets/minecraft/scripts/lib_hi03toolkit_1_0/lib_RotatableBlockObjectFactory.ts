@@ -37,4 +37,15 @@ export class RotatableBlockObjectFactory {
         }
         return RotatableBlockObject.createFromPosList(posList, blockSet);
     }
+
+    static createSideWall(blockSet: BlockSet, width: number, height: number): RotatableBlockObject {
+        width = width <= 1 ? 1 : Math.round(width);
+        height = height <= 1 ? 1 : Math.round(height);
+        const posList: Pos[] = [];
+        for (let y = 0; y < height; y++) {
+            posList.push([0, y, 0]);
+            posList.push([width - 1, y, 0]);
+        }
+        return RotatableBlockObject.createFromPosList(posList, blockSet);
+    }
 }
