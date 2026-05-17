@@ -7,15 +7,18 @@ import { RTMApiCompat } from "./lib_RTMApiCompat";
 
 export class BezierCollector {
     private bezierHashMap: HashMap<Entity, BezierCurve3D[]>;
+    private totalLength: number;
 
     constructor() {
         this.bezierHashMap = new HashMap();
+        this.totalLength = 0;
     }
 
     add(entity: Entity, bezier: BezierCurve3D): void {
         const list = this.getOrCreateList(entity);
         list.push(bezier);
         this.set(entity, list);
+        this.totalLength += bezier.getLength();
     }
 
     addAll(entity: Entity, bezierList: BezierCurve3D[]): void {
@@ -109,6 +112,7 @@ export class BezierCollector {
         const bezier = list.pop();
         if (!bezier) return null;
         this.set(entity, list);
+        this.totalLength -= bezier.getLength();
         return bezier;
     }
 
@@ -118,11 +122,13 @@ export class BezierCollector {
         const bezier = list.shift();
         if (!bezier) return null;
         this.set(entity, list);
+        this.totalLength -= bezier.getLength();
         return bezier;
     }
 
     clear(entity: Entity): void {
         this.set(entity, []);
+        this.totalLength = 0;
     }
 
     getAll(entity: Entity): BezierCurve3D[] {
