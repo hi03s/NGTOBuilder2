@@ -143,6 +143,7 @@ export class NGTOBuilderUtilClient {
             if (!cachedData || cachedData[1] !== modelName) {
                 const modelSet = railCore.getProperty().getModelSet() as ModelSetRailClient;
                 const railRenderer = modelSet.model.renderer as RailPartsRenderer;
+                NGTLog.debug("#renderRailMapHighlight : create glList");
                 const glList = RTMApiCompatClient.generateGLList();
                 cachedData = [glList, modelName];
                 this.renderRailMapCache.put(hashKey, cachedData);
@@ -239,6 +240,7 @@ export class NGTOBuilderUtilClient {
             const key = `${entity.getUniqueID()}_${partsKey}_${posListHash}`;
             const glList = NGTOBuilderUtilClient.glCache.get(key);
             if (!glList) {
+                NGTLog.debug("#renderPosListStatic : create glList");
                 const glList = RTMApiCompatClient.generateGLList();
                 GLHelper.startCompile(glList);
                 GL11.glPushMatrix();
@@ -294,6 +296,7 @@ export class NGTOBuilderUtilClient {
             _${joindNames}`;
         let cachedData = this.renderRailMapCache.get(hashKey);//[displayList, railModelName]
         if (!cachedData) {
+            NGTLog.debug("#renderRailMapStatic : create glList");
             const glList = RTMApiCompatClient.generateGLList();
             cachedData = [glList, ""];
             this.renderRailMapCache.put(hashKey, cachedData);
@@ -336,6 +339,7 @@ export class NGTOBuilderUtilClient {
             _${joindNames}`;
         let cachedData = this.renderRailMapCache.get(hashKey);//[displayList, railModelName]
         if (!cachedData) {
+            NGTLog.debug("#renderBezierStatic : create glList");
             const glList = RTMApiCompatClient.generateGLList();
             cachedData = [glList, ""];
             this.renderRailMapCache.put(hashKey, cachedData);
@@ -393,6 +397,7 @@ export class NGTOBuilderUtilClient {
         const key = `${entity.getEntityId()}_${NGTOBuilderUtil.getNGTOHash(ngto)}`;
         const glList = NGTOBuilderUtilClient.glCache.get(key);
         if (!glList || updateCache) {
+            NGTLog.debug("#renderNGTO : create glList");
             const glList = RTMApiCompatClient.generateGLList();
             GL11.glPushMatrix();
             GLHelper.startCompile(glList);

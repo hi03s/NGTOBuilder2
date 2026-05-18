@@ -23,6 +23,7 @@ import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03to
 import { GuiItemMiniature } from "jp.ngt.mcte.gui";
 import { RotatableBlockObjectFactory } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectFactory";
 import { InputManager } from "../../lib_hi03toolkit_1_0/lib_InputManager";
+import { ReceiveData_prop } from "./server_prop";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
@@ -169,10 +170,6 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         dataMap.setBoolean("isEndEdit", true, 1);
     }
 
-    type SendData = {
-        q: [w: number, x: number, y: number, z: number],
-        pos: Pos
-    }
     //NGTOを生成する
     const ngto = NGTOBuilderUtil.getHeldNGTO(hostPlayer);
     const isBuilding = dataMap.getBoolean("isBuilding");
@@ -182,7 +179,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     else if (lookingPos) buildPos = [lookingPos.blockX, lookingPos.blockY + offsetY, lookingPos.blockZ] as Pos;
     if (keyManager.pressed("build") && buildPos?.length === 3 && !isBuilding && !isUndo && ngto) {
         dataMap.setBoolean("isBuilding", true, 1);
-        const sendData: SendData = {
+        const sendData: ReceiveData_prop = {
             q: [quaternion.w, quaternion.x, quaternion.y, quaternion.z],
             pos: buildPos
         }
@@ -608,7 +605,6 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 supportRBO = RotatableBlockObjectFactory.createWalls(new BlockSet(Blocks.stone, 0), ngto.xSize, offsetY - 1 + supportY, ngto.zSize);
                 supportRBO.offset(0, -offsetY + 1 - supportY, 0);
             }
-
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
             if (isHuge || (interpolationMode === 1 && (ngto.xSize * ngto.ySize * ngto.zSize * 8) > 20000)) {

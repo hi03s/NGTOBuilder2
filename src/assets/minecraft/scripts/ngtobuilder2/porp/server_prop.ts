@@ -63,7 +63,7 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 //##  処理  ##
 //############
 //JSON(sendData)から送られてくるデータの型
-type ReceiveData = {
+export type ReceiveData_prop = {
     q: [w: number, x: number, y: number, z: number],
     pos: Pos
 }
@@ -78,7 +78,7 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
     }
 
     //生成
-    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData>(dataMap, "sendData");
+    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData_prop>(dataMap, "sendData");
     const ngto = NGTOBuilderUtil.getHeldNGTO(hostPlayer);
     const cancelBuild = dataMap.getBoolean("cancelBuild");
     if (receiveData) {
