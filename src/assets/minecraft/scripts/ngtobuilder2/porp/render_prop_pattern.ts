@@ -47,10 +47,10 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
     keyManager.setOptionKey(Keyboard.KEY_LCONTROL);//オプションキー
     keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
     keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-    keyManager.register("build", Keyboard.KEY_RETURN, false, "手に持っているNGTOを生成する");
+    keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
     keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
     keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
-    //ーー個別ーー
+    //ーー機能ーー
     keyManager.register("isBuildSupportBlocks", Keyboard.KEY_U, false, "足場の設置を切り替え");
     keyManager.register("isPlaceAirBlock", Keyboard.KEY_I, false, "空気ブロックの設置を切り替え");
     keyManager.register("isWorldAxis", Keyboard.KEY_O, false, "回転軸の基準を切り替え");
@@ -123,13 +123,14 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //ヘルプ表示
     if (keyManager.pressed("showHelp")) {
-        NGTLog.sendChatMessage(sender, `---NGTO Builder2 プロップ設置 操作方法---`);
+        NGTLog.sendChatMessage(sender, `---NGTO Builder2 プロップ配列設置 操作方法---`);
         //ーー共通ーー
         NGTLog.sendChatMessage(sender, keyManager.getDescription("endEdit"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("build"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("cancelBuild"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("undo"));
-        //ーー個別ーー
+        //ーー機能ーー
+        NGTLog.sendChatMessage(sender, `---機能---`);
         NGTLog.sendChatMessage(sender, keyManager.getDescription("isBuildSupportBlocks"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("isPlaceAirBlock"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("isWorldAxis"));
@@ -316,7 +317,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間モード: ${BlockDiffusionMode.get(nextModeId).displayName}`);
     }
 
-    //補間の拡散量を増やす
+    //補間の拡散量を変更
     const mouseWheel = Mouse.getDWheel();
     if (keyManager.downOptionKey()) {
         if (mouseWheel > 0) {
@@ -508,7 +509,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
 
     //初回選択時にミニチュアブロックのGUIが開くのをブロックする
     const isFirstSelect = dataMap.getBoolean("isFirstSelect");
-    if (isFirstSelect) {
+    if ((lookingPos && Mouse.isButtonDown(1) && collector.size(entity) === 0) || isFirstSelect) {
         const mc = NGTUtilClient.getMinecraft();
         if (mc.currentScreen && mc.currentScreen instanceof GuiItemMiniature) {
             player.closeScreen();
@@ -727,8 +728,6 @@ function renderInMenu(): void {
 
 //#################################
 //#################################
-var isKaizPatch: boolean;
-isKaizPatch = RTMCore.VERSION.indexOf("KaizPatch") !== -1;
 function render(entity: EntityVehicle, pass: number, par3: number): void {
     renderInMenu();
     if (!entity) return;
@@ -748,12 +747,12 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
     const isRightClick = Mouse.isButtonDown(1);
     const prevIsLeftClick = dataMap.getBoolean("prevIsLeftClick");
     const prevIsRightClick = dataMap.getBoolean("prevIsRightClick");
-    if (isLeftClick !== prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", isLeftClick, 0);
-    if (isRightClick !== prevIsRightClick) dataMap.setBoolean("prevIsRightClick", isRightClick, 0);
     const VERSIONS_server = dataMap.getString("VERSIONS");
     const isVersionChecked = dataMap.getBoolean("isVersionChecked");
     RTMApiCompat.doFollowing(entity, hostPlayer);//1.12用
     if (hostPlayer && hostPlayer === player) {
+        if (isLeftClick !== prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", isLeftClick, 0);
+        if (isRightClick !== prevIsRightClick) dataMap.setBoolean("prevIsRightClick", isRightClick, 0);
         if (renderer.currentMatId === 0 && pass === 0) keyManager.update();
         if ((VERSIONS_server != Version) && !isVersionChecked) {
             dataMap.setBoolean("isVersionChecked", true, 0);
@@ -768,6 +767,10 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
         }
         if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) keyInput(hostPlayer, entity, (!prevIsRightClick && isRightClick), (!prevIsLeftClick && isLeftClick));
         renderForToolUser(entity, pass, par3);
+    }
+    else {
+        if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
+        if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
     }
 }
 

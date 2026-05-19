@@ -24,12 +24,15 @@ import { ReceiveData_liner } from "./server_liner";
 import { RotatableBlockObjectFactory } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectFactory";
 import { BlockSet } from "jp.ngt.ngtlib.block";
 import { Blocks } from "net.minecraft.init";
+import { InputManager } from "../../lib_hi03toolkit_1_0/lib_InputManager";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
 
 //initに設定するグローバル関数の宣言
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
+    keyManager = new InputManager();
+
     //バージョン
     Version = "1.0";
     // v1.0 初回リリース
@@ -38,55 +41,26 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
     //##  ユーザー設定  ##
     //###################
 
-    //キー設定 
-    keyMap = {
-        //オプションキー
-        option: Keyboard.KEY_LCONTROL,
-
-        //終了
-        endEdit: Keyboard.KEY_Q,
-
-        //生成
-        build: Keyboard.KEY_RETURN,
-
-        //生成を中止
-        cancelBuild: Keyboard.KEY_BACK,
-
-        //Undo
-        undo: Keyboard.KEY_Z,
-
-        //ヘルプをチャットに表示
-        showHelp: Keyboard.KEY_H,
-
-        //選択をすべて解除
-        resetSelected: Keyboard.KEY_C,
-
-        //高さ変更
-        selectYUp: Keyboard.KEY_UP,
-        selectYDown: Keyboard.KEY_DOWN,
-
-        //Y座標オフセットをリセット / Y座標オフセットをスナップ[+optionキー]
-        resetSelectY: Keyboard.KEY_F,
-
-        //幅を変える[+optionキー]
-        widthUp: Keyboard.KEY_RIGHT,
-        widthDown: Keyboard.KEY_LEFT,
-
-        //表面の高さを変える[+optionキー]
-        surfaceYUp: Keyboard.KEY_UP,
-        surfaceYDown: Keyboard.KEY_DOWN,
-
-        //深さを変える
-        minYUp: Keyboard.KEY_O,
-        minYDown: Keyboard.KEY_L,
-
-        //補間モード切り替え
-        switchInterpolationMode: Keyboard.KEY_U,
-
-        //補間の拡散量を変更 [+optionキー]
-        diffusionRateUp: Keyboard.KEY_O,
-        diffusionRateDown: Keyboard.KEY_P
-    }
+    //ーー共通ーー
+    keyManager.setOptionKey(Keyboard.KEY_LCONTROL);//オプションキー
+    keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
+    keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
+    keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
+    keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
+    keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+    //ーーカーソル操作ーー
+    keyManager.register("selectYUp", Keyboard.KEY_UP, false, "カーソルの高さを上げる");
+    keyManager.register("selectYDown", Keyboard.KEY_DOWN, false, "カーソルの高さを下げる");
+    keyManager.register("resetSelectY", Keyboard.KEY_F, false, "カーソルの高さをリセットする");
+    keyManager.register("adjustSelectY", Keyboard.KEY_F, true, "カーソルの高さを合わせる");
+    keyManager.register("resetSelected", Keyboard.KEY_C, false, "すべての選択とNGTOの状態をリセットする");
+    //ーー地形操作ーー
+    keyManager.register("widthUp", Keyboard.KEY_RIGHT, true, "地表の幅を拡大する");
+    keyManager.register("widthDown", Keyboard.KEY_LEFT, true, "地表の幅を縮小する");
+    keyManager.register("surfaceYUp", Keyboard.KEY_UP, true, "地表の高さを上げる");
+    keyManager.register("surfaceYDown", Keyboard.KEY_DOWN, true, "地表の高さを下げる");
+    keyManager.register("minYUp", Keyboard.KEY_O, true, "底の高さを上げる");
+    keyManager.register("minYDown", Keyboard.KEY_L, true, "底の高さを下げる");
 
     //-------------------
     //--  ユーザー設定  --
@@ -99,28 +73,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
     posListCache = new HashMap();
     initParts();
 }
-
-var keyMap: {
-    option: number;
-    endEdit: number;
-    build: number;
-    undo: number;
-    showHelp: number;
-    cancelBuild: number;
-    resetSelected: number;
-    selectYUp: number;
-    selectYDown: number;
-    widthUp: number;
-    widthDown: number;
-    switchInterpolationMode: number;
-    diffusionRateUp: number;
-    diffusionRateDown: number;
-    minYUp: number;
-    minYDown: number;
-    surfaceYUp: number;
-    surfaceYDown: number;
-    resetSelectY: number;
-};
+var keyManager: InputManager;
 var Version: string;
 var posCollector: PositionCollector;
 var railMapCollector: RailMapCollector;
@@ -134,41 +87,93 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     const lookingPos = NGTOBuilderUtilClient.getLookingPos();
     const world = entity.worldObj;
     const offsetY = dataMap.getInt("offsetY");
-    const isKeyDownOption = Keyboard.isKeyDown(keyMap.option);
     const surfaceY = dataMap.getInt("surfaceY");
+    const minY = dataMap.getInt("minY");
     let quaternion = quaternionManager.get(entity);
     if (!quaternion) {
         quaternion = new Quaternion();
         quaternionManager.put(entity, quaternion);
     }
+    let diffusionRate = dataMap.getInt("diffusionRate");
+    if (diffusionRate === 0) {
+        diffusionRate = 20;
+        dataMap.setInt("diffusionRate", diffusionRate, 1);
+    }
+    let fieldWidth = dataMap.getInt("fieldWidth");
+    if (fieldWidth === 0) {
+        fieldWidth = 10;
+        dataMap.setInt("fieldWidth", fieldWidth, 1);
+    }
 
-    //ツールを終了
-    if (Keyboard.isKeyDown(keyMap.endEdit)) {
+    if (keyManager.pressed("showHelp")) {
+        NGTLog.sendChatMessage(sender, `---NGTO Builder2 地形設置 操作方法---`);
+        //ーー共通ーー
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("endEdit"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("build"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("cancelBuild"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("undo"));
+        //ーーカーソル操作ーー
+        NGTLog.sendChatMessage(sender, `---カーソル操作---`);
+        NGTLog.sendChatMessage(sender, `[右クリック] 座標を選択/レールを選択`);
+        NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("selectYUp"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("selectYDown"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelected"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelectY"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("adjustSelectY"));
+        //ーー機能ーー
+        NGTLog.sendChatMessage(sender, `---機能---`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyManager.getOptionKeyCode())} + ホイールクリック] 補間モード切り替え`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyManager.getOptionKeyCode())} + マウスホイール上] 補間の拡散量を増やす`);
+        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyManager.getOptionKeyCode())} + マウスホイール下] 補間の拡散量を減らす`);
+        //ーー地形操作ーー
+        NGTLog.sendChatMessage(sender, `---地形操作---`);
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("widthUp"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("widthDown"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("surfaceYUp"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("surfaceYDown"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("minYUp"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("minYDown"));
+    }
+
+    //終了
+    if (keyManager.down("endEdit")) {
         dataMap.setBoolean("isEndEdit", true, 1);
     }
 
-    //ヘルプ表示
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "showHelp", keyMap.showHelp)) {
-        NGTLog.sendChatMessage(sender, `---NGTO Builder2 Liner設置 操作方法---`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.endEdit)}] ツールを終了`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.build)}] 手に持っているNGTOを生成する`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.undo)}] Undo`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.cancelBuild)}] 生成を中止する`);
-        NGTLog.sendChatMessage(sender, `[右クリック] 座標を選択/レールを選択`);
-        NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.resetSelected)}] すべての選択と形状をリセットする`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYUp)}] 選択のY高さを上げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.selectYDown)}] 選択のY高さを下げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.switchInterpolationMode)}] ブロック補間モードを切り替え`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateUp)}] 補間の拡散量を増やす`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.diffusionRateDown)}] 補間の拡散量を減らす`);
-        NGTLog.sendChatMessage(sender, `---地面を操作---`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.surfaceYUp)}] 表面の高さを上げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.surfaceYDown)}] 表面の高さを下げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.widthUp)}] 幅を増やす`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.option)} + ${Keyboard.getKeyName(keyMap.widthDown)}] 幅を減らす`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.minYUp)}] 最低Y高さを上げる`);
-        NGTLog.sendChatMessage(sender, `[${Keyboard.getKeyName(keyMap.minYDown)}] 最低Y高さを下げる`);
+    //生成
+    const isBuilding = dataMap.getBoolean("isBuilding");
+    const isUndo = dataMap.getBoolean("isUndo");
+    const blockSet = NGTOBuilderUtil.getHeldBlockSet(hostPlayer);
+    const hasTileEntity = RTMApiCompat.hasTileEntity(blockSet);
+    const bezierList = bezierCollector.getAll(entity);
+    if (keyManager.pressed("build") && bezierList.length > 0 && blockSet && !hasTileEntity && !isUndo && !isBuilding) {
+        dataMap.setBoolean("isBuilding", true, 1);
+        const ctrlPosList: BezierControlPoints[] = [];
+        for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
+            const bezier = bezierList[bezierIdx];
+            if (!bezier) continue;
+            ctrlPosList.push(bezier.getControlPoints());
+        }
+        //送信
+        const sendData: ReceiveData_liner = {
+            bezierList: ctrlPosList
+        }
+        NGTOBuilderUtil.sendJsonData(dataMap, "sendData", sendData);
+        NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成中...");
+    }
+
+    //生成を中止する
+    if (keyManager.pressed("cancelBuild") && isBuilding) {
+        NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成を中止");
+        dataMap.setBoolean("cancelBuild", true, 1);
+    }
+
+    //Undo
+    const canUndo = dataMap.getBoolean("canUndo");
+    if (keyManager.pressed("undo") && canUndo && !isBuilding && !isUndo) {
+        dataMap.setBoolean("isUndo", true, 1);
+        NGTLog.sendChatMessage(sender, "[NGTO Builder2] Undo...");
     }
 
     //座標を追加/レールを収集
@@ -177,8 +182,8 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         if (railMapCollector.size(entity) > 0) {
             //レール選択中
             if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
-                railMapCollector.add(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
-                bezierCollector.addFromRailMap(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
+                railMapCollector.add(entity, lookingRailMap, keyManager.downOptionKey());
+                bezierCollector.addFromRailMap(entity, lookingRailMap, keyManager.downOptionKey());
             }
         }
         else if (posCollector.size(entity) > 0) {
@@ -191,8 +196,8 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         else {
             //初回選択
             if (lookingRailMap && !railMapCollector.hasRailMap(entity, lookingRailMap)) {
-                railMapCollector.add(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
-                bezierCollector.addFromRailMap(entity, lookingRailMap, Keyboard.isKeyDown(keyMap.option));
+                railMapCollector.add(entity, lookingRailMap, keyManager.downOptionKey());
+                bezierCollector.addFromRailMap(entity, lookingRailMap, keyManager.downOptionKey());
                 //surfaceYが0なら-1にする
                 if (surfaceY === 0) dataMap.setInt("surfaceY", -1, 1);
             }
@@ -217,8 +222,31 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         }
     }
 
-    //すべての選択とNGTOの鏡像/回転状態をリセットする
-    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "resetSelected", keyMap.resetSelected)) {
+    //カーソルの高さを上げる
+    if (keyManager.pressed("selectYUp")) {
+        dataMap.setInt("offsetY", offsetY + 1, 1);
+    }
+
+    //カーソルの高さを下げる
+    if (keyManager.pressed("selectYDown")) {
+        dataMap.setInt("offsetY", offsetY - 1, 1);
+    }
+
+    //カーソルの高さをリセットする
+    if (keyManager.pressed("resetSelectY")) {
+        dataMap.setInt("offsetY", 0, 1);
+    }
+
+    //カーソルの高さを合わせる
+    if (keyManager.pressed("adjustSelectY")) {
+        if (lookingPos && posCollector.size(entity) > 0) {
+            const lastPos = posCollector.getLastPos(entity);
+            if (lastPos) dataMap.setInt("offsetY", lastPos[1] - lookingPos.blockY, 1);
+        }
+    }
+
+    //すべての選択とNGTOの状態をリセットする
+    if (keyManager.pressed("resetSelected")) {
         railMapCollector.clear(entity);
         posCollector.clear(entity);
         bezierCollector.clear(entity);
@@ -228,27 +256,11 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         dataMap.setInt("offsetY", 0, 1);
     }
 
-    //選択Y座標
-    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "selectYUp", keyMap.selectYUp)) {
-        dataMap.setInt("offsetY", offsetY + 1, 1);
-    }
-    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "selectYDown", keyMap.selectYDown)) {
-        dataMap.setInt("offsetY", offsetY - 1, 1);
-    }
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "resetSelectY", keyMap.resetSelectY)) {
-        if (isKeyDownOption) {
-            if (lookingPos && posCollector.size(entity) > 0) {
-                const lastPos = posCollector.getLastPos(entity);
-                if (lastPos) dataMap.setInt("offsetY", lastPos[1] - lookingPos.blockY, 1);
-            }
-        }
-        else {
-            dataMap.setInt("offsetY", 0, 1);
-        }
-    }
-
-    //補間モードを切り替え
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "switchInterpolationMode", keyMap.switchInterpolationMode)) {
+    //補間モード切り替え
+    const isMiddleClick = Mouse.isButtonDown(2);
+    const prevMiddleClick = dataMap.getBoolean("prevMiddleClick");
+    if (isMiddleClick !== prevMiddleClick) dataMap.setBoolean("prevMiddleClick", isMiddleClick, 0);
+    if (keyManager.downOptionKey() && isMiddleClick && !prevMiddleClick) {
         const interpolationMode = dataMap.getInt("interpolationMode");
         const nextModeId = BlockDiffusionMode.next(interpolationMode);
         dataMap.setInt("interpolationMode", nextModeId, 1);
@@ -256,93 +268,48 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //補間の拡散量を変更
-    let diffusionRate = dataMap.getInt("diffusionRate");
-    if (diffusionRate === 0) {
-        diffusionRate = 20;
-        dataMap.setInt("diffusionRate", diffusionRate, 1);
-    }
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "diffusionRateUp", keyMap.diffusionRateUp) && isKeyDownOption && diffusionRate < 100) {
-        diffusionRate = diffusionRate + 5;
-        dataMap.setInt("diffusionRate", diffusionRate, 1);
-        NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間の拡散量: ${diffusionRate / 100}[m]`);
-    }
-    if (NGTOBuilderUtilClient.isKeyDown(dataMap, "diffusionRateDown", keyMap.diffusionRateDown) && isKeyDownOption && diffusionRate > 5) {
-        diffusionRate = diffusionRate - 5;
-        dataMap.setInt("diffusionRate", diffusionRate, 1);
-        NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間の拡散量: ${diffusionRate / 100}[m]`);
+    const mouseWheel = Mouse.getDWheel();
+    if (keyManager.downOptionKey()) {
+        if (mouseWheel > 0) {
+            diffusionRate = diffusionRate + 5;
+            dataMap.setInt("diffusionRate", diffusionRate, 1);
+            NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間の拡散量: ${diffusionRate / 100}[m]`);
+        }
+        else if (mouseWheel < 0) {
+            diffusionRate = diffusionRate - 5;
+            dataMap.setInt("diffusionRate", diffusionRate, 1);
+            NGTLog.sendChatMessage(sender, `[NGTO Builder2] 補間の拡散量: ${diffusionRate / 100}[m]`);
+        }
     }
 
-    //表面の高さを操作
-    if (isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "surfaceYUp", keyMap.surfaceYUp)) {
-        dataMap.setInt("surfaceY", surfaceY + 1, 1);
-    }
-    if (isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "surfaceYDown", keyMap.surfaceYDown)) {
-        dataMap.setInt("surfaceY", surfaceY - 1, 1);
-    }
-
-    //幅を操作
-    const fieldWidth = dataMap.getInt("fieldWidth");
-    if (fieldWidth === 0) {
-        dataMap.setInt("fieldWidth", 10, 1);
-    }
-    if (isKeyDownOption && (
-        NGTOBuilderUtilClient.isKeyDown(dataMap, "widthUp", keyMap.widthUp) ||
-        NGTOBuilderUtilClient.isKeyDownLong(dataMap, "widthUp", keyMap.widthUp, 300))
-    ) {
+    //地表の幅を拡大する
+    if (keyManager.pressed("widthUp") || keyManager.held("widthUp", 300)) {
         dataMap.setInt("fieldWidth", fieldWidth + 1, 1);
     }
-    if (isKeyDownOption && fieldWidth > 1 &&
-        NGTOBuilderUtilClient.isKeyDown(dataMap, "widthDown", keyMap.widthDown) ||
-        NGTOBuilderUtilClient.isKeyDownLong(dataMap, "widthDown", keyMap.widthDown, 300)
-    ) {
+
+    //地表の幅を縮小する
+    if (keyManager.pressed("widthDown") || keyManager.held("widthDown", 300)) {
         dataMap.setInt("fieldWidth", fieldWidth - 1, 1);
     }
 
-    //最低Y高さを操作
-    const minY = dataMap.getInt("minY");
-    if (minY === 0) {
-        dataMap.setInt("minY", -1, 1);
+    //地表の高さを上げる
+    if (keyManager.pressed("surfaceYUp")) {
+        dataMap.setInt("surfaceY", surfaceY + 1, 1);
     }
-    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "minYUp", keyMap.minYUp) && minY < -1) {
+
+    //地表の高さを下げる
+    if (keyManager.pressed("surfaceYDown")) {
+        dataMap.setInt("surfaceY", surfaceY - 1, 1);
+    }
+
+    //底の高さを上げる
+    if (keyManager.pressed("minYUp")) {
         dataMap.setInt("minY", minY + 1, 1);
     }
-    if (!isKeyDownOption && NGTOBuilderUtilClient.isKeyDown(dataMap, "minYDown", keyMap.minYDown)) {
+
+    //底の高さを下げる
+    if (keyManager.pressed("minYDown")) {
         dataMap.setInt("minY", minY - 1, 1);
-    }
-
-    //生成
-    const isBuilding = dataMap.getBoolean("isBuilding");
-    const isUndo = dataMap.getBoolean("isUndo");
-    const blockSet = NGTOBuilderUtil.getHeldBlockSet(hostPlayer);
-    const hasTileEntity = RTMApiCompat.hasTileEntity(blockSet);
-    const bezierList = bezierCollector.getAll(entity);
-    if (!isKeyDownOption && bezierList.length > 0 && blockSet && !hasTileEntity && !isUndo && !isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, "build", keyMap.build)) {
-        dataMap.setBoolean("isBuilding", true, 1);
-        const ctrlPosList: BezierControlPoints[] = [];
-        for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
-            const bezier = bezierList[bezierIdx];
-            if (!bezier) continue;
-            ctrlPosList.push(bezier.getControlPoints());
-        }
-        //送信
-        const sendData: ReceiveData_liner = {
-            bezierList: ctrlPosList
-        }
-        NGTOBuilderUtil.sendJsonData(dataMap, "sendData", sendData);
-        NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成中...");
-    }
-
-    //生成を中止する
-    if (isKeyDownOption && isBuilding && NGTOBuilderUtilClient.isKeyDown(dataMap, "cancelBuild", keyMap.cancelBuild)) {
-        NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成を中止");
-        dataMap.setBoolean("cancelBuild", true, 1);
-    }
-
-    //Undo
-    const canUndo = dataMap.getBoolean("canUndo");
-    if (isKeyDownOption && canUndo && !isBuilding && !isUndo && NGTOBuilderUtilClient.isKeyDown(dataMap, "undo", keyMap.undo)) {
-        dataMap.setBoolean("isUndo", true, 1);
-        NGTLog.sendChatMessage(sender, "[NGTO Builder2] Undo...");
     }
 }
 
@@ -547,7 +514,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 GL11.glPushMatrix();
                 GL11.glTranslatef(-posX, -posY, -posZ);
                 NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
-                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
+                if (keyManager.downOptionKey()) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
                 else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
                 GL11.glPopMatrix();
             }
@@ -562,7 +529,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 GL11.glPushMatrix();
                 GL11.glTranslatef(-posX, -posY, -posZ);
                 NGTOBuilderUtilClient.renderRailMapHighlight(entity, lookingRailMap, "#ff7f00", 0.3);
-                if (Keyboard.isKeyDown(keyMap.option)) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
+                if (keyManager.downOptionKey()) NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrowF, lookingRailMap, 10);
                 else NGTOBuilderUtilClient.renderRailMapStatic(renderer, lookingLineArrow, lookingRailMap, 10);
                 GL11.glPopMatrix();
             }
@@ -599,12 +566,13 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
     const isRightClick = Mouse.isButtonDown(1);
     const prevIsLeftClick = dataMap.getBoolean("prevIsLeftClick");
     const prevIsRightClick = dataMap.getBoolean("prevIsRightClick");
-    if (isLeftClick !== prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", isLeftClick, 0);
-    if (isRightClick !== prevIsRightClick) dataMap.setBoolean("prevIsRightClick", isRightClick, 0);
     const VERSIONS_server = dataMap.getString("VERSIONS");
     const isVersionChecked = dataMap.getBoolean("isVersionChecked");
     RTMApiCompat.doFollowing(entity, hostPlayer);//1.12用
     if (hostPlayer && hostPlayer === player) {
+        if (isLeftClick !== prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", isLeftClick, 0);
+        if (isRightClick !== prevIsRightClick) dataMap.setBoolean("prevIsRightClick", isRightClick, 0);
+        if (renderer.currentMatId === 0 && pass === 0) keyManager.update();
         if ((VERSIONS_server != Version) && !isVersionChecked) {
             dataMap.setBoolean("isVersionChecked", true, 0);
             NGTLog.sendChatMessage(sender, "§cVersions don't match!");
@@ -614,10 +582,14 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
         const showHelpMessage = dataMap.getBoolean("showHelpMessage");
         if (!showHelpMessage) {
             dataMap.setBoolean("showHelpMessage", true, 0);
-            NGTLog.sendChatMessage(sender, `Show help : ${Keyboard.getKeyName(keyMap.showHelp)} key`);
+            NGTLog.sendChatMessage(sender, keyManager.getDescription("showHelp"));
         }
         if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) keyInput(hostPlayer, entity, (!prevIsRightClick && isRightClick), (!prevIsLeftClick && isLeftClick));
         renderForToolUser(entity, pass, par3);
+    }
+    else {
+        if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
+        if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
     }
 }
 
