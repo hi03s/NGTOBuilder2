@@ -96,3 +96,14 @@ RTMApiCompatClient.getRendererWithScript = function (resource) {
     else Renderer = Packages.jp.ngt.rtm.render.PartsRenderer;
     return Renderer.getRendererWithScript.apply(Renderer, callArgs);
 }
+RTMApiCompatClient.getModelObjList = function(modelType1_7_10, modelType1_12) {
+    var type = RTMApiCompatClient.isOldVer ? modelType1_7_10 : Packages.jp.ngt.rtm.modelpack.ModelPackManager.getType(modelType1_12);
+    var allModelList = Packages.jp.ngt.rtm.modelpack.ModelPackManager.INSTANCE.getModelList(modelType);
+    var list = {};
+    for (var i = 0; i < allModelList.size(); i++) {
+        var modelSet = allModelList.get(i);
+        var modelName = modelSet.getConfig().name;
+        list[modelName] = modelSet;
+    }
+    return list;
+}
