@@ -114,3 +114,7 @@ RTMApiCompat.getRPAnchorPitch = function (rp) {
     if (RTMApiCompat.isOldVer && !RTMApiCompat.isKaizPatch) return (new Packages.jp.ngt.ngtlib.math.Vec3(endRP.posX - startRP.posX, endRP.posY - startRP.posY, endRP.posZ - startRP.posZ)).getPitch();
     else return rp.anchorPitch;
 }
+RTMApiCompat.getSubType = function (itemStack) {
+    if (this.isOldVer) return itemStack.func_77973_b().getSubType(itemStack);
+    else return itemStack.func_77973_b().getModelState(itemStack).type.subType;
+}

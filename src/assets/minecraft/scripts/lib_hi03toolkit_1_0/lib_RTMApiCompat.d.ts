@@ -37,4 +37,5 @@ export class RTMApiCompat {
     static getHorizontalAnchorYaw(rp:RailPosition): number;
     static getHorizontalAnchorLength(rp:RailPosition): number;
     static getRPAnchorPitch(rp:RailPosition): number;
+    static getSubType(itemStack:ItemStack): string;
 }
