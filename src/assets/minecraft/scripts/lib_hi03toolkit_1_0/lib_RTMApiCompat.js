@@ -115,6 +115,6 @@ RTMApiCompat.getRPAnchorPitch = function (rp) {
     else return rp.anchorPitch;
 }
 RTMApiCompat.getSubType = function (itemStack) {
-    if (this.isOldVer) return itemStack.func_77973_b().getSubType(itemStack);
+    if (RTMApiCompat.isOldVer) return itemStack.func_77973_b().getSubType(itemStack);
     else return itemStack.func_77973_b().getModelState(itemStack).type.subType;
 }
