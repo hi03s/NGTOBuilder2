@@ -1,3 +1,4 @@
+import { RTMBlock, RTMItem } from "jp.ngt.rtm";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { ScriptExecuter } from "jp.ngt.rtm.modelpack";
 import { WeakHashMap } from "java.util";
@@ -7,10 +8,12 @@ import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { EntityPlayer } from "net.minecraft.entity.player";
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 import { NGTLog } from "jp.ngt.ngtlib.io";
-import { BezierControlPoints, BezierCurve3D } from "../../lib_hi03toolkit_1_0/lib_BezierCurve3D";
-import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
-import { BlockDiffusionMode, RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
-import { RotatableBlockObjectFactory } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectFactory";
+import { InsulatorPos } from "../../lib_hi03toolkit_1_0/lib_InsulatorCollector";
+import { ItemStack } from "net.minecraft.item";
+import { BlockSet } from "jp.ngt.ngtlib.block";
+import { ItemInstalledObject } from "jp.ngt.rtm.item";
+import { NBTTagCompound } from "net.minecraft.nbt";
+import { TileEntityInsulator } from "jp.ngt.rtm.electric";
 
 //#################################
 //##  hi03式エディターツール v1.0  ##
@@ -26,18 +29,6 @@ NGTO BuilderやSuperRailBuilder3のような自動車モデル型のエディタ
 //クライアント側とバージョンチェックを行います ※一致していなくても利用自体はできます
 Version = "1.0";
 
-//1tickに生成するブロック数
-blockLimit = 500;//blocks/tick (10000 blocks/sec)
-
-//選択線の長さの上限
-bezierLengthLimit = 256;
-
-//選択幅の上限
-fieldWidthLimit = 256;
-
-//生成するブロックの上限
-totalBlockLimit = 300000;
-
 //#################
 //##  初期化処理  ##
 //#################
@@ -46,9 +37,6 @@ totalBlockLimit = 300000;
 //## グローバル変数として使うための準備 ##
 var builder: BlockBuilder;
 var blockLimit: number;
-var bezierLengthLimit: number;
-var fieldWidthLimit: number;
-var totalBlockLimit: number;
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     const dataMap = entity.getResourceState().getDataMap();
     const isInitializedServer = dataMap.getBoolean("isInitializedServer");
@@ -62,6 +50,10 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
         builderHashMap.put(entity, builder);
     }
     else builder.clear(entity);
+
+    //1tickに生成するブロック数
+    blockLimit = 500;//blocks/tick (10000 blocks/sec)
+
     //dataMapのリセット
     dataMap.setBoolean("buildComplete", false, 1);
     dataMap.setBoolean("isInitializedBuild", false, 1);
@@ -71,13 +63,14 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 //##  処理  ##
 //############
 //JSON(sendData)から送られてくるデータの型
-export type ReceiveData_liner = {
-    bezierList: BezierControlPoints[]
+export type ReceiveData_wire = {
+    posList: InsulatorPos[]
 }
 
 function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     const dataMap = entity.getResourceState().getDataMap();
     const hostPlayer = hostPlayerList.get(entity);
+    const world = entity.worldObj;
 
     //終了
     if (dataMap.getBoolean("isEndEdit")) {
@@ -85,82 +78,32 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
     }
 
     //生成
-    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData_liner>(dataMap, "sendData");
-    const blockSet = NGTOBuilderUtil.getHeldBlockSet(hostPlayer);
+    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData_wire>(dataMap, "sendData");
     const cancelBuild = dataMap.getBoolean("cancelBuild");
+    let placedPos: Pos[] = [];
+    let heldItem: ItemStack | null = NGTOBuilderUtil.getHeldItem(hostPlayer);
+    let insulatorItem = getItemInsulator(hostPlayer);
+    if (heldItem && heldItem.getItem() !== RTMItem.itemWire) heldItem = null;
     if (receiveData) {
         const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");
-        if (!isInitializedBuild && blockSet) {
-            const surfaceY = dataMap.getInt("surfaceY") + 1;
-            const fieldWidth = dataMap.getInt("fieldWidth");
-            const depth = dataMap.getInt("minY");
-            const interpolationMode = dataMap.getInt("interpolationMode");
-            const diffusionRate = dataMap.getInt("diffusionRate");
-            const boxWidth = fieldWidth * 2 + 1;
-            //ベジェ曲線を構築する
-            const bezierList: BezierCurve3D[] = [];
-            let totalLength = 0;
-            for (let i = 0; i < receiveData.bezierList.length; i++) {
-                const bezierData = receiveData.bezierList[i];
-                const bezier = new BezierCurve3D(...bezierData);
-                totalLength += bezier.getLength();
-                bezierList.push(bezier);
+        if (!isInitializedBuild) {
+            let modelName = "NoModel_Side";
+            if (insulatorItem) modelName = insulatorItem.getTagCompound().getString("ModelName");
+            const posList = receiveData.posList;
+            for (let i = 0; i < posList.length; i++) {
+                //コネクタ
+                const pos = posList[i];
+                const nbt = new NBTTagCompound();
+                nbt.setString("ModelName", modelName);
+                nbt.setFloat("offsetX", pos[4]);
+                nbt.setFloat("offsetY", pos[5]);
+                nbt.setFloat("offsetZ", pos[6]);
+                const blockSet = new BlockSet(RTMBlock.insulator, pos[3], nbt);
+                builder.add(entity, blockSet, pos[0], pos[1], pos[2]);
+                placedPos.push([pos[0], pos[1], pos[2]]);
             }
-            if (totalLength > bezierLengthLimit) {
-                NGTLog.sendChatMessage(hostPlayer, `[NGTO Builder2] 線の長さが上限を超えています (${Math.floor(totalLength)} / ${bezierLengthLimit}[m])`);
-            }
-            else if (fieldWidth * 2 + 1 > fieldWidthLimit) {
-                NGTLog.sendChatMessage(hostPlayer, `[NGTO Builder2] 幅が上限を超えています (${fieldWidth * 2 + 1} / ${fieldWidthLimit}[m])`);
-            }
-            else {
-                //ベジェ曲線ごとにRBOを作って合成する
-                const margedRBO = new RotatableBlockObject();
-                const origin = bezierList[0].getPoint(1, 0);
-                //minYを走査して決定する
-                let minY = origin[1];
-                for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
-                    const bezier = bezierList[bezierIdx];
-                    const split = Math.max(1, Math.floor(bezier.getLength() * 2));
-                    for (let idx = 0; idx <= split; idx++) {
-                        const pos = bezier.getPoint(split, idx);
-                        const maxY = pos[1] + surfaceY;
-                        minY = Math.min(minY, pos[1] + depth, maxY);
-                    }
-                }
-                //ベジェ曲線展開
-                for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
-                    const bezier = bezierList[bezierIdx];
-                    const split = Math.max(1, Math.floor(bezier.getLength() * 2));
-                    for (let idx = 0; idx <= split; idx++) {
-                        const pos = bezier.getPoint(split, idx);
-                        const maxY = pos[1] + surfaceY;
-                        const diffY = pos[1] - minY;
-                        const yaw = bezier.getYaw(split, idx);
-                        const boxHeight = Math.max(Math.abs(maxY - minY), 1);
-                        const rbo = RotatableBlockObjectFactory.createBox(blockSet, boxWidth, boxHeight, 1);
-                        const centerX = Math.floor(boxWidth / 2) + 0.5;
-                        rbo.setPivot(centerX, 0.5, 0.5);
-                        rbo.rotate(-yaw, 0, 0);
-                        rbo.movePivotToBase();
-                        rbo.offset(
-                            Math.floor(pos[0]) - Math.floor(origin[0]),
-                            Math.floor(pos[1]) - Math.floor(origin[1]) - diffY,//起点が壁の底
-                            Math.floor(pos[2]) - Math.floor(origin[2])
-                        );
-                        margedRBO.merge(rbo);
-                    }
-                }
-                if (margedRBO.blockSetList.length > totalBlockLimit) {
-                    NGTLog.sendChatMessage(hostPlayer, `[NGTO Builder2] ブロック数が上限を超えています (${margedRBO.blockSetList.length} / ${totalBlockLimit}[blocks])`);
-                }
-                else {
-                    RotatableBlockObjectMapper.applyDiffusionSelf(margedRBO, BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100));
-                    RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
-                    builder.addFromRotatableBlockObjectAt(entity, RotatableBlockObjectMapper.toBlockPlacements(margedRBO, origin[0], origin[1], origin[2]));
-                    UndoManager.backupFromBlockBuilder(entity, builder);
-                    dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
-                }
-            }
+            UndoManager.backupFromBlockBuilder(entity, builder);
+            dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
             dataMap.setBoolean("isInitializedBuild", true, 1);
         }
         //生成を中止
@@ -168,11 +111,25 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
             const remainingCount = builder.getCount(entity);
             UndoManager.removeUnbuiltBlocks(entity, remainingCount);
             builder.clear(entity);
+            placedPos = [];
         }
         //生成
         builder.doBuild(entity, blockLimit);
         //生成完了の処理
         if (builder.isFinished(entity)) {
+            //ワイヤーを生成する
+            if (heldItem) {
+                for (let i = 1; i < placedPos.length; i++) {
+                    const prevPos = placedPos[i - 1];
+                    const pos = placedPos[i];
+                    const tile = RTMApiCompat.getTileEntity(world, pos[0], pos[1], pos[2]);
+                    if (tile instanceof TileEntityInsulator) {
+                        RTMApiCompat.setWireConnection(tile, prevPos, heldItem);
+                    }
+                }
+            }
+
+            //終了
             NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成終了");
             builder.clear(entity);
             dataMap.setBoolean("isInitializedBuild", false, 1);
@@ -241,4 +198,14 @@ function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
         if (isInitializedServer) dataMap.setBoolean("isInitializedServer", false, 1);
         onUpdate2(entity, scriptExecuter);
     }
+}
+
+function getItemInsulator(player: EntityPlayer): ItemStack | null {
+    for (let i = 0; i <= 8; i++) {
+        const itemStack = RTMApiCompat.getItemStackAt(player.inventory, i);
+        if (itemStack && itemStack.getItem() instanceof ItemInstalledObject && RTMApiCompat.getSubType(itemStack) === "Relay") {
+            return itemStack;
+        }
+    }
+    return null;
 }
