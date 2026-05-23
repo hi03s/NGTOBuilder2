@@ -122,3 +122,14 @@ RTMApiCompat.getSubType = function (itemStack) {
 RTMApiCompat.setOffset = function (tileEntity, x, y, z, sync) {
     if (RTMApiCompat.isKaizPatch || RTMApiCompat.isFixRTM) tileEntity.setOffset(x, y, z, sync);
 }
+RTMApiCompat.setWireConnection = function (tileEntity, targetPos, wireStack) {
+    if (wireStack.func_77973_b() !== Packages.jp.ngt.rtm.RTMItem.itemWire) return;
+    if (RTMApiCompat.isOldVer) {
+        var modelName = wireStack.func_77973_b().getModelName(wireStack);
+        tileEntity.setConnectionTo(targetPos[0], targetPos[1], targetPos[2], Packages.jp.ngt.rtm.electric.Connection.ConnectionType.WIRE, modelName);
+    }
+    else {
+        var resourceState = wireStack.func_77973_b().getModelState(wireStack);
+        tileEntity.setConnectionTo(targetPos[0], targetPos[1], targetPos[2], Packages.jp.ngt.rtm.electric.Connection.ConnectionType.WIRE, resourceState);
+    }
+}

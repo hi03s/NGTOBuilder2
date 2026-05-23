@@ -1,5 +1,6 @@
 import { BlockSet, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
 import { Vec3 } from "jp.ngt.ngtlib.math";
+import { TileEntityInsulator } from "jp.ngt.rtm.electric";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { Block } from "net.minecraft.block";
@@ -39,4 +40,5 @@ export class RTMApiCompat {
     static getRPAnchorPitch(rp: RailPosition): number;
     static getSubType(itemStack: ItemStack): string;
     static setOffset(tileEntity: TileEntityPlaceable, x: number, y: number, z: number, sync: boolean): void;
+    static setWireConnection(tileEntity: TileEntityInsulator, targetPos: number[], wireStack: ItemStack): void;
 }
