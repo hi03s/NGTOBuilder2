@@ -3,6 +3,7 @@
 
 import { NGTObject } from "jp.ngt.ngtlib.block";
 import { DisplayList } from "jp.ngt.ngtlib.renderer";
+import { ModelSetBase } from "jp.ngt.rtm.modelpack.modelset";
 
 /**
  * RTMのバージョン差異を吸収するためのクラスです。RTMのバージョンによっては正常に動作しない機能もあります
@@ -28,5 +29,5 @@ export class RTMApiCompatClient {
     static generateGLList(): DisplayList;
     static renderNGTO(renderer: PartsRenderer, ngto: NGTObject, pass: number): void;
     static getRendererWithScript(resource: ResourceLocation, ...args: string[]): PartsRenderer;
-    static getModelObjList(modelType1_7_10: string, modelType1_12: string): { [name: string]: ModelSet };
+    static getModelSetList<T extends ModelSetBase>(modelType: string): { [name: string]: T };
 }
