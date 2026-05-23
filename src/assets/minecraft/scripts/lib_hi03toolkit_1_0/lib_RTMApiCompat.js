@@ -2,6 +2,7 @@ function RTMApiCompat() { }
 RTMApiCompat.prototype = {}
 RTMApiCompat.isOldVer = Packages.jp.ngt.rtm.RTMCore.VERSION.indexOf("1.7.10") >= 0;
 RTMApiCompat.isKaizPatch = Packages.jp.ngt.rtm.RTMCore.VERSION.indexOf("KaizPatch") !== -1;
+RTMApiCompat.isFixRTM = !RTMApiCompat.isOldVer ? Packages.net.minecraftforge.fml.common.Loader.isModLoaded("fix-rtm") : false;
 RTMApiCompat.getRider = function (entity) {
     if (RTMApiCompat.isOldVer) {
         return entity.field_70153_n;
@@ -117,4 +118,7 @@ RTMApiCompat.getRPAnchorPitch = function (rp) {
 RTMApiCompat.getSubType = function (itemStack) {
     if (RTMApiCompat.isOldVer) return itemStack.func_77973_b().getSubType(itemStack);
     else return itemStack.func_77973_b().getModelState(itemStack).type.subType;
+}
+RTMApiCompat.setOffset = function (tileEntity, x, y, z, sync) {
+    if (RTMApiCompat.isKaizPatch || RTMApiCompat.isFixRTM) tileEntity.setOffset(x, y, z, sync);
 }
