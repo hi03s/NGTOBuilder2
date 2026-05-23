@@ -25,9 +25,9 @@ RTMApiCompatClient.getLookingPos = function () {
             else if (side === 4) dx = -1; // 西
             else if (side === 5) dx = 1;  // 東
             return {
-                posX: posX,
-                posY: posY,
-                posZ: posZ,
+                posX: posX + (dx * 1e-6),
+                posY: posY + (dy * 1e-6),
+                posZ: posZ + (dz * 1e-6),
                 blockX: hitX,
                 blockY: hitY,
                 blockZ: hitZ,
@@ -44,17 +44,27 @@ RTMApiCompatClient.getLookingPos = function () {
             var hitX = blockPos.func_177958_n();
             var hitY = blockPos.func_177956_o();
             var hitZ = blockPos.func_177952_p();
+            var side = facing.func_176745_a();
+            var dx = 0;
+            var dy = 0;
+            var dz = 0;
+            if (side === 0) dy = -1;      // 下
+            else if (side === 1) dy = 1;  // 上
+            else if (side === 2) dz = -1; // 北
+            else if (side === 3) dz = 1;  // 南
+            else if (side === 4) dx = -1; // 西
+            else if (side === 5) dx = 1;  // 東
             return {
-                posX: posX,
-                posY: posY,
-                posZ: posZ,
+                posX: posX + (dx * 1e-6),
+                posY: posY + (dy * 1e-6),
+                posZ: posZ + (dz * 1e-6),
                 blockX: hitX,
                 blockY: hitY,
                 blockZ: hitZ,
                 placeX: hitX + dir.func_177958_n(),
                 placeY: hitY + dir.func_177956_o(),
                 placeZ: hitZ + dir.func_177952_p(),
-                side: facing.func_176745_a()
+                side: side
             };
         }
     }
