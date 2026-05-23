@@ -48,7 +48,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
     keyManager.register("selectYUp", Keyboard.KEY_UP, false, "カーソルの高さを上げる");
     keyManager.register("selectYDown", Keyboard.KEY_DOWN, false, "カーソルの高さを下げる");
     keyManager.register("resetSelectY", Keyboard.KEY_F, false, "カーソルの高さをリセットする");
-    keyManager.register("adjustSelectY", Keyboard.KEY_F, true, "カーソルの高さを合わせる");
+    //keyManager.register("adjustSelectY", Keyboard.KEY_F, true, "カーソルの高さを合わせる");
     keyManager.register("resetSelected", Keyboard.KEY_C, false, "すべての選択をリセットする");
     keyManager.register("reverseMarker", Keyboard.KEY_P, false, "マーカーを反転する");
 
@@ -76,7 +76,20 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     const dataMap = entity.getResourceState().getDataMap();
     const lookingPos = NGTOBuilderUtilClient.getLookingPos();
     const world = entity.worldObj;
-    const offsetY = dataMap.getInt("offsetY");
+    const offsetHeight = dataMap.getInt("offsetHeight");
+    let offsetX = 0;
+    let offsetY = 0;
+    let offsetZ = 0;
+    if (lookingPos) {
+        switch (lookingPos.side) {
+            case 0: offsetY = -offsetHeight; break; // 下
+            case 1: offsetY = offsetHeight; break; // 上
+            case 2: offsetZ = -offsetHeight; break; // 北
+            case 3: offsetZ = offsetHeight; break; // 南
+            case 4: offsetX = -offsetHeight; break; // 西
+            case 5: offsetX = offsetHeight; break; // 東
+        }
+    }
     connectorModelList = connectorModelList ? connectorModelList : RTMApiCompatClient.getModelSetList("ModelConnector");
 
     if (keyManager.pressed("showHelp")) {
@@ -94,7 +107,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         NGTLog.sendChatMessage(sender, keyManager.getDescription("selectYDown"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelected"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelectY"));
-        NGTLog.sendChatMessage(sender, keyManager.getDescription("adjustSelectY"));
+        //NGTLog.sendChatMessage(sender, keyManager.getDescription("adjustSelectY"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("reverseMarker"));
     }
 
@@ -138,7 +151,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         const selX = keyManager.downOptionKey() && (side !== 4 && side !== 5) ? lookingPos.posX : lookingPos.placeX + 0.5;
         const selY = keyManager.downOptionKey() && (side !== 0 && side !== 1) ? lookingPos.posY : lookingPos.placeY + 0.5;
         const selZ = keyManager.downOptionKey() && (side !== 2 && side !== 3) ? lookingPos.posZ : lookingPos.placeZ + 0.5;
-        posCollector.add(entity, selX, selY, selZ, side);
+        posCollector.add(entity, selX + offsetX, selY + offsetY, selZ + offsetZ, side);
         const size = posCollector.size(entity);
         if (size > 1) {
             const list = posCollector.getAll(entity);
@@ -159,32 +172,34 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
     //カーソルの高さを上げる
     if (keyManager.pressed("selectYUp")) {
-        dataMap.setInt("offsetY", offsetY + 1, 1);
+        dataMap.setInt("offsetHeight", offsetHeight + 1, 1);
     }
 
     //カーソルの高さを下げる
     if (keyManager.pressed("selectYDown")) {
-        dataMap.setInt("offsetY", offsetY - 1, 1);
+        dataMap.setInt("offsetHeight", offsetHeight - 1, 1);
     }
 
     //カーソルの高さをリセットする
     if (keyManager.pressed("resetSelectY")) {
-        dataMap.setInt("offsetY", 0, 1);
+        dataMap.setInt("offsetHeight", 0, 1);
     }
 
+    /*
     //カーソルの高さを合わせる
     if (keyManager.pressed("adjustSelectY")) {
         if (lookingPos && posCollector.size(entity) > 0) {
             const lastPos = posCollector.getLastPos(entity);
-            if (lastPos) dataMap.setInt("offsetY", lastPos[1] - lookingPos.blockY, 1);
+            if (lastPos) dataMap.setInt("offsetHeight", lastPos[1] - lookingPos.blockY, 1);
         }
     }
+    */
 
     //すべての選択をリセットする
     if (keyManager.pressed("resetSelected")) {
         posCollector.clear(entity);
         bezierCollector.clear(entity);
-        dataMap.setInt("offsetY", 0, 1);
+        dataMap.setInt("offsetHeight", 0, 1);
     }
 
     //マーカーを反転する
@@ -238,17 +253,29 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const posY = MCWrapper.getPosY(entity);
     const posZ = MCWrapper.getPosZ(entity);
     const player = MCWrapperClient.getPlayer();
-    const offsetY = dataMap.getInt("offsetY");
+    const offsetHeight = dataMap.getInt("offsetHeight");
     const isBuilding = dataMap.getBoolean("isBuilding");
     const isUndo = dataMap.getBoolean("isUndo");
     const world = entity.worldObj;
     connectorModelList = connectorModelList ? connectorModelList : RTMApiCompatClient.getModelSetList("ModelConnector");
     wireModelList = wireModelList ? wireModelList : RTMApiCompatClient.getModelSetList("ModelWire");
+    let offsetX = 0;
+    let offsetY = 0;
+    let offsetZ = 0;
+    if (lookingPos) {
+        switch (lookingPos.side) {
+            case 0: offsetY = -offsetHeight; break; // 下
+            case 1: offsetY = offsetHeight; break; // 上
+            case 2: offsetZ = -offsetHeight; break; // 北
+            case 3: offsetZ = offsetHeight; break; // 南
+            case 4: offsetX = -offsetHeight; break; // 西
+            case 5: offsetX = offsetHeight; break; // 東
+        }
+    }
 
-    //コネクタが変わったらベジェ曲線を更新する
-    const insulatorItem = getItemInsulator(player);
-    const insulatorName = insulatorItem ? insulatorItem.getTagCompound().getString("ModelName") : "NoModel_Side";
-    const insulatorModelSet = connectorModelList[insulatorName];
+    //const insulatorItem = getItemInsulator(player);
+    //const insulatorName = insulatorItem ? insulatorItem.getTagCompound().getString("ModelName") : "NoModel_Side";
+    //const insulatorModelSet = connectorModelList[insulatorName];
 
     //カーソル
     if (lookingPos) {
@@ -258,13 +285,13 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         const selZ = keyManager.downOptionKey() || (side === 2 || side === 3) ? lookingPos.posZ : lookingPos.placeZ + 0.5;
 
         GL11.glPushMatrix();
-        GL11.glTranslatef(selX, selY + offsetY, selZ);
+        GL11.glTranslatef(selX + offsetX, selY + offsetY, selZ + offsetZ);
         GL11.glTranslatef(-posX, -posY, -posZ);
         point.render(renderer);
         GL11.glPopMatrix();
 
         GL11.glPushMatrix();
-        GL11.glTranslatef(Math.floor(selX) + 0.5, Math.floor(selY + offsetY) + 0.5, Math.floor(selZ) + 0.5);
+        GL11.glTranslatef(Math.floor(selX + offsetX) + 0.5, Math.floor(selY + offsetY) + 0.5, Math.floor(selZ + offsetZ) + 0.5);
         GL11.glTranslatef(-posX, -posY, -posZ);
         point_block.render(renderer);
         GL11.glPopMatrix();
@@ -279,6 +306,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             GL11.glPushMatrix();
             GL11.glTranslatef(pos[0] + 0.5 + pos[4], pos[1] + 0.5 + pos[5], pos[2] + 0.5 + pos[6]);
             GL11.glTranslatef(-posX, -posY, -posZ);
+            /*
             if (insulatorModelSet) {
                 applyRotationSide(pos[3]);
                 NGTOBuilderUtilClient.enableAlpha(0.5);
@@ -286,6 +314,8 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 NGTOBuilderUtilClient.disableAlpha();
             }
             else selected.render(renderer);
+            */
+            selected.render(renderer);
             GL11.glPopMatrix();
 
             GL11.glPushMatrix();
