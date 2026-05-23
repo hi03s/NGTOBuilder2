@@ -5,9 +5,9 @@ import { Arrays, HashMap } from "java.util";
 import { Entity } from "net.minecraft.entity";
 import { GL11 } from "org.lwjgl.opengl";
 import { DisplayList, GLHelper, NGTRenderHelper } from "jp.ngt.ngtlib.renderer";
-import { ModelObject, Parts, PartsRenderer, RailPartsRenderer, VehiclePartsRenderer } from "jp.ngt.rtm.render";
+import { ModelObject, Parts, PartsRenderer, RailPartsRenderer } from "jp.ngt.rtm.render";
 import { NGTUtil, NGTUtilClient } from "jp.ngt.ngtlib.util";
-import { ModelSetRail, ModelSetRailClient, ModelSetVehicleBaseClient } from "jp.ngt.rtm.modelpack.modelset";
+import { ModelSetRailClient, ModelSetVehicleBaseClient } from "jp.ngt.rtm.modelpack.modelset";
 import { NGTOBuilderUtil } from "./lib_NGTOBuilderUtil";
 import { FloatBuffer } from "java.nio";
 import { Quaternion } from "./lib_Quaternion";
@@ -19,9 +19,7 @@ import { RailMap } from "jp.ngt.rtm.rail.util";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 import { BezierCurve3D } from "./lib_BezierCurve3D";
-import { ModelPackManager } from "jp.ngt.rtm.modelpack";
-import { Invocable, ScriptEngine, ScriptEngineManager } from "javax.script";
-import { ResourceLocation } from "net.minecraft.util";
+import { Invocable } from "javax.script";
 import { TileEntityLargeRailBase, TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
 import { ReflectionHelper } from "cpw.mods.fml.relauncher";
 
@@ -228,7 +226,7 @@ export class NGTOBuilderUtilClient {
      * @param entity 
      * @param posList 
      */
-    static renderPosListStatic(renderer: PartsRenderer, parts: Parts, entity: Entity, posList: Pos[], forceRender:boolean = false): void {
+    static renderPosListStatic(renderer: PartsRenderer, parts: Parts, entity: Entity, posList: Pos[], forceRender: boolean = false): void {
         if (posList.length <= 20000 || forceRender) {
             //posListをハッシュ化
             const partsNames = parts.objNames;
@@ -282,7 +280,7 @@ export class NGTOBuilderUtilClient {
         }
     }
 
-    static renderRailMapStatic(renderer: PartsRenderer, parts: Parts, railMap: RailMap, interval:number = 1): void {
+    static renderRailMapStatic(renderer: PartsRenderer, parts: Parts, railMap: RailMap, interval: number = 1): void {
         const startRP = railMap.getStartRP();
         const endRP = railMap.getEndRP();
         const partsNames = parts.objNames;//Java String[]
@@ -326,7 +324,7 @@ export class NGTOBuilderUtilClient {
         }
     }
 
-    static renderBezierStatic(renderer: PartsRenderer, parts: Parts, bezier: BezierCurve3D, interval:number = 1): void {
+    static renderBezierStatic(renderer: PartsRenderer, parts: Parts, bezier: BezierCurve3D, interval: number = 1): void {
         const posList = bezier.getControlPoints();
         const partsNames = parts.objNames;//Java String[]
         let joindNames = partsNames[0];
@@ -414,17 +412,53 @@ export class NGTOBuilderUtilClient {
         }
     }
 
+    static renderModel(renderer: PartsRenderer, pass: number, modelObj: ModelObject) {
+        const defaultModelObj: ModelObject = NGTUtil.getField(NGTOBuilderUtil.getJavaClass(PartsRenderer), renderer, "modelObj");
+        const defaultTexture = defaultModelObj.textures[renderer.currentMatId];
+
+        const model = modelObj.model;
+        const textures = modelObj.textures;
+        for (var i = 0; i < textures.length; i++) {
+            var matId = textures[i].material.id;
+            if (pass === 0) NGTUtilClient.bindTexture((textures[i]).material.texture);
+            else if (pass === 1) {
+                if (!textures[i].doAlphaBlend) continue;
+                NGTUtilClient.bindTexture((textures[i]).material.texture);
+            }
+            else if (pass === 2) {
+                if (!textures[i].subTextures) continue;
+                NGTUtilClient.bindTexture((textures[i]).subTextures[pass - 2]);
+            }
+            GL11.glShadeModel(GL11.GL_SMOOTH);
+            NGTRenderHelper.renderCustomModelAll(model, matId, true);
+            GL11.glShadeModel(GL11.GL_FLAT);
+        }
+
+        NGTUtilClient.bindTexture(defaultTexture.material.texture);
+    }
+
     static enableAlpha(alpha: number): void {
+        GL11.glPushAttrib(
+            GL11.GL_ENABLE_BIT |
+            GL11.GL_COLOR_BUFFER_BIT |
+            GL11.GL_DEPTH_BUFFER_BIT |
+            GL11.GL_CURRENT_BIT
+        );
+
         GL11.glDisable(GL11.GL_ALPHA_TEST);
         GL11.glEnable(GL11.GL_BLEND);
-        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
+        OpenGlHelper.glBlendFunc(
+            GL11.GL_SRC_ALPHA,
+            GL11.GL_ONE_MINUS_SRC_ALPHA,
+            GL11.GL_ONE,
+            GL11.GL_ZERO
+        );
+
         GL11.glColor4f(1.0, 1.0, 1.0, alpha);
     }
 
     static disableAlpha(): void {
-        GL11.glColor4f(1.0, 1.0, 1.0, 1.0);
-        GL11.glDisable(GL11.GL_BLEND);
-        GL11.glEnable(GL11.GL_ALPHA_TEST);
+        GL11.glPopAttrib();
     }
 
     private static createMatrixKey(matrix: number[]): string {
