@@ -21,7 +21,9 @@
       "java.lang.System",
       "javax.script",
       "java.lang.String",
-      "java.lang.Integer"
+      "java.lang.Integer",
+      "java.lang.Class",
+      "java.lang.reflect"
     ]
   },
   "compilerOptions": {
