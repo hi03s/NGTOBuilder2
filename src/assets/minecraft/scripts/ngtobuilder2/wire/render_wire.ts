@@ -185,16 +185,6 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         dataMap.setInt("offsetHeight", 0, 1);
     }
 
-    /*
-    //カーソルの高さを合わせる
-    if (keyManager.pressed("adjustSelectY")) {
-        if (lookingPos && posCollector.size(entity) > 0) {
-            const lastPos = posCollector.getLastPos(entity);
-            if (lastPos) dataMap.setInt("offsetHeight", lastPos[1] - lookingPos.blockY, 1);
-        }
-    }
-    */
-
     //すべての選択をリセットする
     if (keyManager.pressed("resetSelected")) {
         posCollector.clear(entity);
@@ -210,8 +200,8 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         for (let i = 1; i < list.length; i++) {
             const prev = list[i - 1];
             const last = list[i];
-            const sp: Pos = [prev[0] + prev[4], prev[1] + prev[5], prev[2] + prev[6]];
-            const ep: Pos = [last[0] + last[4], last[1] + last[5], last[2] + last[6]];
+            const sp: Pos = [prev[0] + 0.5 + prev[4], prev[1] + 0.5 + prev[5], prev[2] + 0.5 + prev[6]];
+            const ep: Pos = [last[0] + 0.5 + last[4], last[1] + 0.5 + last[5], last[2] + 0.5 + last[6]];
             const cp = BezierCurve3D.lerpPoint(sp, ep, 0.5);
             bezierCollector.add(entity, new BezierCurve3D(sp, cp, ep));
         }
