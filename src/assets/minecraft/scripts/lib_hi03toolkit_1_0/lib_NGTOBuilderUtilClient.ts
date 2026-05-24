@@ -90,7 +90,7 @@ export class NGTOBuilderUtilClient {
         if (Keyboard.isKeyDown(keyCode)) {
             if (pressStart === 0) {
                 pressStart = now;
-                dataMap.setString(`keyDownStartTime_${name}`, String(pressStart), 0);
+                dataMap.setString(`keyDownStartTime_${name}`, pressStart.toString(), 0);
             }
             return (now - pressStart) >= requiredMillis;
         }
@@ -141,21 +141,19 @@ export class NGTOBuilderUtilClient {
             if (!cachedData || cachedData[1] !== modelName) {
                 const modelSet = railCore.getProperty().getModelSet() as ModelSetRailClient;
                 const railRenderer = modelSet.model.renderer as RailPartsRenderer;
-                NGTLog.debug("#renderRailMapHighlight : create glList");
                 const glList = RTMApiCompatClient.generateGLList();
                 cachedData = [glList, modelName];
                 this.renderRailMapCache.put(hashKey, cachedData);
                 const shouldRenderObject =
                     ReflectionHelper.findMethod(
-                        NGTOBuilderUtil.getJavaClass(RailPartsRenderer),
+                        RailPartsRenderer.class,
                         railRenderer,
-                        ["shouldRenderObject"],
-                        [
-                            NGTOBuilderUtil.getJavaClass(TileEntityLargeRailCore),
-                            NGTOBuilderUtil.getJavaClass(java.lang.String),
-                            java.lang.Integer.TYPE,
-                            java.lang.Integer.TYPE
-                        ]);
+                        NGTOBuilderUtil.toJavaObjectArray(["shouldRenderObject"], java.lang.String.class),
+                        TileEntityLargeRailCore.class,
+                        java.lang.String.class,
+                        java.lang.Integer.TYPE,
+                        java.lang.Integer.TYPE
+                    );
                 const groupObjects = modelSet.model.model.getGroupObjects();
                 //描画
                 GLHelper.startCompile(glList);
@@ -234,11 +232,10 @@ export class NGTOBuilderUtilClient {
             for (let i = 1; i < partsNames.length; i++) {
                 partsKey += "," + partsNames[i];
             }
-            const posListHash = Arrays.deepHashCode(posList);
+            const posListHash = Arrays.deepHashCode(NGTOBuilderUtil.toJavaObjectArray(posList, java.lang.Integer.class));
             const key = `${entity.getUniqueID()}_${partsKey}_${posListHash}`;
             const glList = NGTOBuilderUtilClient.glCache.get(key);
             if (!glList) {
-                NGTLog.debug("#renderPosListStatic : create glList");
                 const glList = RTMApiCompatClient.generateGLList();
                 GLHelper.startCompile(glList);
                 GL11.glPushMatrix();
@@ -269,8 +266,8 @@ export class NGTOBuilderUtilClient {
      * @param partsName 
      */
     static renderStaticParts(renderer: PartsRenderer, parts: Parts): void {
-        const modelSet: ModelSetVehicleBaseClient = NGTUtil.getField(NGTOBuilderUtil.getJavaClass(PartsRenderer), renderer, "modelSet");
-        const modelObj: ModelObject = NGTUtil.getField(NGTOBuilderUtil.getJavaClass(PartsRenderer), renderer, "modelObj");
+        const modelSet: ModelSetVehicleBaseClient = NGTUtil.getField(PartsRenderer.class, renderer, "modelSet");
+        const modelObj: ModelObject = NGTUtil.getField(PartsRenderer.class, renderer, "modelObj");
         const smoothing = modelSet.getConfig().smoothing;
         const model = modelObj.model;
         const currentMatId = renderer.currentMatId;
@@ -294,7 +291,6 @@ export class NGTOBuilderUtilClient {
             _${joindNames}`;
         let cachedData = this.renderRailMapCache.get(hashKey);//[displayList, railModelName]
         if (!cachedData) {
-            NGTLog.debug("#renderRailMapStatic : create glList");
             const glList = RTMApiCompatClient.generateGLList();
             cachedData = [glList, ""];
             this.renderRailMapCache.put(hashKey, cachedData);
@@ -337,7 +333,6 @@ export class NGTOBuilderUtilClient {
             _${joindNames}`;
         let cachedData = this.renderRailMapCache.get(hashKey);//[displayList, railModelName]
         if (!cachedData) {
-            NGTLog.debug("#renderBezierStatic : create glList");
             const glList = RTMApiCompatClient.generateGLList();
             cachedData = [glList, ""];
             this.renderRailMapCache.put(hashKey, cachedData);
@@ -395,7 +390,6 @@ export class NGTOBuilderUtilClient {
         const key = `${entity.getEntityId()}_${NGTOBuilderUtil.getNGTOHash(ngto)}`;
         const glList = NGTOBuilderUtilClient.glCache.get(key);
         if (!glList || updateCache) {
-            NGTLog.debug("#renderNGTO : create glList");
             const glList = RTMApiCompatClient.generateGLList();
             GL11.glPushMatrix();
             GLHelper.startCompile(glList);
@@ -413,7 +407,7 @@ export class NGTOBuilderUtilClient {
     }
 
     static renderModel(renderer: PartsRenderer, pass: number, modelObj: ModelObject) {
-        const defaultModelObj: ModelObject = NGTUtil.getField(NGTOBuilderUtil.getJavaClass(PartsRenderer), renderer, "modelObj");
+        const defaultModelObj: ModelObject = NGTUtil.getField(PartsRenderer.class, renderer, "modelObj");
         const defaultTexture = defaultModelObj.textures[renderer.currentMatId];
 
         const model = modelObj.model;

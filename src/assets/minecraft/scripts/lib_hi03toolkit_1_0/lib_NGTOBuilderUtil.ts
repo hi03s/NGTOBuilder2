@@ -510,13 +510,25 @@ export class NGTOBuilderUtil {
         return null;
     }
 
+    static fromJavaObjectArray<T>(array: JavaObjectArray<T>): T[] {
+        const result: T[] = [];
+        for (let i = 0; i < array.length; i++) {
+            result.push(array[i]);
+        }
+        return result;
+    }
+
     /**
-     * rtm-ts用
-     * Javaのクラスオブジェクトを取得する。引数にはクラスのインスタンスもしくはクラスオブジェクトを渡すことができる。
-     * @param javaType 
+     * 
+     * @param array 
+     * @param componentClass 
      * @returns 
      */
-    static getJavaClass<T>(javaType: T): any {
-        return (javaType as any).class;
+    static toJavaObjectArray<T>(array: T[], componentClass: java.lang.Class<any>): JavaObjectArray<T> {
+        const javaArray = java.lang.reflect.Array.newInstance(componentClass, array.length) as unknown as JavaObjectArray<T>;
+        for (let i = 0; i < array.length; i++) {
+            javaArray[i] = array[i];
+        }
+        return javaArray;
     }
 }
