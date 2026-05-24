@@ -8,6 +8,7 @@ import { TileEntity } from "net.minecraft.tileentity";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
 import { RotatableBlockObject } from "./lib_RotatableBlockObject";
 import { RotatableBlockObjectMapper } from "./lib_RotatableBlockObjectMapper";
+import { NGTLog } from "jp.ngt.ngtlib.io";
 
 export type BlockSetPlacement = [
     blockSet: BlockSet,
@@ -108,7 +109,7 @@ export class BlockBuilder {
         posList.forEach(([x, y, z]: Pos): void => { this.add(entity, blockSet, x, y, z); });
     }
 
-    addFromRotatableBlockObjectAt(entity: Entity, list:BlockSetPlacement[]): void {
+    addFromRotatableBlockObjectAt(entity: Entity, list: BlockSetPlacement[]): void {
         for (let i = 0; i < list.length; i++) {
             const placeData = list[i];
             if (!placeData) continue;
@@ -148,9 +149,9 @@ export class BlockBuilder {
             const block = blockSet.block;
             const metadata = blockSet.metadata;
             if (blockSet.block instanceof BlockDoor && metadata >= 8) continue; // ドア上部はスキップ
-            const x = data[1];
-            const y = data[2];
-            const z = data[3];
+            const x = Math.floor(data[1]);
+            const y = Math.floor(data[2]);
+            const z = Math.floor(data[3]);
             const blockRotation = data[4];
             const replaceBlock = RTMApiCompat.getBlock(world, x, y, z);
             const replaceBlockMeta = RTMApiCompat.getMetadata(world, x, y, z);
@@ -196,6 +197,11 @@ export class BlockBuilder {
     }
 
     static setTileEntityData(tile: TileEntity, blockSet: BlockSet, x: number, y: number, z: number, yaw: number): void {
+        if (y < 0 || y >= 256) {
+            NGTLog.debug("Skip TileEntity NBT: invalid y=" + y);
+            return;
+        }
+
         const nbt = blockSet.nbt;
         let prevX = 0;
         let prevY = 0;

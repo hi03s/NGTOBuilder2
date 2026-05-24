@@ -31,19 +31,31 @@ RTMApiCompat.createNBTFromTileEntity = function (tileEntity) {
     return nbt;
 }
 RTMApiCompat.setBlock = function (world, x, y, z, block, metadata) {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    z = Math.floor(z);
     var flag = 3;
     if (RTMApiCompat.isOldVer) world.func_147465_d(x, y, z, block, metadata, flag);
     else BlockUtil.setBlock(world, x, y, z, block, metadata, flag);
 }
 RTMApiCompat.getBlock = function (world, x, y, z) {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    z = Math.floor(z);
     if (RTMApiCompat.isOldVer) return world.func_147439_a(x, y, z);
     else return BlockUtil.getBlock(world, x, y, z);
 }
 RTMApiCompat.getMetadata = function (world, x, y, z) {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    z = Math.floor(z);
     if (RTMApiCompat.isOldVer) return world.func_72805_g(x, y, z);
     else return BlockUtil.getMetadata(world, x, y, z);
 }
 RTMApiCompat.getTileEntity = function (world, x, y, z) {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    z = Math.floor(z);
     if (RTMApiCompat.isOldVer) return world.func_147438_o(x, y, z);
     else {
         var blockPos = new Packages.net.minecraft.util.math.BlockPos(Math.floor(x), Math.floor(y), Math.floor(z));
@@ -124,12 +136,26 @@ RTMApiCompat.setOffset = function (tileEntity, x, y, z, sync) {
 }
 RTMApiCompat.setWireConnection = function (tileEntity, targetPos, wireStack) {
     if (wireStack.func_77973_b() !== Packages.jp.ngt.rtm.RTMItem.itemWire) return;
+    var sx = Math.floor(tileEntity.field_145851_c);
+    var sy = Math.floor(tileEntity.field_145848_d);
+    var sz = Math.floor(tileEntity.field_145849_e);
+    if (x === sx && y === sy && z === sz) {
+        Packages.jp.ngt.ngtlib.io.NGTLog.debug("[NGTO Builder] Skip self wire connection: " + x + "," + y + "," + z);
+        return;
+    }
+    var x = Math.floor(targetPos[0]);
+    var y = Math.floor(targetPos[1]);
+    var z = Math.floor(targetPos[2]);
+    if (y < 0 || y >= 256) {
+        Packages.jp.ngt.ngtlib.io.NGTLog.debug("[NGTO Builder] Skip wire connection: invalid target y=" + y + " pos=" + x + "," + y + "," + z);
+        return;
+    }
     if (RTMApiCompat.isOldVer) {
         var modelName = wireStack.func_77973_b().getModelName(wireStack);
-        tileEntity.setConnectionTo(targetPos[0], targetPos[1], targetPos[2], Packages.jp.ngt.rtm.electric.Connection.ConnectionType.WIRE, modelName);
+        tileEntity.setConnectionTo(x, y, z, Packages.jp.ngt.rtm.electric.Connection.ConnectionType.WIRE, modelName);
     }
     else {
         var resourceState = wireStack.func_77973_b().getModelState(wireStack);
-        tileEntity.setConnectionTo(targetPos[0], targetPos[1], targetPos[2], Packages.jp.ngt.rtm.electric.Connection.ConnectionType.WIRE, resourceState);
+        tileEntity.setConnectionTo(x, y, z, Packages.jp.ngt.rtm.electric.Connection.ConnectionType.WIRE, resourceState);
     }
 }
