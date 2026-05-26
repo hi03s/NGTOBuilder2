@@ -1,0 +1,28 @@
+{
+    "name": "NGTOBuilder2_Catenary",
+    "model": {
+        "modelFile": "ngtobuilder2/model_wire_catenary.mqo",
+        "textures": [
+            ["mat1", "textures/ngtobuilder2/wire/wire_catenary.png", "AlphaBlend"]
+        ],
+        "rendererPath": "scripts/ngtobuilder2/wire/render_wire_catenary.js"
+    },
+    "buttonTexture": "textures/ngtobuilder2/wire/button_wire_catenary.png",
+    "serverScriptPath": "scripts/ngtobuilder2/wire/server_wire_catenary.js",
+    "playerPos": [[0, 0, 0]],
+    "vehicleType": "Car",
+    "size": [1, 1],
+    "vibration":[0.0, 0.0],
+    "friction": [0.0, 0.0],
+    "acceleration": [0.0, 0.0],
+    "maxSpeed": [0.0, 0.0],
+    "maxYaw": [0.0, 0.0],
+    "pitchCoefficient": [0.0, 0.0],
+    "yawCoefficient": [0.0, 0.0],
+    "useCustomColor": false,
+    "smoothing": true,
+    "doCulling": false,
+    "changeYawOnStopping": false,
+    "accuracy": "MEDIUM",
+    "tags": "ngto builder 2 hi03"
+}

@@ -151,7 +151,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         const selX = keyManager.downOptionKey() && (side !== 4 && side !== 5) ? lookingPos.posX : lookingPos.placeX + 0.5;
         const selY = keyManager.downOptionKey() && (side !== 0 && side !== 1) ? lookingPos.posY : lookingPos.placeY + 0.5;
         const selZ = keyManager.downOptionKey() && (side !== 2 && side !== 3) ? lookingPos.posZ : lookingPos.placeZ + 0.5;
-        posCollector.add(entity, selX + offsetX, selY + offsetY, selZ + offsetZ, side);
+        posCollector.add(entity, selX + offsetX, selY + offsetY, selZ + offsetZ, side, 0);
         const size = posCollector.size(entity);
         if (size > 1) {
             const list = posCollector.getAll(entity);

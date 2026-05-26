@@ -4,8 +4,8 @@ Format Text Ver 1.1
 Scene {
 	pos 20.4046288 -52.0484467 4177.99072
 	lookat 0 0 0
-	head 2.5100
-	pich 0.5008
+	head 2.4900
+	pich 0.6508
 	bank 0.0000
 	ortho 0
 	zoom2 1.7950
@@ -29,7 +29,7 @@ Object "body" {
 	rotation 0 0 0
 	translation 0 0 0
 	visible 15
-	locking 0
+	locking 1
 	shading 1
 	facet 59.5
 	normal_weight 1
@@ -61,7 +61,7 @@ Object "line" {
 	rotation 0 0 0
 	translation 0 0 0
 	visible 15
-	locking 0
+	locking 1
 	shading 1
 	facet 59.5
 	normal_weight 1
@@ -93,7 +93,7 @@ Object "line_selected" {
 	rotation 0 0 0
 	translation 0 0 0
 	visible 15
-	locking 0
+	locking 1
 	shading 1
 	facet 59.5
 	normal_weight 1
@@ -125,7 +125,7 @@ Object "point" {
 	rotation 0 0 0
 	translation 0 0 0
 	visible 15
-	locking 0
+	locking 1
 	shading 1
 	facet 59.5
 	normal_weight 1
@@ -157,7 +157,7 @@ Object "point_block" {
 	rotation 0 0 0
 	translation 0 0 0
 	visible 15
-	locking 0
+	locking 1
 	shading 1
 	facet 59.5
 	normal_weight 1
@@ -189,7 +189,7 @@ Object "selected" {
 	rotation 0 0 0
 	translation 0 0 0
 	visible 15
-	locking 0
+	locking 1
 	shading 1
 	facet 59.5
 	normal_weight 1
@@ -221,7 +221,7 @@ Object "selected_block" {
 	rotation 0 0 0
 	translation 0 0 0
 	visible 15
-	locking 0
+	locking 1
 	shading 1
 	facet 59.5
 	normal_weight 1
@@ -244,6 +244,35 @@ Object "selected_block" {
 		4 V(6 0 1 7) M(0) UV(0.25 0 0.375 0 0.375 0.125 0.25 0.125)
 		4 V(6 4 2 0) M(0) UV(0.25 0 0.375 0 0.375 0.125 0.25 0.125)
 		4 V(1 3 5 7) M(0) UV(0.25 0 0.375 0 0.375 0.125 0.25 0.125)
+	}
+}
+Object "selectedLineArrow" {
+	depth 0
+	folding 0
+	scale 1 1 1
+	rotation 0 0 0
+	translation 0 0 0
+	visible 15
+	locking 1
+	shading 1
+	facet 59.5
+	normal_weight 1
+	color 0.898 0.498 0.698
+	color_type 0
+	vertex 6 {
+		7.74872206e-06 55 30.0000057
+		7.74872206e-06 45 30.0000057
+		24.9999943 55 -30.0000038
+		24.9999943 45 -30.0000038
+		-25.0000057 55 -29.9999924
+		-25.0000057 45 -29.9999924
+	}
+	face 5 {
+		4 V(0 2 3 1) M(0) UV(0 0.1875 0.0625 0.1875 0.0625 0.25 0 0.25)
+		4 V(2 4 5 3) M(0) UV(0 0.1875 0.0625 0.1875 0.0625 0.25 0 0.25)
+		4 V(4 0 1 5) M(0) UV(0 0.1875 0.0625 0.1875 0.0625 0.25 0 0.25)
+		3 V(4 2 0) M(0) UV(0 0.1875 0.0625 0.1875 0.0625 0.25)
+		3 V(1 3 5) M(0) UV(0.0625 0.1875 0.0625 0.25 0 0.25)
 	}
 }
 Eof

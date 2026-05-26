@@ -8,7 +8,8 @@ export type InsulatorPos = [
     blockSide: number,
     offsetX: number,
     offsetY: number,
-    offsetZ: number
+    offsetZ: number,
+    renderYaw: number
 ]
 
 export class InsulatorCollector {
@@ -20,7 +21,7 @@ export class InsulatorCollector {
         this.keyMap = new HashMap();
     }
 
-    add(entity: Entity, posX: number, posY: number, posZ: number, blockSide: number): void {
+    add(entity: Entity, posX: number, posY: number, posZ: number, blockSide: number, renderYaw: number): void {
         const blockX = Math.floor(posX);
         const blockY = Math.floor(posY);
         const blockZ = Math.floor(posZ);
@@ -31,7 +32,7 @@ export class InsulatorCollector {
         const offsetX = posX - (blockX + 0.5);
         const offsetY = posY - (blockY + 0.5);
         const offsetZ = posZ - (blockZ + 0.5);
-        posList.push([blockX, blockY, blockZ, blockSide, offsetX, offsetY, offsetZ]);
+        posList.push([blockX, blockY, blockZ, blockSide, offsetX, offsetY, offsetZ, renderYaw]);
     }
 
     pop(entity: Entity): InsulatorPos | null {
