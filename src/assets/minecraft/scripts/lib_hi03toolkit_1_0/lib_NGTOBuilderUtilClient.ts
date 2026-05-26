@@ -439,7 +439,9 @@ export class NGTOBuilderUtilClient {
             GL11.GL_CURRENT_BIT
         );
 
-        GL11.glDisable(GL11.GL_ALPHA_TEST);
+        GL11.glEnable(GL11.GL_ALPHA_TEST);
+        GL11.glAlphaFunc(GL11.GL_GREATER, 0.01);
+
         GL11.glEnable(GL11.GL_BLEND);
         OpenGlHelper.glBlendFunc(
             GL11.GL_SRC_ALPHA,
