@@ -11,6 +11,12 @@ import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
 import { World } from "net.minecraft.world";
 
+export type Pos = [
+    x: number,
+    y: number,
+    z: number
+]
+
 //lib_RTMApiCompat.jsの型定義ファイル
 /**
  * RTMのバージョン差異を吸収するためのクラスです。RTMのバージョンによっては正常に動作しない機能もあります
@@ -40,5 +46,5 @@ export class RTMApiCompat {
     static getRPAnchorPitch(rp: RailPosition): number;
     static getSubType(itemStack: ItemStack): string;
     static setOffset(tileEntity: TileEntityPlaceable, x: number, y: number, z: number, sync: boolean): void;
-    static setWireConnection(tileEntity: TileEntityInsulator, targetPos: number[], wireStack: ItemStack): void;
+    static setWireConnection(tileEntity: TileEntityInsulator, targetPos: Pos, wireStack: ItemStack): void;
 }

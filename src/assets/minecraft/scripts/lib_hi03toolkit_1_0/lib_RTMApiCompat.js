@@ -26,7 +26,7 @@ RTMApiCompat.dismountPlayer = function (entity) {
 }
 RTMApiCompat.createNBTFromTileEntity = function (tileEntity) {
     var nbt = new Packages.net.minecraft.nbt.NBTTagCompound();
-    if (RTMApiCompat.isOldVer) tileEntity.func_145839_a(nbt);
+    if (RTMApiCompat.isOldVer) tileEntity.func_145841_b(nbt);
     else tileEntity.func_189515_b(nbt);
     return nbt;
 }
