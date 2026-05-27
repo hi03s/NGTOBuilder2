@@ -14,6 +14,7 @@ import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlo
 import { RotatableBlockObjectFactory } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectFactory";
 import { BlockSet } from "jp.ngt.ngtlib.block";
 import { Blocks } from "net.minecraft.init";
+import { Entity } from "net.minecraft.entity";
 
 //#################################
 //##  hi03式エディターツール v1.0  ##
@@ -161,11 +162,9 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
 
 //#################################
 //#################################
-var isKaizPatch: boolean;
-var hostPlayerList: WeakHashMap;
-var builderHashMap: WeakHashMap;
+var hostPlayerList: WeakHashMap<Entity, EntityPlayer>;
+var builderHashMap: WeakHashMap<Entity, BlockBuilder>;
 var Version: string;
-isKaizPatch = RTMCore.VERSION.indexOf("KaizPatch") !== -1;
 hostPlayerList = new WeakHashMap();
 builderHashMap = new WeakHashMap();
 function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
@@ -186,7 +185,7 @@ function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
             RTMApiCompat.dismountPlayer(entity);
             RTMApiCompat.startRiding(entity, rider);
         }
-        else if (ridingEntity) {
+        else if (ridingEntity instanceof EntityPlayer) {
             hostPlayerList.put(entity, ridingEntity);
             playerEntityId = ridingEntity.getEntityId();
             dataMap.setString("hostPlayerEntityId", String(playerEntityId), 1);

@@ -14,6 +14,7 @@ import { BlockSet } from "jp.ngt.ngtlib.block";
 import { ItemInstalledObject } from "jp.ngt.rtm.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntityInsulator } from "jp.ngt.rtm.electric";
+import { Entity } from "net.minecraft.entity";
 
 //#################################
 //##  hi03式エディターツール v1.0  ##
@@ -160,8 +161,8 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
 
 //#################################
 //#################################
-var hostPlayerList: WeakHashMap;
-var builderHashMap: WeakHashMap;
+var hostPlayerList: WeakHashMap<Entity, EntityPlayer>;
+var builderHashMap: WeakHashMap<Entity, BlockBuilder>;
 var Version: string;
 hostPlayerList = new WeakHashMap();
 builderHashMap = new WeakHashMap();
@@ -183,7 +184,7 @@ function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
             RTMApiCompat.dismountPlayer(entity);
             RTMApiCompat.startRiding(entity, rider);
         }
-        else if (ridingEntity) {
+        else if (ridingEntity instanceof EntityPlayer) {
             hostPlayerList.put(entity, ridingEntity);
             playerEntityId = ridingEntity.getEntityId();
             dataMap.setString("hostPlayerEntityId", String(playerEntityId), 1);
