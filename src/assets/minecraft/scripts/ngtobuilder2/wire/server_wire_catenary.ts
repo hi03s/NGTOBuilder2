@@ -63,7 +63,7 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 //##  処理  ##
 //############
 //JSON(sendData)から送られてくるデータの型
-export type ReceiveData_wire = {
+export type ReceiveData_catenary = {
     posList: InsulatorPos[]
 }
 
@@ -78,18 +78,26 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
     }
 
     //生成
-    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData_wire>(dataMap, "sendData");
+    const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData_catenary>(dataMap, "sendData");
     const cancelBuild = dataMap.getBoolean("cancelBuild");
     let heldItem: ItemStack | null = NGTOBuilderUtil.getHeldItem(hostPlayer);
-    let insulatorItem = getItemInsulator(hostPlayer);
+    let insulatorItems = getItemInsulators(hostPlayer);
     if (heldItem && heldItem.getItem() !== RTMItem.itemWire) heldItem = null;
     if (receiveData) {
         const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");
         if (!isInitializedBuild) {
+            const isDeviation = dataMap.getBoolean("isDeviation");
+            const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
+
             let modelName = "NoModel_Side";
-            if (insulatorItem) modelName = insulatorItem.getTagCompound().getString("ModelName");
+            //if (insulatorItems.length > 0) modelName = insulatorItems[0].getTagCompound().getString("ModelName");
             const posList = receiveData.posList;
             for (let i = 0; i < posList.length; i++) {
+                //モデル名決定
+                if (insulatorItems.length > 0) {
+                    const insulatorItem = isDeviation ? i % 2 === 0 !== isDeviationInvert ? insulatorItems[0] : insulatorItems[1] : insulatorItems[0];
+                    modelName = insulatorItem.getTagCompound().getString("ModelName");
+                }
                 //コネクタ
                 const pos = posList[i];
                 const nbt = new NBTTagCompound();
@@ -200,12 +208,13 @@ function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     }
 }
 
-function getItemInsulator(player: EntityPlayer): ItemStack | null {
+function getItemInsulators(player: EntityPlayer): ItemStack[] {
+    const list: ItemStack[] = [];
     for (let i = 0; i <= 8; i++) {
         const itemStack = RTMApiCompat.getItemStackAt(player.inventory, i);
         if (itemStack && itemStack.getItem() instanceof ItemInstalledObject && RTMApiCompat.getSubType(itemStack) === "Relay") {
-            return itemStack;
+            list.push(itemStack);
         }
     }
-    return null;
+    return list;
 }

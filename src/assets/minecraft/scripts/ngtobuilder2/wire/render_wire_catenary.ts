@@ -22,6 +22,7 @@ import { RTMApiCompatClient } from "../../lib_hi03toolkit_1_0/lib_RTMApiCompatCl
 import { HashMap } from "java.util";
 import { Connection, TileEntityInsulator } from "jp.ngt.rtm.electric";
 import { Vec3 } from "jp.ngt.ngtlib.math";
+import { ReceiveData_catenary } from "./server_wire_catenary";
 declare const renderer: VehiclePartsRenderer;
 
 //##  NGTO Builder2 Prop設置  ##
@@ -130,7 +131,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     if (keyManager.pressed("build") && posList.length > 0 && heldItem && !isUndo && !isBuilding) {
         dataMap.setBoolean("isBuilding", true, 1);
         //送信
-        const sendData: ReceiveData_wire = {
+        const sendData: ReceiveData_catenary = {
             posList: posList
         }
         NGTOBuilderUtil.sendJsonData(dataMap, "sendData", sendData);
@@ -151,16 +152,25 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //座標を追加
-    if (lookingPos && isRightClick && (!heldItem || ignoreItemList.indexOf(heldItem.getItem()) === -1)) {
+    if (lookingPos && isRightClick && (!heldItem || (heldItem && ignoreItemList.indexOf(heldItem.getItem()) === -1))) {
+        NGTLog.debug(`heldItem: ${heldItem}`);
         const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY, lookingPos.posZ);
         if (lookingRailMap) {
+            //架線偏位のオフセット 選択済み数によってLRが交互に入れ替わる
+            const isDeviation = dataMap.getBoolean("isDeviation");
+            const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
+            const selectCount = posCollector.size(entity);
+            const deviationOffset = isDeviation ? 0.125 * ((selectCount % 2 === 0) !== isDeviationInvert ? -1 : 1) : 0;
+            let deviationOffsetVec = new Vec3(deviationOffset, 0, 0);
+
             const split = Math.floor(lookingRailMap.getLength() * 2);
             const rmIndex = lookingRailMap.getNearlestPoint(split, lookingPos.posX, lookingPos.posZ);
             const rmPosZX = lookingRailMap.getRailPos(split, rmIndex);
             const rmPosY = lookingRailMap.getRailHeight(split, rmIndex);
             const heightOffsetY = rmPosY - Math.floor(rmPosY) - (1 / 16);//勾配Y差分
             const rmYaw = lookingRailMap.getRailYaw(split, rmIndex);
-            posCollector.add(entity, rmPosZX[1], Math.floor(rmPosY) + 5.5 + heightOffsetY, rmPosZX[0], 1, rmYaw);
+            deviationOffsetVec = deviationOffsetVec.rotateAroundY(rmYaw);
+            posCollector.add(entity, rmPosZX[1] + deviationOffsetVec.getX(), Math.floor(rmPosY) + 5.5 + heightOffsetY, rmPosZX[0] + deviationOffsetVec.getZ(), 1, rmYaw);
 
             const size = posCollector.size(entity);
             if (size > 1) {
@@ -176,7 +186,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //選択を解除
-    if (isLeftClick && (!heldItem || ignoreItemList.indexOf(heldItem.getItem()) === -1)) {
+    if (isLeftClick && (!heldItem || (heldItem && ignoreItemList.indexOf(heldItem.getItem()) === -1))) {
         posCollector.pop(entity);
         bezierCollector.pop(entity);
     }
@@ -203,22 +213,59 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     }
 
     //架線偏位を切り替える
+    if (keyManager.pressed("isDeviation")) {
+        const isDeviation = dataMap.getBoolean("isDeviation");
+        dataMap.setBoolean("isDeviation", !isDeviation, 1);
+        NGTLog.sendChatMessage(sender, `架線偏位: ${!isDeviation ? "ON" : "OFF"}`);
+    }
 
     //架線偏位の左右を入れ替える
+    if (keyManager.pressed("isDeviationInvert")) {
+        const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
+        dataMap.setBoolean("isDeviationInvert", !isDeviationInvert, 1);
+        NGTLog.sendChatMessage(sender, `始点の架線偏位のLRを入れ替え`);
+    }
 
     //ワイヤー式ビーム設置の切り替え
+    if (keyManager.pressed("isBeamWire")) {
+        const isBeamWire = dataMap.getBoolean("isBeamWire");
+        dataMap.setBoolean("isBeamWire", !isBeamWire, 0);
+        NGTLog.sendChatMessage(sender, `ワイヤー式ビーム設置: ${!isBeamWire ? "ON" : "OFF"}`);
+    }
 
     //左にレーンを増やす/右のレーンを減らす
+    const laneCount = dataMap.getInt("laneCount");
+    if (keyManager.pressed("laneLeft")) {
+        dataMap.setInt("laneCount", laneCount + 1, 0);
+    }
 
     //右にレーンを増やす/左のレーンを減らす
+    if (keyManager.pressed("laneRight")) {
+        dataMap.setInt("laneCount", laneCount - 1, 0);
+    }
 
     //レーン間の距離を増やす
+    const laneDistance = dataMap.getDouble("laneDistance");
+    if (laneDistance === 0) dataMap.setDouble("laneDistance", 4.0, 0);
+    if (keyManager.pressed("laneDistanceIncrease") || keyManager.held("laneDistanceIncrease", 500)) {
+        dataMap.setDouble("laneDistance", laneDistance + 0.1, 0);
+    }
 
     //レーン間の距離を減らす
+    if (keyManager.pressed("laneDistanceDecrease") || keyManager.held("laneDistanceDecrease", 500)) {
+        dataMap.setDouble("laneDistance", laneDistance - 0.1, 0);
+    }
 
     //ワイヤー式ビームの長さを0.1m増やす
+    const beamDistance = dataMap.getDouble("beamDistance");
+    if (keyManager.pressed("beamDistanceIncrease") || keyManager.held("beamDistanceIncrease", 500)) {
+        dataMap.setDouble("beamDistance", beamDistance + 0.1, 0);
+    }
 
     //ワイヤー式ビームの長さを0.1m減らす
+    if (keyManager.pressed("beamDistanceDecrease") || keyManager.held("beamDistanceDecrease", 500)) {
+        dataMap.setDouble("beamDistance", beamDistance - 0.1, 0);
+    }
 
 }
 
@@ -279,25 +326,44 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     connectorModelList = connectorModelList ? connectorModelList : RTMApiCompatClient.getModelSetList("ModelConnector");
     wireModelList = wireModelList ? wireModelList : RTMApiCompatClient.getModelSetList("ModelWire");
 
-    const insulatorItem = getItemInsulator(player);
-    const insulatorName = insulatorItem ? insulatorItem.getTagCompound().getString("ModelName") : "NoModel_Side";
-    const insulatorModelSet = connectorModelList[insulatorName];
-    const insulatorOffset = insulatorModelSet ? insulatorModelSet.getConfig().wirePos : [0, 0, 0];
-    const isFlipModel = insulatorName.toLocaleLowerCase().indexOf("flip") >= 0;
+    let insulatorItems = getItemInsulators(player);
+    if (insulatorItems.length === 1) insulatorItems.push(insulatorItems[0]);//1つしかない場合は両方に同じものを入れる
+    const insulatorName1 = insulatorItems && insulatorItems.length > 0 ? insulatorItems[0].getTagCompound().getString("ModelName") : "NoModel_Side";
+    const insulatorModelSet1 = connectorModelList[insulatorName1];
+    const insulatorOffset1 = insulatorModelSet1 ? insulatorModelSet1.getConfig().wirePos : [0, 0, 0];
+    const isFlipModel1 = insulatorName1.toLocaleLowerCase().indexOf("flip") >= 0;
+    const insulatorName2 = insulatorItems && insulatorItems.length > 1 ? insulatorItems[1].getTagCompound().getString("ModelName") : null;
+    const insulatorModelSet2 = insulatorName2 ? connectorModelList[insulatorName2] : null;
+    const insulatorOffset2 = insulatorModelSet2 ? insulatorModelSet2.getConfig().wirePos : [0, 0, 0];
+    const isFlipModel2 = insulatorName2 ? insulatorName2.toLocaleLowerCase().indexOf("flip") >= 0 : false;
+
+    const isDeviation = dataMap.getBoolean("isDeviation");
+    const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
+
 
     //カーソル
     if (lookingPos) {
         const lookingRailMap = NGTOBuilderUtil.getRailMapAt(entity, lookingPos.posX, lookingPos.posY, lookingPos.posZ);
         if (lookingRailMap) {
+
+            //碍子のモデルとオフセットの決定 選択済み数によってLRが交互に入れ替わる
+            const insulatorOffset = isDeviation ? posCollector.size(entity) % 2 === 0 !== isDeviationInvert ? insulatorOffset1 : insulatorOffset2 : insulatorOffset1;
+
+            const selectCount = posCollector.size(entity);
+            const deviationOffset = isDeviation ? 0.125 * ((selectCount % 2 === 0) !== isDeviationInvert ? -1 : 1) : 0;
+            let deviationOffsetVec = new Vec3(deviationOffset, 0, 0);
+
             const split = Math.floor(lookingRailMap.getLength() * 2);
             const rmIndex = lookingRailMap.getNearlestPoint(split, lookingPos.posX, lookingPos.posZ);
             const rmPosZX = lookingRailMap.getRailPos(split, rmIndex);
             const rmPosY = lookingRailMap.getRailHeight(split, rmIndex);
+            const rmYaw = lookingRailMap.getRailYaw(split, rmIndex);
+            deviationOffsetVec = deviationOffsetVec.rotateAroundY(rmYaw);
             const heightOffsetY = rmPosY - Math.floor(rmPosY) - (1 / 16);//勾配Y差分
             const currentPos: Pos = [
-                rmPosZX[1] + insulatorOffset[0],
+                rmPosZX[1] + insulatorOffset[0] + deviationOffsetVec.getX(),
                 Math.floor(rmPosY) + 5.5 + heightOffsetY + insulatorOffset[1],
-                rmPosZX[0] + insulatorOffset[2]
+                rmPosZX[0] + insulatorOffset[2] + deviationOffsetVec.getZ()
             ];
 
             //距離表示
@@ -305,9 +371,9 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 const prevPos = posCollector.getLastPos(entity);
                 if (prevPos) {
                     const _prevPos: Pos = [
-                        prevPos[0] + 0.5 + prevPos[4] + insulatorOffset[0],
-                        prevPos[1] + 0.5 + prevPos[5] + insulatorOffset[1],
-                        prevPos[2] + 0.5 + prevPos[6] + insulatorOffset[2]
+                        prevPos[0] + 0.5 + prevPos[4] + insulatorOffset[0] + deviationOffsetVec.getX(),
+                        prevPos[1] + 0.5 + prevPos[5] + insulatorOffset[1] + deviationOffsetVec.getY(),
+                        prevPos[2] + 0.5 + prevPos[6] + insulatorOffset[2] + deviationOffsetVec.getZ()
                     ];
                     const dx = currentPos[0] - _prevPos[0];
                     const dy = currentPos[1] - _prevPos[1];
@@ -315,7 +381,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                     const distance = Math.round(Math.sqrt(dx * dx + dy * dy + dz * dz)).toString();
                     const toPlayerYaw = Math.atan2(posX - currentPos[0], posZ - currentPos[2]) * (180 / Math.PI) + 180;
                     GL11.glPushMatrix();
-                    GL11.glTranslatef(rmPosZX[1], rmPosY + 5.5 + heightOffsetY, rmPosZX[0]);
+                    GL11.glTranslatef(rmPosZX[1] + deviationOffsetVec.getX(), rmPosY + 5.5 + heightOffsetY, rmPosZX[0] + deviationOffsetVec.getZ());
                     GL11.glTranslatef(-posX, -posY, -posZ);
                     GL11.glRotatef(toPlayerYaw, 0, 1, 0);
                     for (let i = 0; i < distance.length; i++) {
@@ -339,14 +405,14 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
 
             //接続ポイント
             GL11.glPushMatrix();
-            GL11.glTranslatef(rmPosZX[1], Math.floor(rmPosY) + 5.5 + heightOffsetY, rmPosZX[0]);
+            GL11.glTranslatef(rmPosZX[1] + deviationOffsetVec.getX(), Math.floor(rmPosY) + 5.5 + heightOffsetY, rmPosZX[0] + deviationOffsetVec.getZ());
             GL11.glTranslatef(-posX, -posY, -posZ);
             point.render(renderer);
             GL11.glPopMatrix();
 
             //碍子のブロック座標
             GL11.glPushMatrix();
-            GL11.glTranslatef(Math.floor(rmPosZX[1]) + 0.5, Math.floor(rmPosY) + 5.5 + heightOffsetY + 0.5, Math.floor(rmPosZX[0]) + 0.5);
+            GL11.glTranslatef(Math.floor(rmPosZX[1]) + 0.5 + deviationOffsetVec.getX(), Math.floor(rmPosY) + 5.5 + heightOffsetY + 0.5, Math.floor(rmPosZX[0]) + 0.5 + deviationOffsetVec.getZ());
             GL11.glTranslatef(-posX, -posY, -posZ);
             point_block.render(renderer);
             GL11.glPopMatrix();
@@ -356,9 +422,9 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                 const prevPos = posCollector.getLastPos(entity);
                 if (prevPos) {
                     const _prevPos: Pos = [
-                        prevPos[0] + 0.5 + prevPos[4] + insulatorOffset[0],
-                        prevPos[1] + 0.5 + prevPos[5] + insulatorOffset[1],
-                        prevPos[2] + 0.5 + prevPos[6] + insulatorOffset[2]
+                        prevPos[0] + 0.5 + prevPos[4] + insulatorOffset[0] + deviationOffsetVec.getX(),
+                        prevPos[1] + 0.5 + prevPos[5] + insulatorOffset[1] + deviationOffsetVec.getY(),
+                        prevPos[2] + 0.5 + prevPos[6] + insulatorOffset[2] + deviationOffsetVec.getZ()
                     ];
                     GL11.glPushMatrix();
                     GL11.glTranslatef(-posX, -posY, -posZ);
@@ -378,6 +444,13 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     if (posCollector.size(entity) > 0) {
         const list = posCollector.getAll(entity);
         for (let i = 0; i < list.length; i++) {
+
+
+            //碍子のモデルとオフセットの決定 選択済み数によってLRが交互に入れ替わる
+            const insulatorModelSet = isDeviation ? i % 2 === 0 !== isDeviationInvert ? insulatorModelSet1 : insulatorModelSet2 : insulatorModelSet1;
+            const insulatorOffset = isDeviation ? i % 2 === 0 !== isDeviationInvert ? insulatorOffset1 : insulatorOffset2 : insulatorOffset1;
+            const isFlipModel = isDeviation ? i % 2 === 0 !== isDeviationInvert ? isFlipModel1 : isFlipModel2 : isFlipModel1;
+
             const pos = list[i];
             const renderPos = [
                 pos[0] + 0.5 + pos[4] + insulatorOffset[0],
@@ -495,14 +568,15 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 }
 
 //追加関数
-function getItemInsulator(player: EntityPlayer): ItemStack | null {
+function getItemInsulators(player: EntityPlayer): ItemStack[] {
+    const list: ItemStack[] = [];
     for (let i = 0; i <= 8; i++) {
         const itemStack = RTMApiCompat.getItemStackAt(player.inventory, i);
         if (itemStack && itemStack.getItem() instanceof ItemInstalledObject && RTMApiCompat.getSubType(itemStack) === "Relay") {
-            return itemStack;
+            list.push(itemStack);
         }
     }
-    return null;
+    return list;
 }
 
 function applyRotationSide(blockSide: number): void {
