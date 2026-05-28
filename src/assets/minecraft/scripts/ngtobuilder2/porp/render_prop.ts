@@ -1,6 +1,5 @@
 import { NGTLog } from "jp.ngt.ngtlib.io";
 import { MCWrapper, MCWrapperClient, NGTUtilClient } from "jp.ngt.ngtlib.util";
-import { RTMCore } from "jp.ngt.rtm";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { ModelSetVehicle } from "jp.ngt.rtm.modelpack.modelset";
 import { ModelObject, Parts, VehiclePartsRenderer } from "jp.ngt.rtm.render";

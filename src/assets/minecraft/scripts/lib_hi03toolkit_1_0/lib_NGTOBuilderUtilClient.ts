@@ -17,7 +17,6 @@ import { NGTObject } from "jp.ngt.ngtlib.block";
 import { OpenGlHelper } from "net.minecraft.client.renderer";
 import { RailMap } from "jp.ngt.rtm.rail.util";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
-import { NGTLog } from "jp.ngt.ngtlib.io";
 import { BezierCurve3D } from "./lib_BezierCurve3D";
 import { Invocable } from "javax.script";
 import { TileEntityLargeRailBase, TileEntityLargeRailCore } from "jp.ngt.rtm.rail";

@@ -2,7 +2,6 @@ import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { RotatableBlockSet } from "./lib_RotatableBlockSet";
 import { Quaternion } from "./lib_Quaternion";
 import { Block, BlockButton, BlockDoor, BlockFenceGate, BlockLadder, BlockLog, BlockStairs } from "net.minecraft.block";
-import { NBTTagCompound } from "net.minecraft.nbt";
 import { Blocks } from "net.minecraft.init";
 
 export type Pos = [

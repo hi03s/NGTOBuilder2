@@ -14,7 +14,6 @@ import { BezierCollector } from "../../lib_hi03toolkit_1_0/lib_BezierCollector";
 import { BezierCurve3D } from "../../lib_hi03toolkit_1_0/lib_BezierCurve3D";
 import { InputManager } from "../../lib_hi03toolkit_1_0/lib_InputManager";
 import { InsulatorCollector, InsulatorPos } from "../../lib_hi03toolkit_1_0/lib_InsulatorCollector";
-import { ReceiveData_wire } from "./server_wire";
 import { ItemInstalledObject } from "jp.ngt.rtm.item";
 import { Item, ItemStack } from "net.minecraft.item";
 import { RTMItem } from "jp.ngt.rtm";

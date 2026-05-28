@@ -1,4 +1,4 @@
-import { HashMap, HashSet } from "java.util";
+import { HashMap } from "java.util";
 import { Pos, RotatableBlockObject } from "./lib_RotatableBlockObject";
 import { RotatableBlockSet } from "./lib_RotatableBlockSet";
 import { BlockSetPlacement } from "./lib_BlockBuilder";

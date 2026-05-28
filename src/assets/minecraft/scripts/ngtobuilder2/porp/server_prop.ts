@@ -1,4 +1,3 @@
-import { RTMCore } from "jp.ngt.rtm";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { ScriptExecuter } from "jp.ngt.rtm.modelpack";
 import { WeakHashMap } from "java.util";

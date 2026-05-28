@@ -1,7 +1,6 @@
-import { HashMap, HashSet } from "java.util";
+import { HashMap } from "java.util";
 import { Entity } from "net.minecraft.entity";
-import { BlockBuilder, Pos } from "./lib_BlockBuilder";
-import { NGTLog } from "jp.ngt.ngtlib.io";
+import { BlockBuilder } from "./lib_BlockBuilder";
 
 export class UndoManager {
     private static hashMap: HashMap<Entity, BlockBuilder[]> = new HashMap();

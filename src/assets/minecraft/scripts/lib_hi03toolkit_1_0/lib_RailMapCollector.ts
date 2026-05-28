@@ -1,5 +1,5 @@
 import { HashMap } from "java.util";
-import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util"
+import { RailMap } from "jp.ngt.rtm.rail.util"
 import { Entity } from "net.minecraft.entity";
 import { NGTOBuilderUtil } from "./lib_NGTOBuilderUtil";
 

@@ -6,8 +6,6 @@ import { Entity } from "net.minecraft.entity";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
 import { RTMApiCompat } from "./lib_RTMApiCompat";
-import { RotatableBlockObject } from "./lib_RotatableBlockObject";
-import { RotatableBlockObjectMapper } from "./lib_RotatableBlockObjectMapper";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 
 export type BlockSetPlacement = [
