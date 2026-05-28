@@ -14,6 +14,7 @@ import { BlockSet } from "jp.ngt.ngtlib.block";
 import { ItemInstalledObject } from "jp.ngt.rtm.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntityInsulator } from "jp.ngt.rtm.electric";
+import { Entity } from "net.minecraft.entity";
 
 //#################################
 //##  hi03式エディターツール v1.0  ##
@@ -35,21 +36,12 @@ Version = "1.0";
 //スポーン時や再使用時に実行されます
 
 //## グローバル変数として使うための準備 ##
-var builder: BlockBuilder;
 var blockLimit: number;
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     const dataMap = entity.getResourceState().getDataMap();
     const isInitializedServer = dataMap.getBoolean("isInitializedServer");
     if (isInitializedServer) return;
     dataMap.setBoolean("isInitializedServer", true, 1);
-
-    //ブロック生成用のBlockBuilder
-    builder = builderHashMap.get(entity);
-    if (!builder) {
-        builder = new BlockBuilder();
-        builderHashMap.put(entity, builder);
-    }
-    else builder.clear(entity);
 
     //1tickに生成するブロック数
     blockLimit = 500;//blocks/tick (10000 blocks/sec)
@@ -64,13 +56,23 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 //############
 //JSON(sendData)から送られてくるデータの型
 export type ReceiveData_catenary = {
-    posList: InsulatorPos[]
+    posList: InsulatorPos[][],
+    modelNameList: string[][],
+    beamPosList: InsulatorPos[],
+    beamInsulatorName: string,
 }
 
 function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
     const dataMap = entity.getResourceState().getDataMap();
     const hostPlayer = hostPlayerList.get(entity);
     const world = entity.worldObj;
+
+    //ブロック生成用のBlockBuilder
+    let builder: BlockBuilder = builderHashMap.get(entity);
+    if (!builder) {
+        builder = new BlockBuilder();
+        builderHashMap.put(entity, builder);
+    }
 
     //終了
     if (dataMap.getBoolean("isEndEdit")) {
@@ -80,65 +82,119 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
     //生成
     const receiveData = NGTOBuilderUtil.getJsonData<ReceiveData_catenary>(dataMap, "sendData");
     const cancelBuild = dataMap.getBoolean("cancelBuild");
+    const isDeviation = dataMap.getBoolean("isDeviation");
+    const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
     let heldItem: ItemStack | null = NGTOBuilderUtil.getHeldItem(hostPlayer);
-    let insulatorItems = getItemInsulators(hostPlayer);
     if (heldItem && heldItem.getItem() !== RTMItem.itemWire) heldItem = null;
     if (receiveData) {
         const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");
-        if (!isInitializedBuild) {
-            const isDeviation = dataMap.getBoolean("isDeviation");
-            const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
 
-            let modelName = "NoModel_Side";
-            //if (insulatorItems.length > 0) modelName = insulatorItems[0].getTagCompound().getString("ModelName");
-            const posList = receiveData.posList;
-            for (let i = 0; i < posList.length; i++) {
-                //モデル名決定
-                if (insulatorItems.length > 0) {
-                    const insulatorItem = isDeviation ? i % 2 === 0 !== isDeviationInvert ? insulatorItems[0] : insulatorItems[1] : insulatorItems[0];
-                    modelName = insulatorItem.getTagCompound().getString("ModelName");
+        if (!isInitializedBuild) {
+            builder.clear(entity);
+
+            // 全レーンの碍子をまとめてbuilderに追加
+            for (let laneIndex = 0; laneIndex < receiveData.posList.length; laneIndex++) {
+                let modelName = "NoModel_Side";
+                const posList = receiveData.posList[laneIndex];
+
+                for (let i = 0; i < posList.length; i++) {
+                    // モデル名
+                    if (receiveData.modelNameList && receiveData.modelNameList[laneIndex]) {
+                        const model1 = receiveData.modelNameList[laneIndex][0] || modelName;
+                        const model2 = receiveData.modelNameList[laneIndex][1] || modelName;
+                        modelName = isDeviation ? i % 2 === 0 !== isDeviationInvert ? model1 : model2 : model1;
+                    }
+
+                    const pos = posList[i];
+                    const nbt = new NBTTagCompound();
+                    nbt.setString("ModelName", modelName);
+                    nbt.setFloat("offsetX", pos[4]);
+                    nbt.setFloat("offsetY", pos[5]);
+                    nbt.setFloat("offsetZ", pos[6]);
+
+                    const blockSet = new BlockSet(RTMBlock.insulator, pos[3], nbt);
+                    builder.add(entity, blockSet, pos[0], pos[1], pos[2]);
                 }
-                //コネクタ
-                const pos = posList[i];
+            }
+
+            // ビーム碍子も同じbuilderに追加
+            const beamPosList = receiveData.beamPosList;
+            for (let i = 0; i < beamPosList.length; i++) {
+                const pos = beamPosList[i];
                 const nbt = new NBTTagCompound();
-                nbt.setString("ModelName", modelName);
+                nbt.setString("ModelName", receiveData.beamInsulatorName);
                 nbt.setFloat("offsetX", pos[4]);
                 nbt.setFloat("offsetY", pos[5]);
                 nbt.setFloat("offsetZ", pos[6]);
+
                 const blockSet = new BlockSet(RTMBlock.insulator, pos[3], nbt);
                 builder.add(entity, blockSet, pos[0], pos[1], pos[2]);
             }
+
+            // ここで1回だけUndoバックアップ
             UndoManager.backupFromBlockBuilder(entity, builder);
             dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
             dataMap.setBoolean("isInitializedBuild", true, 1);
         }
-        //生成を中止
+
+        // 生成を中止
         if (cancelBuild) {
             const remainingCount = builder.getCount(entity);
             UndoManager.removeUnbuiltBlocks(entity, remainingCount);
             builder.clear(entity);
+
+            dataMap.setBoolean("isInitializedBuild", false, 1);
+            dataMap.setBoolean("isBuilding", false, 1);
+            dataMap.setBoolean("cancelBuild", false, 1);
+            NGTOBuilderUtil.resetJsonData(dataMap, "sendData");
+            return;
         }
-        //生成
+
+        // まとめて生成
         builder.doBuild(entity, blockLimit);
-        //生成完了の処理
+
+        // 全部生成完了
         if (builder.isFinished(entity)) {
-            //ワイヤーを生成する
+            // 架線ワイヤー接続
             if (heldItem) {
-                const placedPos = receiveData.posList.map(pos => [pos[0], pos[1], pos[2]] as Pos);
-                for (let i = 1; i < placedPos.length; i++) {
-                    const prevPos = placedPos[i - 1];
-                    const pos = placedPos[i];
-                    if (!prevPos || !pos) continue;
-                    if (prevPos[0] === pos[0] && prevPos[1] === pos[1] && prevPos[2] === pos[2]) continue;
-                    const tile = RTMApiCompat.getTileEntity(world, pos[0], pos[1], pos[2]);
-                    if (tile instanceof TileEntityInsulator) {
-                        RTMApiCompat.setWireConnection(tile, prevPos, heldItem);
+                for (let laneIndex = 0; laneIndex < receiveData.posList.length; laneIndex++) {
+                    const placedPos = receiveData.posList[laneIndex].map(pos => [pos[0], pos[1], pos[2]] as Pos);
+
+                    for (let i = 1; i < placedPos.length; i++) {
+                        const prevPos = placedPos[i - 1];
+                        const pos = placedPos[i];
+
+                        if (!prevPos || !pos) continue;
+                        if (prevPos[0] === pos[0] && prevPos[1] === pos[1] && prevPos[2] === pos[2]) continue;
+
+                        const tile = RTMApiCompat.getTileEntity(world, pos[0], pos[1], pos[2]);
+                        if (tile instanceof TileEntityInsulator) {
+                            RTMApiCompat.setWireConnection(tile, prevPos, heldItem);
+                        }
                     }
                 }
             }
 
-            //終了
+            // ビームワイヤー接続
+            const beamWire = getBeamWire(hostPlayer);
+            if (beamWire) {
+                const beamPosList = receiveData.beamPosList.map(pos => [pos[0], pos[1], pos[2]] as Pos);
+
+                for (let i = 0; i < beamPosList.length; i = i + 2) {
+                    const startPos = beamPosList[i];
+                    const endPos = beamPosList[i + 1];
+
+                    if (!startPos || !endPos) continue;
+
+                    const tile = RTMApiCompat.getTileEntity(world, startPos[0], startPos[1], startPos[2]);
+                    if (tile instanceof TileEntityInsulator) {
+                        RTMApiCompat.setWireConnection(tile, endPos, beamWire);
+                    }
+                }
+            }
+
             NGTLog.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成終了");
+
             builder.clear(entity);
             dataMap.setBoolean("isInitializedBuild", false, 1);
             dataMap.setBoolean("isBuilding", false, 1);
@@ -168,8 +224,8 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
 
 //#################################
 //#################################
-var hostPlayerList: WeakHashMap;
-var builderHashMap: WeakHashMap;
+var hostPlayerList: WeakHashMap<Entity, EntityPlayer>;
+var builderHashMap: WeakHashMap<Entity, BlockBuilder>;
 var Version: string;
 hostPlayerList = new WeakHashMap();
 builderHashMap = new WeakHashMap();
@@ -191,7 +247,7 @@ function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
             RTMApiCompat.dismountPlayer(entity);
             RTMApiCompat.startRiding(entity, rider);
         }
-        else if (ridingEntity) {
+        else if (ridingEntity instanceof EntityPlayer) {
             hostPlayerList.put(entity, ridingEntity);
             playerEntityId = ridingEntity.getEntityId();
             dataMap.setString("hostPlayerEntityId", String(playerEntityId), 1);
@@ -217,4 +273,14 @@ function getItemInsulators(player: EntityPlayer): ItemStack[] {
         }
     }
     return list;
+}
+
+function getBeamWire(player: EntityPlayer): ItemStack | null {
+    for (let i = 8; i >= 0; i--) {
+        const itemStack = RTMApiCompat.getItemStackAt(player.inventory, i);
+        if (itemStack && itemStack.getItem() === RTMItem.itemWire) {
+            return itemStack;
+        }
+    }
+    return null;
 }
