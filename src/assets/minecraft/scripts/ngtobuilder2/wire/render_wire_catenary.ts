@@ -607,22 +607,21 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     //ワイヤー式ビームのプレビュー
     if (beamCollectorList.size(entity) > 0) {
         const beamPosList = beamCollectorList.getAll(entity);//beamPosListの要素は[0]が始点、[1]が終点の繰り返し
+        const renderOffsetY = dataMap.getBoolean("isBeamInsulatorMode") ? 0 : -5;//碍子を空中に置くか地面に置くか
         for (let i = 0; i < beamPosList.length; i = i + 2) {
             const startPos = beamPosList[i];
             const endPos = beamPosList[i + 1];
-            const renderOffsetY = dataMap.getBoolean("isBeamInsulatorMode") ? 0 : -5.5;//碍子を空中に置くか地面に置くか
 
-            //碍子ブロック
             const startX = startPos[0] + 0.5 + startPos[4];
             const startY = startPos[1] + 0.5 + startPos[5];
             const startZ = startPos[2] + 0.5 + startPos[6];
-            const startBlockX = Math.floor(startX) + 0.5;
-            const startBlockY = Math.floor(startY) + 0.5;
-            const startBlockZ = Math.floor(startZ) + 0.5;
+            const endX = endPos[0] + 0.5 + endPos[4];
+            const endY = endPos[1] + 0.5 + endPos[5];
+            const endZ = endPos[2] + 0.5 + endPos[6];
+
             GL11.glPushMatrix();
-            GL11.glTranslatef(startBlockX, startBlockY, startBlockZ);
             GL11.glTranslatef(-posX, -posY, -posZ);
-            selected_block.render(renderer);
+            renderWire([startX, startY + (5.5 + renderOffsetY), startZ], [endX, endY + (5.5 + renderOffsetY), endZ], beam);
             GL11.glPopMatrix();
 
             GL11.glPushMatrix();
@@ -631,23 +630,14 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             pole.render(renderer);
             GL11.glPopMatrix();
 
-            const endX = endPos[0] + 0.5 + endPos[4];
-            const endY = endPos[1] + 0.5 + endPos[5];
-            const endZ = endPos[2] + 0.5 + endPos[6];
-            const endBlockX = Math.floor(endX) + 0.5;
-            const endBlockY = Math.floor(endY) + 0.5;
-            const endBlockZ = Math.floor(endZ) + 0.5;
-            GL11.glPushMatrix();
-            GL11.glTranslatef(endBlockX, endBlockY, endBlockZ);
-            GL11.glTranslatef(-posX, -posY, -posZ);
-            selected_block.render(renderer);
-            GL11.glPopMatrix();
-
             GL11.glPushMatrix();
             GL11.glTranslatef(endX, endY + renderOffsetY, endZ);
             GL11.glTranslatef(-posX, -posY, -posZ);
             pole.render(renderer);
             GL11.glPopMatrix();
+
+            renderBlockPreview(startX, startY, startZ, posX, posY, posZ);
+            renderBlockPreview(endX, endY, endZ, posX, posY, posZ);
         }
     }
 
@@ -825,4 +815,16 @@ function rebuildParallelLane(entity: EntityVehicle, collectorList: InsulatorColl
             beamCollector.add(entity, baseX + deviationVecRight.getX(), insulatorY, baseZ + deviationVecRight.getZ(), pos[3], pos[7]);
         }
     }
+}
+
+function renderBlockPreview(x: number, y: number, z: number, entityX: number, entityY: number, entityZ: number): void {
+    GL11.glPushMatrix();
+    GL11.glTranslatef(
+        Math.floor(x) + 0.5,
+        Math.floor(y) + 0.5,
+        Math.floor(z) + 0.5
+    );
+    GL11.glTranslatef(-entityX, -entityY, -entityZ);
+    selected_block.render(renderer);
+    GL11.glPopMatrix();
 }

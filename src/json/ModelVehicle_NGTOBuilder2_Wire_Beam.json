@@ -1,14 +1,14 @@
 {
-    "name": "NGTOBuilder2_Catenary",
+    "name": "NGTOBuilder2_Wire_Beam",
     "model": {
         "modelFile": "ngtobuilder2/model_wire_catenary.mqo",
         "textures": [
-            ["mat1", "textures/ngtobuilder2/wire/wire_catenary.png", "AlphaBlend"]
+            ["mat1", "textures/ngtobuilder2/wire/wire_beam.png", "AlphaBlend"]
         ],
-        "rendererPath": "scripts/ngtobuilder2/wire/render_wire_catenary.js"
+        "rendererPath": "scripts/ngtobuilder2/wire/render_wire_beam.js"
     },
-    "buttonTexture": "textures/ngtobuilder2/wire/button_wire_catenary.png",
-    "serverScriptPath": "scripts/ngtobuilder2/wire/server_wire_catenary.js",
+    "buttonTexture": "textures/ngtobuilder2/wire/button_wire_beam.png",
+    "serverScriptPath": "scripts/ngtobuilder2/wire/server_wire_beam.js",
     "playerPos": [[0, 0, 0]],
     "vehicleType": "Car",
     "size": [1, 1],
@@ -23,6 +23,6 @@
     "smoothing": true,
     "doCulling": false,
     "changeYawOnStopping": false,
-    "accuracy": "MEDIUM",
+    "accuracy": "LOW",
     "tags": "ngto builder 2 hi03"
 }
