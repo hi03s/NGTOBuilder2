@@ -31,8 +31,6 @@ export type combineNGTOList = [
     offsetZ: number
 ] | null;
 
-declare const Java: any;
-
 //### NGTOBuilderUtil ###
 /**
  * 便利機能を提供するユーティリティクラス
