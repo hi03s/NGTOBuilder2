@@ -139,9 +139,9 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     //生成
     let insulatorItems = getItemInsulators(hostPlayer);
     if (insulatorItems.length === 1) insulatorItems.push(insulatorItems[0]);//1つしかない場合は両方に同じものを入れる
-    const insulatorName1 = insulatorItems && insulatorItems.length > 0 ? insulatorItems[0].getTagCompound().getString("ModelName") : "NoModel_Side";
-    const insulatorName2 = insulatorItems && insulatorItems.length > 1 ? insulatorItems[1].getTagCompound().getString("ModelName") : "NoModel_Side";
-    const beamConnectorModelName = insulatorItems && insulatorItems.length > 0 ? insulatorItems[insulatorItems.length - 1].getTagCompound().getString("ModelName") : "NoModel_Side";
+    const insulatorName1 = insulatorItems && insulatorItems.length > 0 ? RTMApiCompat.getModelNameFromItem(insulatorItems[0]) : "NoModel_Side";
+    const insulatorName2 = insulatorItems && insulatorItems.length > 1 ? RTMApiCompat.getModelNameFromItem(insulatorItems[1]) : "NoModel_Side";
+    const beamConnectorModelName = insulatorItems && insulatorItems.length > 0 ? RTMApiCompat.getModelNameFromItem(insulatorItems[insulatorItems.length - 1]) : "NoModel_Side";
 
     let laneCount = dataMap.getInt("laneCount");
     let laneDistance = dataMap.getDouble("laneDistance");
@@ -199,7 +199,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
             const rmPosY = lookingRailMap.getRailHeight(split, rmIndex);
             const heightOffsetY = rmPosY - Math.floor(rmPosY) - (1 / 16);//勾配Y差分
             let rmYaw = lookingRailMap.getRailYaw(split, rmIndex);
-            if (keyManager.downOptionKey()) rmYaw += 180;
+            if (keyManager.downOptionKey()) rmYaw += (180 + 360);//コントロールキーによる追加かチェックするため+360
             deviationOffsetVec = deviationOffsetVec.rotateAroundY(rmYaw);
             collectorList[0].add(entity, rmPosZX[1] + deviationOffsetVec.getX(), Math.floor(rmPosY) + 5.5 + heightOffsetY, rmPosZX[0] + deviationOffsetVec.getZ(), 1, rmYaw);
 
@@ -396,11 +396,11 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
 
     let insulatorItems = getItemInsulators(player);
     if (insulatorItems.length === 1) insulatorItems.push(insulatorItems[0]);//1つしかない場合は両方に同じものを入れる
-    const insulatorName1 = insulatorItems && insulatorItems.length > 0 ? insulatorItems[0].getTagCompound().getString("ModelName") : "NoModel_Side";
+    const insulatorName1 = insulatorItems && insulatorItems.length > 0 ? RTMApiCompat.getModelNameFromItem(insulatorItems[0]) : "NoModel_Side";
     const insulatorModelSet1 = connectorModelList[insulatorName1];
     const insulatorOffset1 = insulatorModelSet1 ? insulatorModelSet1.getConfig().wirePos : [0, 0, 0];
     const isFlipModel1 = insulatorName1.toLocaleLowerCase().indexOf("flip") >= 0;
-    const insulatorName2 = insulatorItems && insulatorItems.length > 1 ? insulatorItems[1].getTagCompound().getString("ModelName") : null;
+    const insulatorName2 = insulatorItems && insulatorItems.length > 1 ? RTMApiCompat.getModelNameFromItem(insulatorItems[1]) : null;
     const insulatorModelSet2 = insulatorName2 ? connectorModelList[insulatorName2] : null;
     const insulatorOffset2 = insulatorModelSet2 ? insulatorModelSet2.getConfig().wirePos : [0, 0, 0];
     const isFlipModel2 = insulatorName2 ? insulatorName2.toLocaleLowerCase().indexOf("flip") >= 0 : false;
@@ -550,7 +550,8 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                     pos[1] + 0.5 + pos[5] + insulatorOffset[1],
                     pos[2] + 0.5 + pos[6] + insulatorOffset[2]
                 ];
-                const tileEntity = world.getTileEntity(Math.floor(pos[0]), Math.floor(pos[1]), Math.floor(pos[2]));
+                //const tileEntity = world.getTileEntity(Math.floor(pos[0]), Math.floor(pos[1]), Math.floor(pos[2]));
+                const tileEntity = RTMApiCompat.getTileEntity(world, Math.floor(pos[0]), Math.floor(pos[1]), Math.floor(pos[2]));
                 if (!(tileEntity instanceof TileEntityInsulator)) {
                     //碍子のプレビュー
                     GL11.glPushMatrix();
@@ -558,7 +559,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
                     GL11.glTranslatef(-posX, -posY, -posZ);
                     if (insulatorModelSet) {
                         applyRotationSide(pos[3]);
-                        GL11.glRotatef(pos[7] + (isFlipModel ? 180 : 0), 0, 1, 0);
+                        GL11.glRotatef((pos[7] - 540) + (isFlipModel ? 180 : 0), 0, 1, 0);
                         NGTOBuilderUtilClient.enableAlpha(0.3);
                         NGTOBuilderUtilClient.renderModel(renderer, pass, insulatorModelSet.modelObj);
                         NGTOBuilderUtilClient.disableAlpha();

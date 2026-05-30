@@ -116,9 +116,9 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
 
                     if (!startPos || !endPos) continue;
 
-                    const tile = RTMApiCompat.getTileEntity(world, startPos[0], startPos[1], startPos[2]);
+                    const tile = RTMApiCompat.getTileEntity(world, endPos[0], endPos[1], endPos[2]);
                     if (tile instanceof TileEntityInsulator) {
-                        RTMApiCompat.setWireConnection(tile, endPos, beamWire);
+                        RTMApiCompat.setWireConnection(tile, startPos, beamWire);
                     }
                 }
             }

@@ -129,8 +129,9 @@ export class NGTOBuilderUtilClient {
         const tile = RTMApiCompat.getTileEntity(entity.worldObj, startRP.blockX, startRP.blockY, startRP.blockZ);
         if (tile instanceof TileEntityLargeRailBase && tile.getRailCore()) {
             const railCore = tile.getRailCore();
-            const property = railCore.getProperty();
-            const modelName = property.railModel;
+            //const property = railCore.getProperty();
+            //const modelName = property.railModel;//1.12 core.getResourceState().getResourceName()
+            const modelName = RTMApiCompatClient.getRailName(railCore);
             const hashKey =
                 `${startRP.blockX}_${startRP.blockY}_${startRP.blockZ}_${RTMApiCompat.getHorizontalAnchorYaw(startRP)}_${RTMApiCompat.getHorizontalAnchorLength(startRP)}
                 _${endRP.blockX}_${endRP.blockY}_${endRP.blockZ}_${RTMApiCompat.getHorizontalAnchorYaw(endRP)}_${RTMApiCompat.getHorizontalAnchorLength(endRP)}
@@ -138,11 +139,15 @@ export class NGTOBuilderUtilClient {
 
             let cachedData = this.renderRailMapCache.get(hashKey);//[displayList, railModelName]
             if (!cachedData || cachedData[1] !== modelName) {
-                const modelSet = railCore.getProperty().getModelSet() as ModelSetRailClient;
-                const railRenderer = modelSet.model.renderer as RailPartsRenderer;
+                //const modelSet = railCore.getProperty().getModelSet() as ModelSetRailClient;
+                const modelSet = RTMApiCompatClient.getRailModelSet(railCore);
+                const railModelObj = RTMApiCompatClient.getModelObject(modelSet);
+                //const railRenderer = modelSet.model.renderer as RailPartsRenderer;//modelSet.model = ModelObject : modelSetBase.modelObj = ModelObject  prop.getResourceSet() = ModelSetRail
+                const railRenderer = railModelObj.renderer as RailPartsRenderer;
                 const glList = RTMApiCompatClient.generateGLList();
                 cachedData = [glList, modelName];
                 this.renderRailMapCache.put(hashKey, cachedData);
+                /*
                 const shouldRenderObject =
                     ReflectionHelper.findMethod(
                         RailPartsRenderer.class,
@@ -153,7 +158,20 @@ export class NGTOBuilderUtilClient {
                         java.lang.Integer.TYPE,
                         java.lang.Integer.TYPE
                     );
-                const groupObjects = modelSet.model.model.getGroupObjects();
+                */
+                const shouldRenderObject =
+                    NGTOBuilderUtil.findMethod(
+                        RailPartsRenderer.class,
+                        ["shouldRenderObject"],
+                        [
+                            TileEntityLargeRailCore.class,
+                            java.lang.String.class,
+                            java.lang.Integer.TYPE,
+                            java.lang.Integer.TYPE
+                        ]
+                    )
+                //const groupObjects = modelSet.model.model.getGroupObjects();
+                const groupObjects = railModelObj.model.getGroupObjects();
                 //描画
                 GLHelper.startCompile(glList);
                 GL11.glPushMatrix();
@@ -175,8 +193,9 @@ export class NGTOBuilderUtilClient {
                         const group = groupObjects.get(groupIdx);
                         const name = new java.lang.String(group.name);
                         const pos = java.lang.Integer.valueOf(rmIdx);
-                        if (shouldRenderObject.invoke(railRenderer, railCore, name, len, pos) as boolean) {
-                            NGTRenderHelper.renderCustomModel(modelSet.model.model, railRenderer.currentMatId, modelSet.getConfig().smoothing, group.name);
+                        if (shouldRenderObject && shouldRenderObject.invoke(railRenderer, railCore, name, len, pos) as boolean) {
+                            //NGTRenderHelper.renderCustomModel(modelSet.model.model, railRenderer.currentMatId, modelSet.getConfig().smoothing, group.name);
+                            NGTRenderHelper.renderCustomModel(railModelObj.model, railRenderer.currentMatId, modelSet.getConfig().smoothing, group.name);
                         }
                     }
                     GL11.glPopMatrix();

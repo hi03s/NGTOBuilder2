@@ -213,9 +213,9 @@ export class BlockBuilder {
             _nbt.setInteger("y", y);
             _nbt.setInteger("z", z);
 
-            RTMApiCompat.setResourceName(tile, nbt);//1.12専用
-
             tile.readFromNBT(_nbt);
+
+            RTMApiCompat.setResourceName(tile, _nbt.getString("ModelName"));//1.12専用
         }
         if (tile instanceof TileEntityCustom) {//RTM側のsetPos
             tile.setPos(x, y, z, prevX, prevY, prevZ);

@@ -15,6 +15,8 @@ import { Vec3 } from "jp.ngt.ngtlib.math";
 import { RotatableBlockObject } from "./lib_RotatableBlockObject";
 import { RotatableBlockObjectMapper } from "./lib_RotatableBlockObjectMapper";
 import { RotatableBlockSet } from "./lib_RotatableBlockSet";
+import { Class } from "java.lang";
+import { Method } from "java.lang.reflect";
 
 export type Pos = [
     x: number,
@@ -29,14 +31,14 @@ export type combineNGTOList = [
     offsetZ: number
 ] | null;
 
+declare const Java: any;
+
 //### NGTOBuilderUtil ###
 /**
  * 便利機能を提供するユーティリティクラス
  */
 export class NGTOBuilderUtil {
     private static ngtoCache: HashMap<NBTTagCompound | string, NGTObject> = new HashMap();
-
-    private static posListCache: HashMap<string, Pos[]> = new HashMap();
 
     /**
      * プレイヤーが手に持っているミニチュアブロックからNGTOを取得する
@@ -530,5 +532,33 @@ export class NGTOBuilderUtil {
             javaArray[i] = array[i];
         }
         return javaArray;
+    }
+
+    static findMethod(clazz: Class, names: string[], paramTypes: Class[] = []): Method | null {
+        if (!clazz || !names || names.length === 0) return null;
+        let current: Class | null = clazz;
+        while (current) {
+            for (let i = 0; i < names.length; i++) {
+                const name = names[i];
+                try {
+                    const method = current.getDeclaredMethod(
+                        name,
+                        Java.to(paramTypes, "java.lang.Class[]")
+                    );
+                    method.setAccessible(true);
+                    return method;
+                }
+                catch (e) {
+                    // 次の候補名を試す
+                }
+            }
+            try {
+                current = current.getSuperclass();
+            }
+            catch (e) {
+                current = null;
+            }
+        }
+        return null;
     }
 }

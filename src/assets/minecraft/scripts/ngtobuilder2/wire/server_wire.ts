@@ -11,7 +11,7 @@ import { NGTLog } from "jp.ngt.ngtlib.io";
 import { InsulatorPos } from "../../lib_hi03toolkit_1_0/lib_InsulatorCollector";
 import { ItemStack } from "net.minecraft.item";
 import { BlockSet } from "jp.ngt.ngtlib.block";
-import { ItemInstalledObject } from "jp.ngt.rtm.item";
+import { ItemInstalledObject, ItemWithModel } from "jp.ngt.rtm.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntityInsulator } from "jp.ngt.rtm.electric";
 import { Entity } from "net.minecraft.entity";
@@ -88,7 +88,8 @@ function onUpdate2(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void 
         const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");
         if (!isInitializedBuild) {
             let modelName = "NoModel_Side";
-            if (insulatorItem) modelName = insulatorItem.getTagCompound().getString("ModelName");
+            //if (insulatorItem) modelName = insulatorItem.getTagCompound().getString("ModelName");
+            if (insulatorItem) modelName = RTMApiCompat.getModelNameFromItem(insulatorItem);
             const posList = receiveData.posList;
             for (let i = 0; i < posList.length; i++) {
                 //コネクタ

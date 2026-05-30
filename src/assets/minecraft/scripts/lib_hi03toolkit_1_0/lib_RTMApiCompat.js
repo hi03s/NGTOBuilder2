@@ -37,21 +37,21 @@ RTMApiCompat.setBlock = function (world, x, y, z, block, metadata) {
     z = Math.floor(z);
     var flag = 3;
     if (RTMApiCompat.isOldVer) world.func_147465_d(x, y, z, block, metadata, flag);
-    else BlockUtil.setBlock(world, x, y, z, block, metadata, flag);
+    else Packages.jp.ngt.ngtlib.block.BlockUtil.setBlock(world, x, y, z, block, metadata, flag);
 }
 RTMApiCompat.getBlock = function (world, x, y, z) {
     x = Math.floor(x);
     y = Math.floor(y);
     z = Math.floor(z);
     if (RTMApiCompat.isOldVer) return world.func_147439_a(x, y, z);
-    else return BlockUtil.getBlock(world, x, y, z);
+    else return Packages.jp.ngt.ngtlib.block.BlockUtil.getBlock(world, x, y, z);
 }
 RTMApiCompat.getMetadata = function (world, x, y, z) {
     x = Math.floor(x);
     y = Math.floor(y);
     z = Math.floor(z);
     if (RTMApiCompat.isOldVer) return world.func_72805_g(x, y, z);
-    else return BlockUtil.getMetadata(world, x, y, z);
+    else return Packages.jp.ngt.ngtlib.block.BlockUtil.getMetadata(world, x, y, z);
 }
 RTMApiCompat.getTileEntity = function (world, x, y, z) {
     x = Math.floor(x);
@@ -67,6 +67,7 @@ RTMApiCompat.hasTileEntity = function (blockSet) {
     if (!blockSet || !blockSet.block) return false;
     var block = blockSet.block;
     try {
+        if (block instanceof Packages.net.minecraft.block.ITileEntityProvider) return true;
         if (RTMApiCompat.isOldVer) return block.hasTileEntity(blockSet.metadata);
         else return block.hasTileEntity(block.func_176203_a(blockSet.metadata));
     }
@@ -75,11 +76,8 @@ RTMApiCompat.hasTileEntity = function (blockSet) {
         return false;
     }
 }
-RTMApiCompat.setResourceName = function (tileEntity, nbt) {//1.12専用
-    if (!RTMApiCompat.isOldVer) {
-        var modelName = nbt.func_74779_i("ModelName");
-        if (modelName) tileEntity.getResourceState().setResourceName(modelName);
-    }
+RTMApiCompat.setResourceName = function (tileEntity, modelName) {//1.12専用
+    if (!RTMApiCompat.isOldVer) tileEntity.getResourceState().setResourceName(modelName);
 }
 RTMApiCompat.setPos = function (tileEntity, x, y, z) {
     if (RTMApiCompat.isOldVer) {
@@ -97,13 +95,13 @@ RTMApiCompat.getItemStackAt = function (inventory, index) {
 }
 RTMApiCompat.doFollowing = function (entity, hostPlayer) {//1.12専用
     if (!entity || !hostPlayer || RTMApiCompat.isOldVer) return;
-    var x = hostPlayer.posX;
-    var y = hostPlayer.posY + 2;
-    var z = hostPlayer.posZ;
-    entity.setPosition(x, y, z);
-    entity.motionX = 0;
-    entity.motionY = 0;
-    entity.motionZ = 0;
+    var x = hostPlayer.field_70165_t;
+    var y = hostPlayer.field_70163_u + 3;
+    var z = hostPlayer.field_70161_v;
+    entity.func_70107_b(x, y, z);
+    entity.field_70159_w = 0;
+    entity.field_70181_x = 0;
+    entity.field_70179_y = 0;
 }
 RTMApiCompat.startRiding = function (entity, targetEntity) {
     if (RTMApiCompat.isOldVer) entity.func_70078_a(targetEntity);
@@ -140,13 +138,13 @@ RTMApiCompat.setWireConnection = function (tileEntity, targetPos, wireStack) {
     var sx = Math.floor(tileEntity.field_145851_c);
     var sy = Math.floor(tileEntity.field_145848_d);
     var sz = Math.floor(tileEntity.field_145849_e);
+    var x = Math.floor(targetPos[0]);
+    var y = Math.floor(targetPos[1]);
+    var z = Math.floor(targetPos[2]);
     if (x === sx && y === sy && z === sz) {
         Packages.jp.ngt.ngtlib.io.NGTLog.debug("[NGTO Builder] Skip self wire connection: " + x + "," + y + "," + z);
         return;
     }
-    var x = Math.floor(targetPos[0]);
-    var y = Math.floor(targetPos[1]);
-    var z = Math.floor(targetPos[2]);
     if (y < 0 || y >= 256) {
         Packages.jp.ngt.ngtlib.io.NGTLog.debug("[NGTO Builder] Skip wire connection: invalid target y=" + y + " pos=" + x + "," + y + "," + z);
         return;
@@ -158,5 +156,15 @@ RTMApiCompat.setWireConnection = function (tileEntity, targetPos, wireStack) {
     else {
         var resourceState = wireStack.func_77973_b().getModelState(wireStack);
         tileEntity.setConnectionTo(x, y, z, Packages.jp.ngt.rtm.electric.Connection.ConnectionType.WIRE, resourceState);
+    }
+}
+RTMApiCompat.getModelNameFromItem = function (itemStack) {
+    if (RTMApiCompat.isOldVer) return itemStack.getTagCompound().getString("ModelName");
+    else {
+        if (itemStack.func_77973_b() instanceof Packages.jp.ngt.rtm.item.ItemInstalledObject) {
+            if (itemStack.func_77973_b().getModelState(itemStack)) return itemStack.func_77973_b().getModelState(itemStack).getResourceName();
+        }
+        return "";
+        //return itemStack.func_77973_b() instanceof Packages.jp.ngt.rtm.item.ItemInstalledObject ? itemStack.func_77973_b().getModelState(itemStack) ? itemStack.func_77973_b().getModelState(itemStack).getResourceName() : "" : "";
     }
 }

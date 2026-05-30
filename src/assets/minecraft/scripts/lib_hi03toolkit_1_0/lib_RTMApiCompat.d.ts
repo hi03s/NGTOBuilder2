@@ -6,7 +6,7 @@ import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { Block } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
 import { InventoryPlayer } from "net.minecraft.entity.player";
-import { ItemStack } from "net.minecraft.item";
+import { Item, ItemStack } from "net.minecraft.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
 import { World } from "net.minecraft.world";
@@ -35,7 +35,7 @@ export class RTMApiCompat {
     static getMetadata(world: World, x: number, y: number, z: number): number | null;
     static getTileEntity(world: World, x: number, y: number, z: number): TileEntity | null;
     static hasTileEntity(blockSet: BlockSet | null): boolean;
-    static setResourceName(tileEntity: TileEntity, nbt: NBTTagCompound): void;
+    static setResourceName(tileEntity: TileEntity, modelName: string): void;
     static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void;
     static getItemStackAt(inventory: InventoryPlayer, index: number): ItemStack | null;
     static doFollowing(entity: Entity, hostPlayer: Entity): void;
@@ -48,4 +48,5 @@ export class RTMApiCompat {
     static getSubType(itemStack: ItemStack): string;
     static setOffset(tileEntity: TileEntityPlaceable, x: number, y: number, z: number, sync: boolean): void;
     static setWireConnection(tileEntity: TileEntityInsulator, targetPos: Pos, wireStack: ItemStack): void;
+    static getModelNameFromItem(itemStack: ItemStack): string;
 }

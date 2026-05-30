@@ -107,8 +107,8 @@ RTMApiCompatClient.getRendererWithScript = function (resource) {
     return Renderer.getRendererWithScript.apply(Renderer, callArgs);
 }
 RTMApiCompatClient.getModelSetList = function(modelType) {
-    var type = RTMApiCompatClient.isOldVer ? modelType : Packages.jp.ngt.rtm.modelpack.ModelPackManager.getType(modelType);
-    var allModelList = Packages.jp.ngt.rtm.modelpack.ModelPackManager.INSTANCE.getModelList(modelType);
+    var type = RTMApiCompatClient.isOldVer ? modelType : Packages.jp.ngt.rtm.modelpack.ModelPackManager.INSTANCE.getType(modelType);
+    var allModelList = Packages.jp.ngt.rtm.modelpack.ModelPackManager.INSTANCE.getModelList(type);
     var list = {};
     for (var i = 0; i < allModelList.size(); i++) {
         var modelSet = allModelList.get(i);
@@ -116,4 +116,16 @@ RTMApiCompatClient.getModelSetList = function(modelType) {
         list[modelName] = modelSet;
     }
     return list;
+}
+RTMApiCompatClient.getRailModelSet = function(railCore) {
+    if (RTMApiCompatClient.isOldVer) return railCore.getProperty().getModelSet();
+    else return railCore.getResourceState().getResourceSet();
+}
+RTMApiCompatClient.getRailName = function(railCore) {
+    if (RTMApiCompatClient.isOldVer) return railCore.getProperty().railModel;
+    else return railCore.getResourceState().getResourceName();
+}
+RTMApiCompatClient.getModelObject = function(modelSet) {
+    if (RTMApiCompatClient.isOldVer) return modelSet.model;
+    else return modelSet.modelObj;
 }

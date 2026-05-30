@@ -383,7 +383,9 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 //追加関数
 function getBeamInsulatorName(player: EntityPlayer): string {
     const insulatorItems = getItemInsulators(player);
-    return insulatorItems.length > 0 ? insulatorItems[0].getTagCompound().getString("ModelName") : "NoModel_Side";
+    let modelName = "NoModel_Side";
+    if (insulatorItems.length > 0) modelName = RTMApiCompat.getModelNameFromItem(insulatorItems[0]);
+    return modelName;
 }
 
 function getItemInsulators(player: EntityPlayer): ItemStack[] {
