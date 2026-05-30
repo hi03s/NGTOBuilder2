@@ -42,13 +42,11 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
     keyManager.register("resetSelected", Keyboard.KEY_C, false, "すべての選択をリセットする");
 
     //ーービーム操作ーー
-    keyManager.register("isBeamInsulatorMode", Keyboard.KEY_I, true, "ワイヤー式ビームの碍子の設置位置を切り替える");
-    keyManager.register("laneLeft", Keyboard.KEY_LEFT, true, "左にレーンを増やす/右のレーンを減らす");
-    keyManager.register("laneRight", Keyboard.KEY_RIGHT, true, "右にレーンを増やす/左のレーンを減らす");
-    keyManager.register("laneDistanceIncrease", Keyboard.KEY_RIGHT, false, "レーン間の距離を増やす");
-    keyManager.register("laneDistanceDecrease", Keyboard.KEY_LEFT, false, "レーン間の距離を減らす");
-    keyManager.register("beamDistanceIncrease", Keyboard.KEY_UP, false, "ワイヤー式ビームの余長を0.1m増やす");
-    keyManager.register("beamDistanceDecrease", Keyboard.KEY_DOWN, false, "ワイヤー式ビームの余長を0.1m減らす");
+    keyManager.register("isBeamInsulatorMode", Keyboard.KEY_P, false, "ワイヤー式ビームの碍子の設置位置を切り替える");
+    keyManager.register("xOffsetIncrease", Keyboard.KEY_RIGHT, true, "中心を右にずらす");
+    keyManager.register("xOffsetDecrease", Keyboard.KEY_LEFT, true, "中心を左にずらす");
+    keyManager.register("beamDistanceIncrease", Keyboard.KEY_RIGHT, false, "ビームの半幅を0.1m増やす");
+    keyManager.register("beamDistanceDecrease", Keyboard.KEY_LEFT, false, "ビームの半幅を0.1m減らす");
 
     ignoreItemList = [
         RTMItem.itemWire,
@@ -98,10 +96,8 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
 
         NGTLog.sendChatMessage(sender, `---ビーム操作---`);
         NGTLog.sendChatMessage(sender, keyManager.getDescription("isBeamInsulatorMode"));
-        NGTLog.sendChatMessage(sender, keyManager.getDescription("laneLeft"));
-        NGTLog.sendChatMessage(sender, keyManager.getDescription("laneRight"));
-        NGTLog.sendChatMessage(sender, keyManager.getDescription("laneDistanceIncrease"));
-        NGTLog.sendChatMessage(sender, keyManager.getDescription("laneDistanceDecrease"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("xOffsetIncrease"));
+        NGTLog.sendChatMessage(sender, keyManager.getDescription("xOffsetDecrease"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("beamDistanceIncrease"));
         NGTLog.sendChatMessage(sender, keyManager.getDescription("beamDistanceDecrease"));
     }
@@ -111,27 +107,16 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         dataMap.setBoolean("isEndEdit", true, 1);
     }
 
-    const beamWire = getBeamWire(hostPlayer);
+    const heldWire = getHeldWire(hostPlayer);
     const beamInsulatorName = getBeamInsulatorName(hostPlayer);
 
-    let laneCount = dataMap.getInt("laneCount");
-    let laneDistance = dataMap.getDouble("laneDistance");
+    let xOffset = dataMap.getDouble("xOffset");
     let beamDistance = dataMap.getDouble("beamDistance");
     const isBuilding = dataMap.getBoolean("isBuilding");
     const isUndo = dataMap.getBoolean("isUndo");
 
-    if (laneDistance === 0) {
-        laneDistance = 4.0;
-        dataMap.setDouble("laneDistance", laneDistance, 0);
-    }
-
-    if (beamDistance === 0) {
-        beamDistance = 0.0;
-        dataMap.setDouble("beamDistance", beamDistance, 0);
-    }
-
     //生成
-    if (keyManager.pressed("build") && beamCollector.size(entity) > 0 && beamWire && !isUndo && !isBuilding) {
+    if (keyManager.pressed("build") && beamCollector.size(entity) > 0 && heldWire && !isUndo && !isBuilding) {
         dataMap.setBoolean("isBuilding", true, 1);
 
         const sendData: ReceiveData_beam = {
@@ -194,6 +179,7 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
     if (keyManager.pressed("resetSelected")) {
         baseCollector.clear(entity);
         beamCollector.clear(entity);
+        dataMap.setDouble("xOffset", 0, 0);
     }
 
     //ワイヤー式ビームの碍子の設置位置を切り替える
@@ -204,37 +190,17 @@ function keyInput(hostPlayer: EntityPlayer, entity: EntityVehicle, isRightClick:
         rebuildBeam(entity, baseCollector, beamCollector, dataMap);
     }
 
-    //左にレーンを増やす/右のレーンを減らす
-    if (keyManager.pressed("laneLeft")) {
-        laneCount = laneCount - 1;
-        dataMap.setInt("laneCount", laneCount, 0);
-        const laneDescription = laneCount > 0 ? `R+${laneCount}` : laneCount < 0 ? `L+${Math.abs(laneCount)}` : "0";
-        NGTLog.sendChatMessage(sender, `レーン数: ${laneDescription}`);
+    //ローカルXオフセットを増やす
+    if (keyManager.pressed("xOffsetIncrease") || keyManager.held("xOffsetIncrease", 500)) {
+        xOffset += 0.1;
+        dataMap.setDouble("xOffset", xOffset, 0);
         rebuildBeam(entity, baseCollector, beamCollector, dataMap);
     }
 
-    //右にレーンを増やす/左のレーンを減らす
-    if (keyManager.pressed("laneRight")) {
-        laneCount = laneCount + 1;
-        dataMap.setInt("laneCount", laneCount, 0);
-        const laneDescription = laneCount > 0 ? `R+${laneCount}` : laneCount < 0 ? `L+${Math.abs(laneCount)}` : "0";
-        NGTLog.sendChatMessage(sender, `レーン数: ${laneDescription}`);
-        rebuildBeam(entity, baseCollector, beamCollector, dataMap);
-    }
-
-    //レーン間の距離を増やす
-    if (keyManager.pressed("laneDistanceIncrease") || keyManager.held("laneDistanceIncrease", 500)) {
-        laneDistance += 0.1;
-        dataMap.setDouble("laneDistance", laneDistance, 0);
-        NGTLog.sendChatMessage(sender, `レーン間の距離: ${laneDistance.toFixed(1)}m`);
-        rebuildBeam(entity, baseCollector, beamCollector, dataMap);
-    }
-
-    //レーン間の距離を減らす
-    if (keyManager.pressed("laneDistanceDecrease") || keyManager.held("laneDistanceDecrease", 500)) {
-        laneDistance = Math.max(0, laneDistance - 0.1);
-        dataMap.setDouble("laneDistance", laneDistance, 0);
-        NGTLog.sendChatMessage(sender, `レーン間の距離: ${laneDistance.toFixed(1)}m`);
+    //ローカルXオフセットを減らす
+    if (keyManager.pressed("xOffsetDecrease") || keyManager.held("xOffsetDecrease", 500)) {
+        xOffset -= 0.1;
+        dataMap.setDouble("xOffset", xOffset, 0);
         rebuildBeam(entity, baseCollector, beamCollector, dataMap);
     }
 
@@ -431,7 +397,7 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 //追加関数
 function getBeamInsulatorName(player: EntityPlayer): string {
     const insulatorItems = getItemInsulators(player);
-    return insulatorItems.length > 0 ? insulatorItems[insulatorItems.length - 1].getTagCompound().getString("ModelName") : "NoModel_Side";
+    return insulatorItems.length > 0 ? insulatorItems[0].getTagCompound().getString("ModelName") : "NoModel_Side";
 }
 
 function getItemInsulators(player: EntityPlayer): ItemStack[] {
@@ -443,16 +409,6 @@ function getItemInsulators(player: EntityPlayer): ItemStack[] {
         }
     }
     return list;
-}
-
-function getBeamWire(player: EntityPlayer): ItemStack | null {
-    for (let i = 8; i >= 0; i--) {
-        const itemStack = RTMApiCompat.getItemStackAt(player.inventory, i);
-        if (itemStack && itemStack.getItem() === RTMItem.itemWire) {
-            return itemStack;
-        }
-    }
-    return null;
 }
 
 function renderWire(pos1: [number, number, number], pos2: [number, number, number], parts: Parts): void {
@@ -471,37 +427,49 @@ function renderWire(pos1: [number, number, number], pos2: [number, number, numbe
 }
 
 function rebuildBeam(entity: EntityVehicle, baseCollector: InsulatorCollector, beamCollector: InsulatorCollector, dataMap: DataMap): void {
-    const laneCount = dataMap.getInt("laneCount");
-    const laneDistance = dataMap.getDouble("laneDistance");
-    const beamDistance = dataMap.getDouble("beamDistance");
+    const xOffset = dataMap.getDouble("xOffset");
+    let beamDistance = dataMap.getDouble("beamDistance");
     const isBeamInsulatorMode = dataMap.getBoolean("isBeamInsulatorMode");
-
+    if (beamDistance === 0) {
+        beamDistance = 3.0;
+        dataMap.setDouble("beamDistance", beamDistance, 0);
+    }
     beamCollector.clear(entity);
-
-    const beamMargin = beamDistance + 3;
-    const outerLaneDeviation = laneDistance * Math.abs(laneCount) * (laneCount > 0 ? -1 : 1);
-    const beamLeft = Math.min(0, outerLaneDeviation) - beamMargin;
-    const beamRight = Math.max(0, outerLaneDeviation) + beamMargin;
-
+    const beamLeft = -xOffset - beamDistance;
+    const beamRight = -xOffset + beamDistance;
     const baseList = baseCollector.getAll(entity);
-
     for (let i = 0; i < baseList.length; i++) {
         const pos = baseList[i];
         const yaw = pos[7];
-
         let deviationVecLeft = new Vec3(beamLeft, 0, 0);
         let deviationVecRight = new Vec3(beamRight, 0, 0);
         deviationVecLeft = deviationVecLeft.rotateAroundY(yaw);
         deviationVecRight = deviationVecRight.rotateAroundY(yaw);
-
         const baseX = pos[0] + 0.5 + pos[4];
         const baseY = pos[1] + 0.5 + pos[5];
         const baseZ = pos[2] + 0.5 + pos[6];
-
         const groundY = pos[1] - 4.5;
         const insulatorY = !isBeamInsulatorMode ? baseY : groundY;
-
-        beamCollector.add(entity, baseX + deviationVecLeft.getX(), insulatorY, baseZ + deviationVecLeft.getZ(), pos[3], pos[7]);
-        beamCollector.add(entity, baseX + deviationVecRight.getX(), insulatorY, baseZ + deviationVecRight.getZ(), pos[3], pos[7]);
+        beamCollector.add(
+            entity,
+            baseX + deviationVecLeft.getX(),
+            insulatorY,
+            baseZ + deviationVecLeft.getZ(),
+            pos[3],
+            pos[7]
+        );
+        beamCollector.add(
+            entity,
+            baseX + deviationVecRight.getX(),
+            insulatorY,
+            baseZ + deviationVecRight.getZ(),
+            pos[3],
+            pos[7]
+        );
     }
+}
+
+function getHeldWire(player: EntityPlayer): ItemStack | null {
+    const itemStack = NGTOBuilderUtil.getHeldItem(player);
+    return itemStack && itemStack.getItem() === RTMItem.itemWire ? itemStack : null;
 }

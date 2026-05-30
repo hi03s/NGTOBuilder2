@@ -215,13 +215,6 @@ function getItemInsulators(player: EntityPlayer): ItemStack[] {
 }
 
 function getBeamWire(player: EntityPlayer): ItemStack | null {
-    for (let i = 8; i >= 0; i--) {
-        const itemStack = RTMApiCompat.getItemStackAt(player.inventory, i);
-
-        if (itemStack && itemStack.getItem() === RTMItem.itemWire) {
-            return itemStack;
-        }
-    }
-
-    return null;
+    const itemStack = NGTOBuilderUtil.getHeldItem(player);
+    return itemStack && itemStack.getItem() === RTMItem.itemWire ? itemStack : null;
 }
