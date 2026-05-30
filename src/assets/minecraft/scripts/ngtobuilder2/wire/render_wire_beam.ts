@@ -246,6 +246,9 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const posY = MCWrapper.getPosY(entity);
     const posZ = MCWrapper.getPosZ(entity);
 
+    //本体
+    body.render(renderer);
+
     let baseCollector = baseCollectorCache.get(entity);
     if (!baseCollector) {
         baseCollector = new InsulatorCollector();
@@ -322,7 +325,8 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
 
 //他のプレイヤーに描画する
 function renderForOtherUser(entity: EntityVehicle, pass: number, par3: number): void {
-
+    //本体
+    body.render(renderer);
 }
 
 function renderInMenu(): void {
@@ -330,61 +334,49 @@ function renderInMenu(): void {
 }
 
 function render(entity: EntityVehicle, pass: number, par3: number): void {
-    renderInMenu();
-    if (!entity) return;
-
+    if (!entity) {
+        renderInMenu();
+        return;
+    }
     const dataMap = entity.getResourceState().getDataMap();
     const isOpenGUI = NGTUtilClient.getMinecraft().currentScreen !== null;
     const world = entity.worldObj;
     const player = MCWrapperClient.getPlayer();
     const hostPlayerEntityId = dataMap.getString("hostPlayerEntityId");
-
     let hostPlayer = null;
     if (hostPlayerEntityId !== "") hostPlayer = world.getEntityByID(Number(hostPlayerEntityId)) as EntityPlayer;
-
+    const prevIsLeftClick = dataMap.getBoolean("prevIsLeftClick");
+    const prevIsRightClick = dataMap.getBoolean("prevIsRightClick");
     if (hostPlayer === null) {
         dataMap.setBoolean("showHelpMessage", false, 0);
+        if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
+        if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
+        renderForOtherUser(entity, pass, par3);
         return;
     }
-
     const sender = hostPlayer as unknown as ICommandSender;
     const isLeftClick = Mouse.isButtonDown(0);
     const isRightClick = Mouse.isButtonDown(1);
-    const prevIsLeftClick = dataMap.getBoolean("prevIsLeftClick");
-    const prevIsRightClick = dataMap.getBoolean("prevIsRightClick");
     const VERSIONS_server = dataMap.getString("VERSIONS");
     const isVersionChecked = dataMap.getBoolean("isVersionChecked");
-
-    RTMApiCompat.doFollowing(entity, hostPlayer);
-
+    RTMApiCompat.doFollowing(entity, hostPlayer);//1.12用
     if (hostPlayer && hostPlayer === player) {
         if (isLeftClick !== prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", isLeftClick, 0);
         if (isRightClick !== prevIsRightClick) dataMap.setBoolean("prevIsRightClick", isRightClick, 0);
         if (renderer.currentMatId === 0 && pass === 0) keyManager.update();
-
         if ((VERSIONS_server != Version) && !isVersionChecked) {
             dataMap.setBoolean("isVersionChecked", true, 0);
             NGTLog.sendChatMessage(sender, "§cVersions don't match!");
             NGTLog.sendChatMessage(sender, "§cClient:" + Version);
             NGTLog.sendChatMessage(sender, "§cServer:" + VERSIONS_server);
         }
-
         const showHelpMessage = dataMap.getBoolean("showHelpMessage");
         if (!showHelpMessage) {
             dataMap.setBoolean("showHelpMessage", true, 0);
             NGTLog.sendChatMessage(sender, keyManager.getDescription("showHelp"));
         }
-
-        if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) {
-            keyInput(hostPlayer, entity, (!prevIsRightClick && isRightClick), (!prevIsLeftClick && isLeftClick));
-        }
-
+        if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) keyInput(hostPlayer, entity, (!prevIsRightClick && isRightClick), (!prevIsLeftClick && isLeftClick));
         renderForToolUser(entity, pass, par3);
-    }
-    else {
-        if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
-        if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
-        renderForOtherUser(entity, pass, par3);
     }
 }
 

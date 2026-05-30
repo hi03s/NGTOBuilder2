@@ -419,6 +419,9 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     const isUndo = dataMap.getBoolean("isUndo");
     const world = entity.worldObj;
 
+    //本体
+    body.render(renderer);
+
     //カーソル
     if (lookingPos) {
         if (railMapCollector.size(entity) > 0) {
@@ -606,7 +609,8 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
 
 //他のプレイヤーに描画する
 function renderForOtherUser(entity: EntityVehicle, pass: number, par3: number): void {
-
+    //本体
+    body.render(renderer);
 }
 
 //本体の描画(モデル選択と画面併用)
@@ -617,8 +621,10 @@ function renderInMenu(): void {
 //#################################
 //#################################
 function render(entity: EntityVehicle, pass: number, par3: number): void {
-    renderInMenu();
-    if (!entity) return;
+    if (!entity) {
+        renderInMenu();
+        return;
+    }
     const dataMap = entity.getResourceState().getDataMap();
     const isOpenGUI = NGTUtilClient.getMinecraft().currentScreen !== null;
     const world = entity.worldObj;
@@ -626,15 +632,18 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
     const hostPlayerEntityId = dataMap.getString("hostPlayerEntityId");
     let hostPlayer = null;
     if (hostPlayerEntityId !== "") hostPlayer = world.getEntityByID(Number(hostPlayerEntityId)) as EntityPlayer;
+    const prevIsLeftClick = dataMap.getBoolean("prevIsLeftClick");
+    const prevIsRightClick = dataMap.getBoolean("prevIsRightClick");
     if (hostPlayer === null) {
         dataMap.setBoolean("showHelpMessage", false, 0);
+        if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
+        if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
+        renderForOtherUser(entity, pass, par3);
         return;
     }
     const sender = hostPlayer as unknown as ICommandSender;
     const isLeftClick = Mouse.isButtonDown(0);
     const isRightClick = Mouse.isButtonDown(1);
-    const prevIsLeftClick = dataMap.getBoolean("prevIsLeftClick");
-    const prevIsRightClick = dataMap.getBoolean("prevIsRightClick");
     const VERSIONS_server = dataMap.getString("VERSIONS");
     const isVersionChecked = dataMap.getBoolean("isVersionChecked");
     RTMApiCompat.doFollowing(entity, hostPlayer);//1.12用
@@ -655,11 +664,6 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
         }
         if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) keyInput(hostPlayer, entity, (!prevIsRightClick && isRightClick), (!prevIsLeftClick && isLeftClick));
         renderForToolUser(entity, pass, par3);
-    }
-    else {
-        if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
-        if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
-        renderForOtherUser(entity, pass, par3);
     }
 }
 
