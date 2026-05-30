@@ -470,7 +470,6 @@ var handleZ: Parts;
 var axisX: Parts;
 var axisY: Parts;
 var axisZ: Parts;
-var test: Parts;
 var mirrorX: Parts;
 var mirrorY: Parts;
 var mirrorZ: Parts;
@@ -486,7 +485,6 @@ function initParts(): void {
     axisX = renderer.registerParts(new Parts("axisX"));
     axisY = renderer.registerParts(new Parts("axisY"));
     axisZ = renderer.registerParts(new Parts("axisZ"));
-    test = renderer.registerParts(new Parts("test"));
     mirrorX = renderer.registerParts(new Parts("mirrorX"));
     mirrorY = renderer.registerParts(new Parts("mirrorY"));
     mirrorZ = renderer.registerParts(new Parts("mirrorZ"));
@@ -547,7 +545,7 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         for (let ngtoIdx = 0; ngtoIdx < ngtos.length; ngtoIdx++) {
             const ngto = ngtos[ngtoIdx];
             if (!ngto) continue;
-            ngtosHashKey += NGTOBuilderUtil.getNGTOHash(ngto) + "|";
+            ngtosHashKey += ngtoIdx + "|" + NGTOBuilderUtil.getNGTOHash(ngto) + "|";
         }
         const ngtoHash = NGTOBuilderUtil.getNGTOCache(entity, ngtosHashKey);
         if (!ngtoHash) {
@@ -635,7 +633,6 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
         const hash = entityId + ngtoHash + qHash + String(interpolationMode) + String(isPlaceAirBlock) + String(diffusionRate) + String(isMirrorX) + String(isMirrorY) + String(isMirrorZ) + String(supportY) + String(isBuildSupportBlocks) + String(offsetY);
         let posList = posListCache.get(hash);//相対座標で管理
         if (!posList) {
-            NGTLog.debug("test");
             let centerX = Math.floor(ngto.xSize / 2) + 0.5;
             let centerZ = Math.floor(ngto.zSize / 2) + 0.5;
             let supportRBO = new RotatableBlockObject();
