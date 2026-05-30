@@ -28,6 +28,7 @@ export class RTMApiCompat {
     static getRider(entity: EntityVehicle): Entity | null;
     static getRidingEntity(entity: EntityVehicle): Entity | null;
     static dismountPlayer(entity: EntityVehicle): void;
+    static dismount(entity: Entity): void;
     static createNBTFromTileEntity(tileEntity: TileEntity): NBTTagCompound;
     static setBlock(world: World, x: number, y: number, z: number, block: Block, metadata: number): void;
     static getBlock(world: World, x: number, y: number, z: number): Block | null;

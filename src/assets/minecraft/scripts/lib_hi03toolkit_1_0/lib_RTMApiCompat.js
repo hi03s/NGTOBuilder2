@@ -19,10 +19,11 @@ RTMApiCompat.getRidingEntity = function (entity) {
 };
 RTMApiCompat.dismountPlayer = function (entity) {
     var rider = RTMApiCompat.getRider(entity);
-    if (rider) {
-        if (RTMApiCompat.isOldVer) rider.func_70078_a(null);
-        else rider.func_184210_p();
-    }
+    if (rider) RTMApiCompat.dismount(rider);
+}
+RTMApiCompat.dismount = function (entity) {
+    if (RTMApiCompat.isOldVer) entity.func_70078_a(null);
+    else entity.func_184210_p();
 }
 RTMApiCompat.createNBTFromTileEntity = function (tileEntity) {
     var nbt = new Packages.net.minecraft.nbt.NBTTagCompound();
