@@ -320,16 +320,9 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     }
 }
 
-function renderBlockPreview(x: number, y: number, z: number, entityX: number, entityY: number, entityZ: number): void {
-    GL11.glPushMatrix();
-    GL11.glTranslatef(
-        Math.floor(x) + 0.5,
-        Math.floor(y) + 0.5,
-        Math.floor(z) + 0.5
-    );
-    GL11.glTranslatef(-entityX, -entityY, -entityZ);
-    selected_block.render(renderer);
-    GL11.glPopMatrix();
+//他のプレイヤーに描画する
+function renderForOtherUser(entity: EntityVehicle, pass: number, par3: number): void {
+
 }
 
 function renderInMenu(): void {
@@ -391,6 +384,7 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
     else {
         if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
         if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
+        renderForOtherUser(entity, pass, par3);
     }
 }
 
@@ -472,4 +466,16 @@ function rebuildBeam(entity: EntityVehicle, baseCollector: InsulatorCollector, b
 function getHeldWire(player: EntityPlayer): ItemStack | null {
     const itemStack = NGTOBuilderUtil.getHeldItem(player);
     return itemStack && itemStack.getItem() === RTMItem.itemWire ? itemStack : null;
+}
+
+function renderBlockPreview(x: number, y: number, z: number, entityX: number, entityY: number, entityZ: number): void {
+    GL11.glPushMatrix();
+    GL11.glTranslatef(
+        Math.floor(x) + 0.5,
+        Math.floor(y) + 0.5,
+        Math.floor(z) + 0.5
+    );
+    GL11.glTranslatef(-entityX, -entityY, -entityZ);
+    selected_block.render(renderer);
+    GL11.glPopMatrix();
 }

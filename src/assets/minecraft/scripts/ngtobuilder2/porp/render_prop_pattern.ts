@@ -721,6 +721,11 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
     }
 }
 
+//他のプレイヤーに描画する
+function renderForOtherUser(entity: EntityVehicle, pass: number, par3: number): void {
+
+}
+
 //本体の描画(モデル選択と画面併用)
 function renderInMenu(): void {
     body.render(renderer);
@@ -771,6 +776,7 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
     else {
         if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
         if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
+        renderForOtherUser(entity, pass, par3);
     }
 }
 

@@ -640,6 +640,10 @@ function renderForToolUser(entity: EntityVehicle, pass: number, par3: number): v
             renderBlockPreview(endX, endY, endZ, posX, posY, posZ);
         }
     }
+}
+
+//他のプレイヤーに描画する
+function renderForOtherUser(entity: EntityVehicle, pass: number, par3: number): void {
 
 }
 
@@ -693,6 +697,7 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
     else {
         if (!prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", true, 0);
         if (!prevIsRightClick) dataMap.setBoolean("prevIsRightClick", true, 0);
+        renderForOtherUser(entity, pass, par3);
     }
 }
 
