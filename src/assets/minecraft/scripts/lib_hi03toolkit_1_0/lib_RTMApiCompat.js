@@ -159,12 +159,11 @@ RTMApiCompat.setWireConnection = function (tileEntity, targetPos, wireStack) {
     }
 }
 RTMApiCompat.getModelNameFromItem = function (itemStack) {
-    if (RTMApiCompat.isOldVer) return itemStack.getTagCompound().getString("ModelName");
+    if (RTMApiCompat.isOldVer) return itemStack.func_77978_p().func_74779_i("ModelName");
     else {
         if (itemStack.func_77973_b() instanceof Packages.jp.ngt.rtm.item.ItemInstalledObject) {
             if (itemStack.func_77973_b().getModelState(itemStack)) return itemStack.func_77973_b().getModelState(itemStack).getResourceName();
         }
         return "";
-        //return itemStack.func_77973_b() instanceof Packages.jp.ngt.rtm.item.ItemInstalledObject ? itemStack.func_77973_b().getModelState(itemStack) ? itemStack.func_77973_b().getModelState(itemStack).getResourceName() : "" : "";
     }
 }
