@@ -10,7 +10,7 @@ importers:
     dependencies:
       rtm-ts:
         specifier: latest
-        version: 0.7.0
+        version: 0.8.0
 
 packages:
 
@@ -18,8 +18,8 @@ packages:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
 
-  rtm-ts@0.7.0:
-    resolution: {integrity: sha512-VA1+D9CXZHJohERwyoDW26DLoA1wy+L9OeP4D0KiJ5/ErvbkBlEqHtbG9wLvn7tJ16ZaIKfcG9cXi/AID1/Mvg==}
+  rtm-ts@0.8.0:
+    resolution: {integrity: sha512-HTLiOpLiR2G+Kr9xiRX+G/f7Cy1V/R0uEg6eajDh+suedlbEz4rOm/Ore7dk/xK43vPh4GBk2FUMVtoeIWsaLA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -32,7 +32,7 @@ snapshots:
 
   commander@12.1.0: {}
 
-  rtm-ts@0.7.0:
+  rtm-ts@0.8.0:
     dependencies:
       commander: 12.1.0
       typescript: 5.9.3
