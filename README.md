@@ -12,7 +12,7 @@ NGTOをワールド上に設置したり、ワイヤーモデルを簡単に設�
 This is a convenient tool for placing NGTO objects and wire models in the world more easily.<br>
 It is included as a vehicle model. Place it on the ground and right-click it to use it.
 
-## 注意事項
+## 注意事項 / Notice
 NGTO Builder 2を使用する前に、**必ずワールドデータのバックアップを取ってください**。デバッグ中にワールドデータが破損した事例があります。<br>
 このパックの使用によって生じた損害や損失について、作者は一切責任を負いません。<br>
 <br>
@@ -22,7 +22,7 @@ The author is not responsible for any damage or loss caused by using this pack.
 ## ダウンロード / Download
 * [最新リリース / New Release](https://github.com/hi03s/NGTOBuilder2/releases)
 
-## ツール内容
+## ツール内容 / Tools
 ### ● 地面設置
 線路/座標を指定して広い地面を生成します<br>
 Generates a wide ground surface by specifying routes or coordinates.
