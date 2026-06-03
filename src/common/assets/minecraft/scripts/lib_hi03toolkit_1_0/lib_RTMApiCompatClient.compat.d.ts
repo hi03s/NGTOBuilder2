@@ -1,21 +1,11 @@
-
-//lib_RTMApiCompatClient.jsの型定義ファイル
-
 import { NGTObject } from "jp.ngt.ngtlib.block";
 import { DisplayList } from "jp.ngt.ngtlib.renderer";
-import { ModelSetBase, ModelSetRail, ModelSetRailClient } from "jp.ngt.rtm.modelpack.modelset";
+import { ModelSetBase } from "jp.ngt.rtm.modelpack.modelset";
 import { TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
-import { ModelObject, RailPartsRenderer } from "jp.ngt.rtm.render";
+import { ModelObject, PartsRenderer } from "jp.ngt.rtm.render";
+import { ResourceLocation } from "net.minecraft.util";
 
-/**
- * RTMのバージョン差異を吸収するためのクラスです。RTMのバージョンによっては正常に動作しない機能もあります
- * 
- * 1.7.10で動作するように設計されています
- * 
- * クライアントサイド専用の機能を提供します
- */
 export class RTMApiCompatClient {
-    static isOldVer: boolean;
     static getLookingPos(): {
         posX: number;
         posY: number;
@@ -30,9 +20,10 @@ export class RTMApiCompatClient {
     } | null;
     static generateGLList(): DisplayList;
     static renderNGTO(renderer: PartsRenderer, ngto: NGTObject, pass: number): void;
+    static isMiniatureGui(screen: unknown): boolean;
     static getRendererWithScript(resource: ResourceLocation, ...args: string[]): PartsRenderer;
     static getModelSetList<T extends ModelSetBase>(modelType: string): { [name: string]: T };
-    static getRailModelSet(railCore: TileEntityLargeRailCore): ModelSetRailClient;
+    static getRailModelSet(railCore: TileEntityLargeRailCore): ModelSetBase;
     static getRailName(railCore: TileEntityLargeRailCore): string;
     static getModelObject(modelSet: ModelSetBase): ModelObject;
 }
