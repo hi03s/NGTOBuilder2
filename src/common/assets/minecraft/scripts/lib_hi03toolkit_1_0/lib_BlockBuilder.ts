@@ -1,5 +1,9 @@
 import { HashMap } from "java.util";
-import { BlockSet, TileEntityCustom, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
+import {
+	BlockSet,
+	TileEntityCustom,
+	TileEntityPlaceable,
+} from "jp.ngt.ngtlib.block";
 import { TileEntityLargeRailBase } from "jp.ngt.rtm.rail";
 import { Block, BlockDoor } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
@@ -8,7 +12,13 @@ import { TileEntity } from "net.minecraft.tileentity";
 import { RTMApiCompat } from "@target/assets/minecraft/scripts/lib_hi03toolkit_1_0/lib_RTMApiCompat";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 
-export type BlockSetPlacement = [blockSet: BlockSet, x: number, y: number, z: number, yaw: number];
+export type BlockSetPlacement = [
+	blockSet: BlockSet,
+	x: number,
+	y: number,
+	z: number,
+	yaw: number,
+];
 
 export type Pos = [x: number, y: number, z: number];
 
@@ -18,212 +28,251 @@ export type Pos = [x: number, y: number, z: number];
  * 引数のEntityはHashMapのキーとして使用
  */
 export class BlockBuilder {
-  private hashMap: HashMap<Entity, BlockSetPlacement[]>;
-  private processed: HashMap<Entity, number>;
+	private hashMap: HashMap<Entity, BlockSetPlacement[]>;
+	private processed: HashMap<Entity, number>;
 
-  constructor() {
-    this.hashMap = new HashMap();
-    this.processed = new HashMap();
-  }
+	constructor() {
+		this.hashMap = new HashMap();
+		this.processed = new HashMap();
+	}
 
-  /**
-   * ブロック設置が完了しているかどうかを判定する
-   * @param entity
-   * @returns
-   */
-  isFinished(entity: Entity): boolean {
-    const posList = this.get(entity);
-    const processed = this.getProcessed(entity);
-    return processed >= posList.length;
-  }
+	/**
+	 * ブロック設置が完了しているかどうかを判定する
+	 * @param entity
+	 * @returns
+	 */
+	isFinished(entity: Entity): boolean {
+		const posList = this.get(entity);
+		const processed = this.getProcessed(entity);
+		return processed >= posList.length;
+	}
 
-  /**
-   * 残りのブロックの数を取得する
-   * @param entity
-   * @returns
-   */
-  getCount(entity: Entity): number {
-    const posList = this.get(entity);
-    const processed = this.getProcessed(entity);
-    return Math.max(0, posList.length - processed);
-  }
+	/**
+	 * 残りのブロックの数を取得する
+	 * @param entity
+	 * @returns
+	 */
+	getCount(entity: Entity): number {
+		const posList = this.get(entity);
+		const processed = this.getProcessed(entity);
+		return Math.max(0, posList.length - processed);
+	}
 
-  /**
-   * 指定座標のブロックを収集するUndo向け機能
-   * @param entity
-   * @param pos [x, y, z]
-   */
-  addBackup(entity: Entity, pos: Pos): void {
-    const posList = this.get(entity);
-    const world = RTMApiCompat.getWorld(entity);
-    const tileEntity = RTMApiCompat.getTileEntity(world, pos[0], pos[1], pos[2]);
-    const block = RTMApiCompat.getBlock(world, pos[0], pos[1], pos[2]);
-    const metadata = RTMApiCompat.getMetadata(world, pos[0], pos[1], pos[2]);
-    if (block !== null && metadata !== null) {
-      let nbt = null;
-      let blockRotation = 0;
-      if (tileEntity && !(tileEntity instanceof TileEntityLargeRailBase)) {
-        if (block instanceof TileEntityPlaceable) blockRotation = block.getRotation();
-        nbt = RTMApiCompat.createNBTFromTileEntity(tileEntity);
-      }
-      const blockSet = !nbt ? new BlockSet(block, metadata) : new BlockSet(block, metadata, nbt);
-      posList.push([blockSet, pos[0], pos[1], pos[2], blockRotation]);
-      this.set(entity, posList);
-    }
-  }
+	/**
+	 * 指定座標のブロックを収集するUndo向け機能
+	 * @param entity
+	 * @param pos [x, y, z]
+	 */
+	addBackup(entity: Entity, pos: Pos): void {
+		const posList = this.get(entity);
+		const world = RTMApiCompat.getWorld(entity);
+		const tileEntity = RTMApiCompat.getTileEntity(
+			world,
+			pos[0],
+			pos[1],
+			pos[2],
+		);
+		const block = RTMApiCompat.getBlock(world, pos[0], pos[1], pos[2]);
+		const metadata = RTMApiCompat.getMetadata(world, pos[0], pos[1], pos[2]);
+		if (block !== null && metadata !== null) {
+			let nbt = null;
+			let blockRotation = 0;
+			if (tileEntity && !(tileEntity instanceof TileEntityLargeRailBase)) {
+				if (block instanceof TileEntityPlaceable)
+					blockRotation = block.getRotation();
+				nbt = RTMApiCompat.createNBTFromTileEntity(tileEntity);
+			}
+			const blockSet = !nbt
+				? new BlockSet(block, metadata)
+				: new BlockSet(block, metadata, nbt);
+			posList.push([blockSet, pos[0], pos[1], pos[2], blockRotation]);
+			this.set(entity, posList);
+		}
+	}
 
-  /**
-   * 指定座標にブロックを追加する
-   * @param entity
-   * @param blockSet
-   * @param x
-   * @param y
-   * @param z
-   */
-  add(entity: Entity, blockSet: BlockSet, x: number, y: number, z: number, yaw: number = 0): void {
-    const posList = this.get(entity);
-    posList.push([blockSet, x, y, z, yaw]);
-    this.set(entity, posList);
-  }
+	/**
+	 * 指定座標にブロックを追加する
+	 * @param entity
+	 * @param blockSet
+	 * @param x
+	 * @param y
+	 * @param z
+	 */
+	add(
+		entity: Entity,
+		blockSet: BlockSet,
+		x: number,
+		y: number,
+		z: number,
+		yaw: number = 0,
+	): void {
+		const posList = this.get(entity);
+		posList.push([blockSet, x, y, z, yaw]);
+		this.set(entity, posList);
+	}
 
-  /**
-   * 複数の座標に同じブロックを追加する(塗りつぶし向け機能)
-   * @param entity
-   * @param blockSet
-   * @param posList [[x, y, z], ...]
-   */
-  addAll(entity: Entity, blockSet: BlockSet, posList: Pos[]): void {
-    posList.forEach(([x, y, z]: Pos): void => {
-      this.add(entity, blockSet, x, y, z);
-    });
-  }
+	/**
+	 * 複数の座標に同じブロックを追加する(塗りつぶし向け機能)
+	 * @param entity
+	 * @param blockSet
+	 * @param posList [[x, y, z], ...]
+	 */
+	addAll(entity: Entity, blockSet: BlockSet, posList: Pos[]): void {
+		posList.forEach(([x, y, z]: Pos): void => {
+			this.add(entity, blockSet, x, y, z);
+		});
+	}
 
-  addFromRotatableBlockObjectAt(entity: Entity, list: BlockSetPlacement[]): void {
-    for (let i = 0; i < list.length; i++) {
-      const placeData = list[i];
-      if (!placeData) continue;
-      this.add(entity, placeData[0], placeData[1], placeData[2], placeData[3], placeData[4]);
-    }
-  }
+	addFromRotatableBlockObjectAt(
+		entity: Entity,
+		list: BlockSetPlacement[],
+	): void {
+		for (let i = 0; i < list.length; i++) {
+			const placeData = list[i];
+			if (!placeData) continue;
+			this.add(
+				entity,
+				placeData[0],
+				placeData[1],
+				placeData[2],
+				placeData[3],
+				placeData[4],
+			);
+		}
+	}
 
-  /**
-   * ブロックのリストをクリアする
-   * @param entity
-   */
-  clear(entity: Entity): void {
-    this.set(entity, []);
-    this.setProcessed(entity, 0);
-  }
+	/**
+	 * ブロックのリストをクリアする
+	 * @param entity
+	 */
+	clear(entity: Entity): void {
+		this.set(entity, []);
+		this.setProcessed(entity, 0);
+	}
 
-  /**
-   * ブロックを生成する
-   * 終了するまで実行し続ける必要があるため、完了しているかどうかはisFinishedで判定する
-   * @param entity
-   * @param buildLimit 1tickあたりのブロック生成数
-   */
-  doBuild(entity: Entity, buildLimit: number): void {
-    if (buildLimit <= 0) return;
-    const world = RTMApiCompat.getWorld(entity);
-    const posList = this.get(entity);
-    let processed = this.getProcessed(entity);
-    if (processed >= posList.length) {
-      this.clear(entity);
-      return;
-    }
-    const end = Math.min(processed + buildLimit, posList.length);
-    for (let i = processed; i < end; i++) {
-      const data = posList[i];
-      if (!data) continue;
-      const blockSet = data[0];
-      const block = blockSet.block;
-      const metadata = blockSet.metadata;
-      if (blockSet.block instanceof BlockDoor && metadata >= 8) continue; // ドア上部はスキップ
-      const x = Math.floor(data[1]);
-      const y = Math.floor(data[2]);
-      const z = Math.floor(data[3]);
-      const blockRotation = data[4];
-      const replaceBlock = RTMApiCompat.getBlock(world, x, y, z);
-      const replaceBlockMeta = RTMApiCompat.getMetadata(world, x, y, z);
-      if (replaceBlock === block && replaceBlockMeta === metadata) continue;
-      const tile = RTMApiCompat.getTileEntity(world, x, y, z);
-      if (tile instanceof TileEntityLargeRailBase) continue;
-      // ブロックを設置
-      RTMApiCompat.setBlock(world, x, y, z, block, metadata);
-      if (block instanceof BlockDoor) {
-        const upsideMetadata = 8;
-      RTMApiCompat.setBlock(world, x, y + 1, z, block as unknown as Block, upsideMetadata);
-      }
-      if (RTMApiCompat.hasTileEntity(blockSet)) {
-        const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
-        if (tileEntity) {
-          BlockBuilder.setTileEntityData(tileEntity, blockSet, x, y, z, blockRotation);
-        }
-      }
-    }
-    processed = end;
-    if (processed >= posList.length) {
-      this.clear(entity);
-    } else {
-      this.setProcessed(entity, processed);
-    }
-  }
+	/**
+	 * ブロックを生成する
+	 * 終了するまで実行し続ける必要があるため、完了しているかどうかはisFinishedで判定する
+	 * @param entity
+	 * @param buildLimit 1tickあたりのブロック生成数
+	 */
+	doBuild(entity: Entity, buildLimit: number): void {
+		if (buildLimit <= 0) return;
+		const world = RTMApiCompat.getWorld(entity);
+		const posList = this.get(entity);
+		let processed = this.getProcessed(entity);
+		if (processed >= posList.length) {
+			this.clear(entity);
+			return;
+		}
+		const end = Math.min(processed + buildLimit, posList.length);
+		for (let i = processed; i < end; i++) {
+			const data = posList[i];
+			if (!data) continue;
+			const blockSet = data[0];
+			const block = blockSet.block;
+			const metadata = blockSet.metadata;
+			if (blockSet.block instanceof BlockDoor && metadata >= 8) continue; // ドア上部はスキップ
+			const x = Math.floor(data[1]);
+			const y = Math.floor(data[2]);
+			const z = Math.floor(data[3]);
+			const blockRotation = data[4];
+			const replaceBlock = RTMApiCompat.getBlock(world, x, y, z);
+			const replaceBlockMeta = RTMApiCompat.getMetadata(world, x, y, z);
+			if (replaceBlock === block && replaceBlockMeta === metadata) continue;
+			const tile = RTMApiCompat.getTileEntity(world, x, y, z);
+			if (tile instanceof TileEntityLargeRailBase) continue;
+			// ブロックを設置
+			RTMApiCompat.setBlock(world, x, y, z, block, metadata);
+			if (block instanceof BlockDoor) {
+				const upsideMetadata = 8;
+				RTMApiCompat.setBlock(
+					world,
+					x,
+					y + 1,
+					z,
+					block as unknown as Block,
+					upsideMetadata,
+				);
+			}
+			if (RTMApiCompat.hasTileEntity(blockSet)) {
+				const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
+				if (tileEntity) {
+					BlockBuilder.setTileEntityData(
+						tileEntity,
+						blockSet,
+						x,
+						y,
+						z,
+						blockRotation,
+					);
+				}
+			}
+		}
+		processed = end;
+		if (processed >= posList.length) {
+			this.clear(entity);
+		} else {
+			this.setProcessed(entity, processed);
+		}
+	}
 
-  get(entity: Entity): BlockSetPlacement[] {
-    return this.hashMap.get(entity) || [];
-  }
+	get(entity: Entity): BlockSetPlacement[] {
+		return this.hashMap.get(entity) || [];
+	}
 
-  set(entity: Entity, posList: BlockSetPlacement[]): void {
-    this.hashMap.put(entity, posList);
-  }
+	set(entity: Entity, posList: BlockSetPlacement[]): void {
+		this.hashMap.put(entity, posList);
+	}
 
-  getProcessed(entity: Entity): number {
-    return this.processed.get(entity) || 0;
-  }
+	getProcessed(entity: Entity): number {
+		return this.processed.get(entity) || 0;
+	}
 
-  setProcessed(entity: Entity, processed: number): void {
-    this.processed.put(entity, processed);
-  }
+	setProcessed(entity: Entity, processed: number): void {
+		this.processed.put(entity, processed);
+	}
 
-  static setTileEntityData(
-    tile: TileEntity,
-    blockSet: BlockSet,
-    x: number,
-    y: number,
-    z: number,
-    yaw: number
-  ): void {
-    if (y < 0 || y >= 256) {
-      NGTLog.debug("Skip TileEntity NBT: invalid y=" + y);
-      return;
-    }
+	static setTileEntityData(
+		tile: TileEntity,
+		blockSet: BlockSet,
+		x: number,
+		y: number,
+		z: number,
+		yaw: number,
+	): void {
+		if (y < 0 || y >= 256) {
+			NGTLog.debug("Skip TileEntity NBT: invalid y=" + y);
+			return;
+		}
 
-    const nbt = blockSet.nbt;
-    let prevX = 0;
-    let prevY = 0;
-    let prevZ = 0;
-    if (nbt) {
-      const _nbt = nbt.copy() as NBTTagCompound;
-      prevX = _nbt.getInteger("x");
-      prevY = _nbt.getInteger("y");
-      prevZ = _nbt.getInteger("z");
-      _nbt.setInteger("x", x);
-      _nbt.setInteger("y", y);
-      _nbt.setInteger("z", z);
+		const nbt = blockSet.nbt;
+		let prevX = 0;
+		let prevY = 0;
+		let prevZ = 0;
+		if (nbt) {
+			const _nbt = nbt.copy() as NBTTagCompound;
+			prevX = _nbt.getInteger("x");
+			prevY = _nbt.getInteger("y");
+			prevZ = _nbt.getInteger("z");
+			_nbt.setInteger("x", x);
+			_nbt.setInteger("y", y);
+			_nbt.setInteger("z", z);
 
-      tile.readFromNBT(_nbt);
+			tile.readFromNBT(_nbt);
 
-      RTMApiCompat.setResourceName(tile, _nbt.getString("ModelName")); //1.12専用
-    }
-    if (tile instanceof TileEntityCustom) {
-      //RTM側のsetPos
-      tile.setPos(x, y, z, prevX, prevY, prevZ);
-    } else {
-      //Minecraft側のsetPos
-      RTMApiCompat.setPos(tile, x, y, z);
-    }
-    if (tile instanceof TileEntityPlaceable) {
-      const rotation = tile.getRotation() + yaw;
-      tile.setRotation(rotation, true);
-    }
-  }
+			RTMApiCompat.setResourceName(tile, _nbt.getString("ModelName")); //1.12専用
+		}
+		if (tile instanceof TileEntityCustom) {
+			//RTM側のsetPos
+			tile.setPos(x, y, z, prevX, prevY, prevZ);
+		} else {
+			//Minecraft側のsetPos
+			RTMApiCompat.setPos(tile, x, y, z);
+		}
+		if (tile instanceof TileEntityPlaceable) {
+			const rotation = tile.getRotation() + yaw;
+			tile.setRotation(rotation, true);
+		}
+	}
 }

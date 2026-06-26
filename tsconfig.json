@@ -1,9 +1,9 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.common.json" },
-    { "path": "./tsconfig.kaizpatch.json" },
-    { "path": "./tsconfig.mc1710.json" },
-    { "path": "./tsconfig.mc1122.json" }
-  ]
+	"files": [],
+	"references": [
+		{ "path": "./tsconfig.common.json" },
+		{ "path": "./tsconfig.kaizpatch.json" },
+		{ "path": "./tsconfig.mc1710.json" },
+		{ "path": "./tsconfig.mc1122.json" }
+	]
 }

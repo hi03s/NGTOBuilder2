@@ -1,36 +1,56 @@
-lockfileVersion: '9.0'
+lockfileVersion: "9.0"
 
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 importers:
-
   .:
     dependencies:
       rtm-ts:
         specifier: 0.9.0
         version: 0.9.0
+    devDependencies:
+      prettier:
+        specifier: ^3.8.5
+        version: 3.8.5
 
 packages:
-
   commander@12.1.0:
-    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
-    engines: {node: '>=18'}
+    resolution:
+      {
+        integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==,
+      }
+    engines: { node: ">=18" }
+
+  prettier@3.8.5:
+    resolution:
+      {
+        integrity: sha512-zxcTTCedNGJM4R8sj/Cq/F0W/c4iE0afWBcBwMTRtw4WHYP9TWkYjdiH3npPRUYsXQCPR0hTU9yjovOu+E6EQA==,
+      }
+    engines: { node: ">=14" }
+    hasBin: true
 
   rtm-ts@0.9.0:
-    resolution: {integrity: sha512-eNHwUSjz25PAzpaDmqQqVIIl/MY8jiWSoFIuSSsHCMosWkHRqh6kzPq2BFSjB2bAR1qR5M7xZ7HT1v7ZUN4+IQ==}
-    engines: {node: '>=18'}
+    resolution:
+      {
+        integrity: sha512-eNHwUSjz25PAzpaDmqQqVIIl/MY8jiWSoFIuSSsHCMosWkHRqh6kzPq2BFSjB2bAR1qR5M7xZ7HT1v7ZUN4+IQ==,
+      }
+    engines: { node: ">=18" }
     hasBin: true
 
   typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
-    engines: {node: '>=14.17'}
+    resolution:
+      {
+        integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==,
+      }
+    engines: { node: ">=14.17" }
     hasBin: true
 
 snapshots:
-
   commander@12.1.0: {}
+
+  prettier@3.8.5: {}
 
   rtm-ts@0.9.0:
     dependencies:

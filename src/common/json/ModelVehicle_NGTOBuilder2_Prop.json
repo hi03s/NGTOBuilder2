@@ -1,28 +1,26 @@
 {
-    "name": "NGTOBuilder2_Prop",
-    "model": {
-        "modelFile": "ngtobuilder2/model_prop.mqo",
-        "textures": [
-            ["mat1", "textures/ngtobuilder2/porp/prop.png", "AlphaBlend"]
-        ],
-        "rendererPath": "scripts/ngtobuilder2/porp/render_prop.js"
-    },
-    "buttonTexture": "textures/ngtobuilder2/porp/button_prop.png",
-    "serverScriptPath": "scripts/ngtobuilder2/porp/server_prop.js",
-    "playerPos": [[0, 0, 0]],
-    "vehicleType": "Car",
-    "size": [1, 1],
-    "vibration":[0.0, 0.0],
-    "friction": [0.0, 0.0],
-    "acceleration": [0.0, 0.0],
-    "maxSpeed": [0.0, 0.0],
-    "maxYaw": [0.0, 0.0],
-    "pitchCoefficient": [0.0, 0.0],
-    "yawCoefficient": [0.0, 0.0],
-    "useCustomColor": false,
-    "smoothing": true,
-    "doCulling": false,
-    "changeYawOnStopping": false,
-    "accuracy": "LOW",
-    "tags": "ngto builder 2 hi03"
+	"name": "NGTOBuilder2_Prop",
+	"model": {
+		"modelFile": "ngtobuilder2/model_prop.mqo",
+		"textures": [["mat1", "textures/ngtobuilder2/porp/prop.png", "AlphaBlend"]],
+		"rendererPath": "scripts/ngtobuilder2/porp/render_prop.js"
+	},
+	"buttonTexture": "textures/ngtobuilder2/porp/button_prop.png",
+	"serverScriptPath": "scripts/ngtobuilder2/porp/server_prop.js",
+	"playerPos": [[0, 0, 0]],
+	"vehicleType": "Car",
+	"size": [1, 1],
+	"vibration": [0.0, 0.0],
+	"friction": [0.0, 0.0],
+	"acceleration": [0.0, 0.0],
+	"maxSpeed": [0.0, 0.0],
+	"maxYaw": [0.0, 0.0],
+	"pitchCoefficient": [0.0, 0.0],
+	"yawCoefficient": [0.0, 0.0],
+	"useCustomColor": false,
+	"smoothing": true,
+	"doCulling": false,
+	"changeYawOnStopping": false,
+	"accuracy": "LOW",
+	"tags": "ngto builder 2 hi03"
 }

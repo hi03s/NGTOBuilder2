@@ -4,113 +4,134 @@ import { DisplayList, GLHelper, NGTRenderer } from "jp.ngt.ngtlib.renderer";
 import { MCWrapperClient, NGTUtil } from "jp.ngt.ngtlib.util";
 import { NGTWorld } from "jp.ngt.ngtlib.world";
 import { ModelPackManager } from "jp.ngt.rtm.modelpack";
-import { ModelSetBase, ModelSetRailClient } from "jp.ngt.rtm.modelpack.modelset";
+import {
+	ModelSetBase,
+	ModelSetRailClient,
+} from "jp.ngt.rtm.modelpack.modelset";
 import { TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
 import { ModelObject, PartsRenderer, RTMRenderers } from "jp.ngt.rtm.render";
 import { TextureMap } from "net.minecraft.client.renderer.texture";
 import { ResourceLocation } from "net.minecraft.util";
 
 type LookingPos = {
-    posX: number;
-    posY: number;
-    posZ: number;
-    blockX: number;
-    blockY: number;
-    blockZ: number;
-    placeX: number;
-    placeY: number;
-    placeZ: number;
-    side: number;
+	posX: number;
+	posY: number;
+	posZ: number;
+	blockX: number;
+	blockY: number;
+	blockZ: number;
+	placeX: number;
+	placeY: number;
+	placeZ: number;
+	side: number;
 };
 
 type ModelSetWithModel = ModelSetBase & {
-    model: ModelObject;
+	model: ModelObject;
 };
 
 export class RTMApiCompatClient {
-    static ngtoWorld = new HashMap<NGTObject, NGTWorld>();
+	static ngtoWorld = new HashMap<NGTObject, NGTWorld>();
 
-    static getLookingPos(): LookingPos | null {
-        const player = MCWrapperClient.getPlayer();
-        const mop = BlockUtil.getMOPFromPlayer(player, 512, true);
-        if (!mop) return null;
+	static getLookingPos(): LookingPos | null {
+		const player = MCWrapperClient.getPlayer();
+		const mop = BlockUtil.getMOPFromPlayer(player, 512, true);
+		if (!mop) return null;
 
-        const lookingVec = mop.hitVec;
-        const posX = lookingVec.xCoord;
-        const posY = lookingVec.yCoord;
-        const posZ = lookingVec.zCoord;
-        const hitX = mop.blockX;
-        const hitY = mop.blockY;
-        const hitZ = mop.blockZ;
-        const side = mop.sideHit;
-        let dx = 0;
-        let dy = 0;
-        let dz = 0;
-        if (side === 0) dy = -1;
-        else if (side === 1) dy = 1;
-        else if (side === 2) dz = -1;
-        else if (side === 3) dz = 1;
-        else if (side === 4) dx = -1;
-        else if (side === 5) dx = 1;
-        return {
-            posX: posX + dx * 1e-6,
-            posY: posY + dy * 1e-6,
-            posZ: posZ + dz * 1e-6,
-            blockX: hitX,
-            blockY: hitY,
-            blockZ: hitZ,
-            placeX: hitX + dx,
-            placeY: hitY + dy,
-            placeZ: hitZ + dz,
-            side: side
-        };
-    }
+		const lookingVec = mop.hitVec;
+		const posX = lookingVec.xCoord;
+		const posY = lookingVec.yCoord;
+		const posZ = lookingVec.zCoord;
+		const hitX = mop.blockX;
+		const hitY = mop.blockY;
+		const hitZ = mop.blockZ;
+		const side = mop.sideHit;
+		let dx = 0;
+		let dy = 0;
+		let dz = 0;
+		if (side === 0) dy = -1;
+		else if (side === 1) dy = 1;
+		else if (side === 2) dz = -1;
+		else if (side === 3) dz = 1;
+		else if (side === 4) dx = -1;
+		else if (side === 5) dx = 1;
+		return {
+			posX: posX + dx * 1e-6,
+			posY: posY + dy * 1e-6,
+			posZ: posZ + dz * 1e-6,
+			blockX: hitX,
+			blockY: hitY,
+			blockZ: hitZ,
+			placeX: hitX + dx,
+			placeY: hitY + dy,
+			placeZ: hitZ + dz,
+			side: side,
+		};
+	}
 
-    static generateGLList(): DisplayList {
-        return GLHelper.generateGLList();
-    }
+	static generateGLList(): DisplayList {
+		return GLHelper.generateGLList();
+	}
 
-    static renderNGTO(renderer: PartsRenderer, ngto: NGTObject, pass: number): void {
-        const modelObj = NGTUtil.getField(PartsRenderer.class, renderer, "modelObj") as ModelObject | null;
-        const matId = renderer.currentMatId;
-        if (modelObj) {
-            const defaultTexture = modelObj.textures[matId].material.texture;
-            renderer.bindTexture(TextureMap.locationBlocksTexture);
-            NGTRenderer.renderNGTObject(ngto, true);
-            renderer.bindTexture(defaultTexture);
-        }
-        void pass;
-    }
+	static renderNGTO(
+		renderer: PartsRenderer,
+		ngto: NGTObject,
+		pass: number,
+	): void {
+		const modelObj = NGTUtil.getField(
+			PartsRenderer.class,
+			renderer,
+			"modelObj",
+		) as ModelObject | null;
+		const matId = renderer.currentMatId;
+		if (modelObj) {
+			const defaultTexture = modelObj.textures[matId].material.texture;
+			renderer.bindTexture(TextureMap.locationBlocksTexture);
+			NGTRenderer.renderNGTObject(ngto, true);
+			renderer.bindTexture(defaultTexture);
+		}
+		void pass;
+	}
 
-    static isMiniatureGui(screen: unknown): boolean {
-        void screen;
-        return false;
-    }
+	static isMiniatureGui(screen: unknown): boolean {
+		void screen;
+		return false;
+	}
 
-    static getRendererWithScript(resource: ResourceLocation, ...args: string[]): PartsRenderer {
-        return RTMRenderers.getRendererWithScript(resource, ...args) as PartsRenderer;
-    }
+	static getRendererWithScript(
+		resource: ResourceLocation,
+		...args: string[]
+	): PartsRenderer {
+		return RTMRenderers.getRendererWithScript(
+			resource,
+			...args,
+		) as PartsRenderer;
+	}
 
-    static getModelSetList<T extends ModelSetBase>(modelType: string): { [name: string]: T } {
-        const allModelList = ModelPackManager.INSTANCE.getModelList(modelType);
-        const list: { [name: string]: T } = {};
-        for (let i = 0; i < allModelList.size(); i++) {
-            const modelSet = allModelList.get(i) as T;
-            const modelName = modelSet.getConfig().name;
-            list[modelName] = modelSet;
-        }
-        return list;
-    }
+	static getModelSetList<T extends ModelSetBase>(
+		modelType: string,
+	): { [name: string]: T } {
+		const allModelList = ModelPackManager.INSTANCE.getModelList(modelType);
+		const list: { [name: string]: T } = {};
+		for (let i = 0; i < allModelList.size(); i++) {
+			const modelSet = allModelList.get(i) as T;
+			const modelName = modelSet.getConfig().name;
+			list[modelName] = modelSet;
+		}
+		return list;
+	}
 
-    static getRailModelSet(railCore: TileEntityLargeRailCore): ModelSetRailClient {
-        return railCore.getProperty().getModelSet() as ModelSetRailClient;
-    }
+	static getRailModelSet(
+		railCore: TileEntityLargeRailCore,
+	): ModelSetRailClient {
+		return railCore.getProperty().getModelSet() as ModelSetRailClient;
+	}
 
-    static getRailName(railCore: TileEntityLargeRailCore): string {
-        return railCore.getProperty().railModel;
-    }
+	static getRailName(railCore: TileEntityLargeRailCore): string {
+		return railCore.getProperty().railModel;
+	}
 
-    static getModelObject(modelSet: ModelSetBase): ModelObject {
-        return (modelSet as ModelSetWithModel).model;
-    }
+	static getModelObject(modelSet: ModelSetBase): ModelObject {
+		return (modelSet as ModelSetWithModel).model;
+	}
 }

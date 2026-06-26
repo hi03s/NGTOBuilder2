@@ -1,4 +1,9 @@
-import { BlockSet, BlockUtil, NGTObject, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
+import {
+	BlockSet,
+	BlockUtil,
+	NGTObject,
+	TileEntityPlaceable,
+} from "jp.ngt.ngtlib.block";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 import { RTMItem } from "jp.ngt.rtm";
 import { Connection, TileEntityInsulator } from "jp.ngt.rtm.electric";
@@ -20,197 +25,254 @@ import { Loader } from "net.minecraftforge.fml.common";
 export type Pos = [x: number, y: number, z: number];
 
 type OffsettableTileEntity = TileEntityPlaceable & {
-    setOffset(x: number, y: number, z: number, sync: boolean): void;
+	setOffset(x: number, y: number, z: number, sync: boolean): void;
 };
 
 type ResourceNameState = {
-    setResourceName(modelName: string): void;
+	setResourceName(modelName: string): void;
 };
 
 type ResourceStateTileEntity = TileEntity & {
-    getResourceState(): ResourceNameState;
+	getResourceState(): ResourceNameState;
 };
 
 export class RTMApiCompat {
-    static isFixRTM = Loader.isModLoaded("fix-rtm");
+	static isFixRTM = Loader.isModLoaded("fix-rtm");
 
-    static getRider(entity: EntityVehicle): Entity | null {
-        const passengers = entity.getPassengers();
-        return passengers.size() > 0 ? passengers.get(0) : null;
-    }
+	static getRider(entity: EntityVehicle): Entity | null {
+		const passengers = entity.getPassengers();
+		return passengers.size() > 0 ? passengers.get(0) : null;
+	}
 
-    static getRidingEntity(entity: EntityVehicle): Entity | null {
-        return entity.getRidingEntity();
-    }
+	static getRidingEntity(entity: EntityVehicle): Entity | null {
+		return entity.getRidingEntity();
+	}
 
-    static getWorld(entity: unknown): World {
-        return (entity as Entity).world;
-    }
+	static getWorld(entity: unknown): World {
+		return (entity as Entity).world;
+	}
 
-    static dismountPlayer(entity: EntityVehicle): void {
-        const rider = RTMApiCompat.getRider(entity);
-        if (rider) RTMApiCompat.dismount(rider);
-    }
+	static dismountPlayer(entity: EntityVehicle): void {
+		const rider = RTMApiCompat.getRider(entity);
+		if (rider) RTMApiCompat.dismount(rider);
+	}
 
-    static dismount(entity: Entity): void {
-        entity.dismountRidingEntity();
-    }
+	static dismount(entity: Entity): void {
+		entity.dismountRidingEntity();
+	}
 
-    static createNBTFromTileEntity(tileEntity: TileEntity): NBTTagCompound {
-        const nbt = new NBTTagCompound();
-        tileEntity.writeToNBT(nbt);
-        return nbt;
-    }
+	static createNBTFromTileEntity(tileEntity: TileEntity): NBTTagCompound {
+		const nbt = new NBTTagCompound();
+		tileEntity.writeToNBT(nbt);
+		return nbt;
+	}
 
-    static setBlock(world: World, x: number, y: number, z: number, block: Block, metadata: number): void {
-        x = Math.floor(x);
-        y = Math.floor(y);
-        z = Math.floor(z);
-        BlockUtil.setBlock(world, x, y, z, block, metadata, 3);
-    }
+	static setBlock(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+		block: Block,
+		metadata: number,
+	): void {
+		x = Math.floor(x);
+		y = Math.floor(y);
+		z = Math.floor(z);
+		BlockUtil.setBlock(world, x, y, z, block, metadata, 3);
+	}
 
-    static getBlock(world: World, x: number, y: number, z: number): Block | null {
-        x = Math.floor(x);
-        y = Math.floor(y);
-        z = Math.floor(z);
-        return BlockUtil.getBlock(world, x, y, z);
-    }
+	static getBlock(world: World, x: number, y: number, z: number): Block | null {
+		x = Math.floor(x);
+		y = Math.floor(y);
+		z = Math.floor(z);
+		return BlockUtil.getBlock(world, x, y, z);
+	}
 
-    static getMetadata(world: World, x: number, y: number, z: number): number | null {
-        x = Math.floor(x);
-        y = Math.floor(y);
-        z = Math.floor(z);
-        return BlockUtil.getMetadata(world, x, y, z);
-    }
+	static getMetadata(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+	): number | null {
+		x = Math.floor(x);
+		y = Math.floor(y);
+		z = Math.floor(z);
+		return BlockUtil.getMetadata(world, x, y, z);
+	}
 
-    static getTileEntity(world: World, x: number, y: number, z: number): TileEntity | null {
-        return world.getTileEntity(new BlockPos(Math.floor(x), Math.floor(y), Math.floor(z)));
-    }
+	static getTileEntity(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+	): TileEntity | null {
+		return world.getTileEntity(
+			new BlockPos(Math.floor(x), Math.floor(y), Math.floor(z)),
+		);
+	}
 
-    static hasTileEntity(blockSet: BlockSet | null): boolean {
-        if (!blockSet || !blockSet.block) return false;
-        const block = blockSet.block;
-        try {
-            return block.hasTileEntity(block.getStateFromMeta(blockSet.metadata));
-        } catch (err) {
-            NGTLog.debug("[NGTO Builder] hasTileEntity Error: " + block + " -> " + err);
-            return false;
-        }
-    }
+	static hasTileEntity(blockSet: BlockSet | null): boolean {
+		if (!blockSet || !blockSet.block) return false;
+		const block = blockSet.block;
+		try {
+			return block.hasTileEntity(block.getStateFromMeta(blockSet.metadata));
+		} catch (err) {
+			NGTLog.debug(
+				"[NGTO Builder] hasTileEntity Error: " + block + " -> " + err,
+			);
+			return false;
+		}
+	}
 
-    static setResourceName(tileEntity: TileEntity, modelName: string): void {
-        (tileEntity as ResourceStateTileEntity).getResourceState().setResourceName(modelName);
-    }
+	static setResourceName(tileEntity: TileEntity, modelName: string): void {
+		(tileEntity as ResourceStateTileEntity)
+			.getResourceState()
+			.setResourceName(modelName);
+	}
 
-    static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void {
-        tileEntity.setPos(new BlockPos(x, y, z));
-    }
+	static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void {
+		tileEntity.setPos(new BlockPos(x, y, z));
+	}
 
-    static getItemStackAt(inventory: InventoryPlayer, index: number): ItemStack | null {
-        return inventory.mainInventory.get(index);
-    }
+	static getItemStackAt(
+		inventory: InventoryPlayer,
+		index: number,
+	): ItemStack | null {
+		return inventory.mainInventory.get(index);
+	}
 
-    static getInventorySize(inventory: InventoryPlayer): number {
-        return inventory.mainInventory.size();
-    }
+	static getInventorySize(inventory: InventoryPlayer): number {
+		return inventory.mainInventory.size();
+	}
 
-    static doFollowing(entity: unknown, hostPlayer: unknown): void {
-        const followEntity = entity as Entity | null;
-        const hostEntity = hostPlayer as Entity | null;
-        if (!followEntity || !hostEntity) return;
-        const x = hostEntity.posX;
-        const y = hostEntity.posY + 3;
-        const z = hostEntity.posZ;
-        followEntity.setPosition(x, y, z);
-        followEntity.motionX = 0;
-        followEntity.motionY = 0;
-        followEntity.motionZ = 0;
-    }
+	static doFollowing(entity: unknown, hostPlayer: unknown): void {
+		const followEntity = entity as Entity | null;
+		const hostEntity = hostPlayer as Entity | null;
+		if (!followEntity || !hostEntity) return;
+		const x = hostEntity.posX;
+		const y = hostEntity.posY + 3;
+		const z = hostEntity.posZ;
+		followEntity.setPosition(x, y, z);
+		followEntity.motionX = 0;
+		followEntity.motionY = 0;
+		followEntity.motionZ = 0;
+	}
 
-    static startRiding(entity: unknown, targetEntity: unknown): void {
-        void entity;
-        void targetEntity;
-    }
+	static startRiding(entity: unknown, targetEntity: unknown): void {
+		void entity;
+		void targetEntity;
+	}
 
-    static sendChatMessage(target: unknown, message: string): void {
-        NGTLog.sendChatMessage(target as ICommandSender, message);
-    }
+	static sendChatMessage(target: unknown, message: string): void {
+		NGTLog.sendChatMessage(target as ICommandSender, message);
+	}
 
-    static getNGTObjectFromItemNBT(nbt: NBTTagCompound): NGTObject | null {
-        void nbt;
-        return null;
-    }
+	static getNGTObjectFromItemNBT(nbt: NBTTagCompound): NGTObject | null {
+		void nbt;
+		return null;
+	}
 
-    static getRailPitch(railMap: RailMap, split: number, index: number): number {
-        return railMap.getRailPitch(split, index);
-    }
+	static getRailPitch(railMap: RailMap, split: number, index: number): number {
+		return railMap.getRailPitch(split, index);
+	}
 
-    static getRailYaw(railMap: RailMap, split: number, index: number): number {
-        return railMap.getRailYaw(split, index);
-    }
+	static getRailYaw(railMap: RailMap, split: number, index: number): number {
+		return railMap.getRailYaw(split, index);
+	}
 
-    static getCant(railMap: RailMap, split: number, index: number): number {
-        return railMap.getCant(split, index);
-    }
+	static getCant(railMap: RailMap, split: number, index: number): number {
+		return railMap.getCant(split, index);
+	}
 
-    static getHorizontalAnchorYaw(rp: RailPosition): number {
-        return rp.anchorYaw;
-    }
+	static getHorizontalAnchorYaw(rp: RailPosition): number {
+		return rp.anchorYaw;
+	}
 
-    static getHorizontalAnchorLength(rp: RailPosition): number {
-        return rp.anchorLengthHorizontal;
-    }
+	static getHorizontalAnchorLength(rp: RailPosition): number {
+		return rp.anchorLengthHorizontal;
+	}
 
-    static getRPAnchorPitch(rp: RailPosition): number {
-        return rp.anchorPitch;
-    }
+	static getRPAnchorPitch(rp: RailPosition): number {
+		return rp.anchorPitch;
+	}
 
-    static getSubType(itemStack: ItemStack): string {
-        return (itemStack.getItem() as ItemWithModel).getModelState(itemStack).type.subType;
-    }
+	static getSubType(itemStack: ItemStack): string {
+		return (itemStack.getItem() as ItemWithModel).getModelState(itemStack).type
+			.subType;
+	}
 
-    static getItemDamage(itemStack: ItemStack): number {
-        return itemStack.getItemDamage();
-    }
+	static getItemDamage(itemStack: ItemStack): number {
+		return itemStack.getItemDamage();
+	}
 
-    static getBlockAir(): Block {
-        return Blocks.AIR;
-    }
+	static getBlockAir(): Block {
+		return Blocks.AIR;
+	}
 
-    static getBlockStone(): Block {
-        return Blocks.STONE;
-    }
+	static getBlockStone(): Block {
+		return Blocks.STONE;
+	}
 
-    static setOffset(tileEntity: TileEntityPlaceable, x: number, y: number, z: number, sync: boolean): void {
-        if (RTMApiCompat.isFixRTM) (tileEntity as OffsettableTileEntity).setOffset(x, y, z, sync);
-    }
+	static setOffset(
+		tileEntity: TileEntityPlaceable,
+		x: number,
+		y: number,
+		z: number,
+		sync: boolean,
+	): void {
+		if (RTMApiCompat.isFixRTM)
+			(tileEntity as OffsettableTileEntity).setOffset(x, y, z, sync);
+	}
 
-    static setWireConnection(tileEntity: TileEntityInsulator, targetPos: Pos, wireStack: ItemStack): void {
-        if (wireStack.getItem() !== RTMItem.itemWire) return;
-        const sx = Math.floor(tileEntity.getX());
-        const sy = Math.floor(tileEntity.getY());
-        const sz = Math.floor(tileEntity.getZ());
-        const x = Math.floor(targetPos[0]);
-        const y = Math.floor(targetPos[1]);
-        const z = Math.floor(targetPos[2]);
-        if (x === sx && y === sy && z === sz) {
-            NGTLog.debug("[NGTO Builder] Skip self wire connection: " + x + "," + y + "," + z);
-            return;
-        }
-        if (y < 0 || y >= 256) {
-            NGTLog.debug("[NGTO Builder] Skip wire connection: invalid target y=" + y + " pos=" + x + "," + y + "," + z);
-            return;
-        }
-        const resourceState = (wireStack.getItem() as ItemWithModel).getModelState(wireStack);
-        tileEntity.setConnectionTo(x, y, z, Connection.ConnectionType.WIRE, resourceState);
-    }
+	static setWireConnection(
+		tileEntity: TileEntityInsulator,
+		targetPos: Pos,
+		wireStack: ItemStack,
+	): void {
+		if (wireStack.getItem() !== RTMItem.itemWire) return;
+		const sx = Math.floor(tileEntity.getX());
+		const sy = Math.floor(tileEntity.getY());
+		const sz = Math.floor(tileEntity.getZ());
+		const x = Math.floor(targetPos[0]);
+		const y = Math.floor(targetPos[1]);
+		const z = Math.floor(targetPos[2]);
+		if (x === sx && y === sy && z === sz) {
+			NGTLog.debug(
+				"[NGTO Builder] Skip self wire connection: " + x + "," + y + "," + z,
+			);
+			return;
+		}
+		if (y < 0 || y >= 256) {
+			NGTLog.debug(
+				"[NGTO Builder] Skip wire connection: invalid target y=" +
+					y +
+					" pos=" +
+					x +
+					"," +
+					y +
+					"," +
+					z,
+			);
+			return;
+		}
+		const resourceState = (wireStack.getItem() as ItemWithModel).getModelState(
+			wireStack,
+		);
+		tileEntity.setConnectionTo(
+			x,
+			y,
+			z,
+			Connection.ConnectionType.WIRE,
+			resourceState,
+		);
+	}
 
-    static getModelNameFromItem(itemStack: ItemStack): string {
-        const item = itemStack.getItem();
-        if (item instanceof ItemInstalledObject) {
-            const modelState = item.getModelState(itemStack);
-            if (modelState) return modelState.getResourceName();
-        }
-        return "";
-    }
+	static getModelNameFromItem(itemStack: ItemStack): string {
+		const item = itemStack.getItem();
+		if (item instanceof ItemInstalledObject) {
+			const modelState = item.getModelState(itemStack);
+			if (modelState) return modelState.getResourceName();
+		}
+		return "";
+	}
 }
