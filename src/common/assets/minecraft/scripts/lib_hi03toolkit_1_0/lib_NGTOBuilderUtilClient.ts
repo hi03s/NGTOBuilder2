@@ -520,6 +520,8 @@ export class NGTOBuilderUtilClient {
 		pass: number,
 		modelObj: ModelObject,
 	) {
+		if (!modelObj) return;
+
 		const defaultModelObj: ModelObject = NGTUtil.getField(
 			PartsRenderer.class,
 			renderer,

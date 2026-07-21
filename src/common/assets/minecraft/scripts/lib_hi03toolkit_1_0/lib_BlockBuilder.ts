@@ -78,9 +78,15 @@ export class BlockBuilder {
 			let nbt = null;
 			let blockRotation = 0;
 			if (tileEntity && !(tileEntity instanceof TileEntityLargeRailBase)) {
-				if (block instanceof TileEntityPlaceable)
-					blockRotation = block.getRotation();
-				nbt = RTMApiCompat.createNBTFromTileEntity(tileEntity);
+				if (block instanceof TileEntityPlaceable) blockRotation = block.getRotation();
+				try{
+					nbt = RTMApiCompat.createNBTFromTileEntity(tileEntity);
+				}
+				catch(e) {
+					NGTLog.debug(`###  addBackup ERROR  ###`);
+					NGTLog.debug(`world:${world}`);
+					NGTLog.debug(`tileEntity:${tileEntity}`);
+				}
 			}
 			const blockSet = !nbt
 				? new BlockSet(block, metadata)
@@ -196,16 +202,27 @@ export class BlockBuilder {
 				);
 			}
 			if (RTMApiCompat.hasTileEntity(blockSet)) {
-				const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
-				if (tileEntity) {
-					BlockBuilder.setTileEntityData(
-						tileEntity,
-						blockSet,
-						x,
-						y,
-						z,
-						blockRotation,
-					);
+				try {
+					const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
+					if (tileEntity) {
+						BlockBuilder.setTileEntityData(
+							tileEntity,
+							blockSet,
+							x,
+							y,
+							z,
+							blockRotation,
+						);
+					}
+				}
+				catch (e) {
+					const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
+					NGTLog.debug(`###  setTileEntityData ERROR  ###`);
+					NGTLog.debug(`world:${world}`);
+					NGTLog.debug(`tileEntity:${tileEntity}`);
+					NGTLog.debug(`blockSet:${blockSet}`);
+					NGTLog.debug(`pos:[${x}, ${y}, ${z}]`);
+					NGTLog.debug(`blockRotation:${blockRotation}`);
 				}
 			}
 		}
