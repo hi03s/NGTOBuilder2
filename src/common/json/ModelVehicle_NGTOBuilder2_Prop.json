@@ -2,11 +2,11 @@
 	"name": "NGTOBuilder2_Prop",
 	"model": {
 		"modelFile": "ngtobuilder2/model_prop.mqo",
-		"textures": [["mat1", "textures/ngtobuilder2/porp/prop.png", "AlphaBlend"]],
-		"rendererPath": "scripts/ngtobuilder2/porp/render_prop.js"
+		"textures": [["mat1", "textures/ngtobuilder2/prop/prop.png", "AlphaBlend"]],
+		"rendererPath": "scripts/ngtobuilder2/prop/render_prop.js"
 	},
-	"buttonTexture": "textures/ngtobuilder2/porp/button_prop.png",
-	"serverScriptPath": "scripts/ngtobuilder2/porp/server_prop.js",
+	"buttonTexture": "textures/ngtobuilder2/prop/button_prop.png",
+	"serverScriptPath": "scripts/ngtobuilder2/prop/server_prop.js",
 	"playerPos": [[0, 0, 0]],
 	"vehicleType": "Car",
 	"size": [1, 1],
@@ -23,5 +23,5 @@
 	"changeYawOnStopping": false,
 	"accuracy": "LOW",
 	"tags": "ngto builder 2 hi03",
-	"customIconTexture": "textures/ngtobuilder2/porp/icon_prop.png"
+	"customIconTexture": "textures/ngtobuilder2/prop/icon_prop.png"
 }
