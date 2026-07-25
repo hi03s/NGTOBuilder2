@@ -1,4 +1,4 @@
-import { ArrayList, HashMap, List } from "java.util";
+import { ArrayList, HashMap, IdentityHashMap, List } from "java.util";
 import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { DataMap } from "jp.ngt.rtm.modelpack.state";
 import { Block } from "net.minecraft.block";
@@ -34,6 +34,9 @@ export type combineNGTOList =
 export class NGTOBuilderUtil {
 	private static ngtoCache: HashMap<NBTTagCompound | string, NGTObject> =
 		new HashMap();
+	private static ngtoIdentityMap: IdentityHashMap<NGTObject, number> =
+		new IdentityHashMap();
+	private static nextNGTOIdentity = 1;
 
 	/**
 	 * プレイヤーが手に持っているミニチュアブロックからNGTOを取得する
@@ -504,7 +507,12 @@ export class NGTOBuilderUtil {
 	 * 同じ寸法でも内容が異なるNGTOを区別するため、オブジェクトの識別値を含める。
 	 */
 	static getNGTOCacheKey(ngto: NGTObject): string {
-		return `${java.lang.System.identityHashCode(ngto)}:${this.getNGTOHash(ngto)}`;
+		let identity = this.ngtoIdentityMap.get(ngto);
+		if (!identity) {
+			identity = this.nextNGTOIdentity++;
+			this.ngtoIdentityMap.put(ngto, identity);
+		}
+		return `${identity}:${this.getNGTOHash(ngto)}`;
 	}
 
 	//小数点を含む座標を与えること(ブロック座標だとズレます)
