@@ -40,6 +40,7 @@ type OffsettableTileEntity = TileEntityPlaceable & {
 };
 
 type ResourceNameState = {
+	color: number;
 	setResourceName(modelName: string): void;
 };
 
@@ -139,9 +140,11 @@ export class RTMApiCompat {
 	}
 
 	static setResourceName(tileEntity: TileEntity, modelName: string): void {
-		(tileEntity as ResourceStateTileEntity)
-			.getResourceState()
-			.setResourceName(modelName);
+		const resourceState = (tileEntity as ResourceStateTileEntity).getResourceState();
+		resourceState.setResourceName(modelName);
+		// 1.12ではState.Colorがないと0（黒）として読み込まれる。
+		// スクリプトから設置するモデル付き設置物は白で統一する。
+		resourceState.color = 0xffffff;
 	}
 
 	static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void {
