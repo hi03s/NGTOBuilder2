@@ -215,7 +215,7 @@ export class NGTOBuilderUtilClient {
 				//const groupObjects = modelSet.model.model.getGroupObjects();
 				const groupObjects = railModelObj.model.getGroupObjects();
 				//描画
-				GLHelper.startCompile(glList);
+				RTMApiCompatClient.startCompile(glList);
 				GL11.glPushMatrix();
 				const split = Math.floor(railMap.getLength() * 2);
 				const len = java.lang.Integer.valueOf(split);
@@ -284,7 +284,7 @@ export class NGTOBuilderUtilClient {
 				GL11.glColor4f(r, g, b, a);
 
 				//描画
-				GLHelper.callList(cachedData[0]);
+				RTMApiCompatClient.callList(cachedData[0]);
 
 				//復元
 				GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -322,7 +322,7 @@ export class NGTOBuilderUtilClient {
 			const glList = NGTOBuilderUtilClient.glCache.get(key);
 			if (!glList) {
 				const glList = RTMApiCompatClient.generateGLList();
-				GLHelper.startCompile(glList);
+				RTMApiCompatClient.startCompile(glList);
 				GL11.glPushMatrix();
 
 				posList.forEach((pos) => {
@@ -337,9 +337,9 @@ export class NGTOBuilderUtilClient {
 
 				NGTOBuilderUtilClient.glCache.put(key, glList);
 
-				GLHelper.callList(glList);
+				RTMApiCompatClient.callList(glList);
 			} else {
-				GLHelper.callList(glList);
+				RTMApiCompatClient.callList(glList);
 			}
 		}
 	}
@@ -395,7 +395,7 @@ export class NGTOBuilderUtilClient {
 			const glList = RTMApiCompatClient.generateGLList();
 			cachedData = [glList, ""];
 			this.renderRailMapCache.put(hashKey, cachedData);
-			GLHelper.startCompile(glList);
+			RTMApiCompatClient.startCompile(glList);
 			GL11.glPushMatrix();
 			const split = Math.floor(railMap.getLength() * 2);
 			if (interval < 1) interval = 1;
@@ -416,7 +416,7 @@ export class NGTOBuilderUtilClient {
 			GL11.glPopMatrix();
 			GLHelper.endCompile();
 		} else {
-			GLHelper.callList(cachedData[0]);
+			RTMApiCompatClient.callList(cachedData[0]);
 		}
 	}
 
@@ -440,7 +440,7 @@ export class NGTOBuilderUtilClient {
 			const glList = RTMApiCompatClient.generateGLList();
 			cachedData = [glList, ""];
 			this.renderRailMapCache.put(hashKey, cachedData);
-			GLHelper.startCompile(glList);
+			RTMApiCompatClient.startCompile(glList);
 			GL11.glPushMatrix();
 			const split = Math.floor(bezier.getLength() * 2);
 			if (interval < 1) interval = 1;
@@ -458,7 +458,7 @@ export class NGTOBuilderUtilClient {
 			GL11.glPopMatrix();
 			GLHelper.endCompile();
 		} else {
-			GLHelper.callList(cachedData[0]);
+			RTMApiCompatClient.callList(cachedData[0]);
 		}
 	}
 
@@ -502,7 +502,7 @@ export class NGTOBuilderUtilClient {
 		if (!glList || updateCache) {
 			const glList = RTMApiCompatClient.generateGLList();
 			GL11.glPushMatrix();
-			GLHelper.startCompile(glList);
+			RTMApiCompatClient.startCompile(glList);
 
 			RTMApiCompatClient.renderNGTO(renderer, ngto, pass);
 
@@ -511,7 +511,7 @@ export class NGTOBuilderUtilClient {
 
 			NGTOBuilderUtilClient.glCache.put(key, glList);
 		} else {
-			GLHelper.callList(glList);
+			RTMApiCompatClient.callList(glList);
 		}
 	}
 

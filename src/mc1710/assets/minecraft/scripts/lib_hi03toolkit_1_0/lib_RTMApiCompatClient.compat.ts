@@ -73,6 +73,14 @@ export class RTMApiCompatClient {
 		return GLHelper.generateGLList();
 	}
 
+	static startCompile(displayList: DisplayList): void {
+		GLHelper.startCompile(displayList);
+	}
+
+	static callList(displayList: DisplayList): void {
+		GLHelper.callList(displayList);
+	}
+
 	static renderNGTO(
 		renderer: PartsRenderer,
 		ngto: NGTObject,
