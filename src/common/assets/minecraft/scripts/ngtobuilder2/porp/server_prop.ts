@@ -97,7 +97,7 @@ function onUpdate2(
 		if (!isInitializedBuild && ngto) {
 			const isHuge = ngto.xSize * ngto.ySize * ngto.zSize > 20000;
 			if (isHuge)
-				RTMApiCompat.sendChatMessage(hostPlayer, "[NGTO Builder2] 計算中...");
+				RTMApiCompat.sendChatMessage(hostPlayer, `[NGTO Builder2] 計算中...`);
 			const q = new Quaternion(...receiveData.q);
 			const interpolationMode = dataMap.getInt("interpolationMode");
 			const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
@@ -147,7 +147,7 @@ function onUpdate2(
 			UndoManager.backupFromBlockBuilder(entity, builder);
 			dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
 			if (isHuge)
-				RTMApiCompat.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成開始...");
+				RTMApiCompat.sendChatMessage(hostPlayer, `[NGTO Builder2] 生成開始...`);
 			dataMap.setBoolean("isInitializedBuild", true, 1);
 		}
 		//生成を中止
@@ -160,7 +160,7 @@ function onUpdate2(
 		builder.doBuild(entity, blockLimit);
 		//生成完了の処理
 		if (builder.isFinished(entity)) {
-			RTMApiCompat.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成終了");
+			RTMApiCompat.sendChatMessage(hostPlayer, `[NGTO Builder2] 生成終了`);
 			builder.clear(entity);
 			dataMap.setBoolean("isInitializedBuild", false, 1);
 			dataMap.setBoolean("isBuilding", false, 1);

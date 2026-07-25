@@ -236,7 +236,7 @@ function onUpdate2(
 				}
 			}
 
-			RTMApiCompat.sendChatMessage(hostPlayer, "[NGTO Builder2] 生成終了");
+			RTMApiCompat.sendChatMessage(hostPlayer, `[NGTO Builder2] 生成終了`);
 
 			builder.clear(entity);
 			dataMap.setBoolean("isInitializedBuild", false, 1);
