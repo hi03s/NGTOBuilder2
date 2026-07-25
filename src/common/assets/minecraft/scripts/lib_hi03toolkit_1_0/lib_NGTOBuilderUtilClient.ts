@@ -307,6 +307,7 @@ export class NGTOBuilderUtilClient {
 		entity: Entity,
 		posList: Pos[],
 		forceRender: boolean = false,
+		cacheKeyOverride?: string,
 	): void {
 		if (posList.length <= 20000 || forceRender) {
 			//posListをハッシュ化
@@ -315,14 +316,23 @@ export class NGTOBuilderUtilClient {
 			for (let i = 1; i < partsNames.length; i++) {
 				partsKey += "," + partsNames[i];
 			}
-			const javaPosList = java.lang.reflect.Array.newInstance(java.lang.Integer.class, posList.length, 3) as unknown as JavaObjectArray<JavaObjectArray<number>>;
-			for (let i = 0; i < posList.length; i++) {
-				const pos = posList[i];
-				javaPosList[i][0] = pos[0];
-				javaPosList[i][1] = pos[1];
-				javaPosList[i][2] = pos[2];
+			let posListHash: number | string;
+			if (cacheKeyOverride !== undefined) {
+				posListHash = cacheKeyOverride;
+			} else {
+				const javaPosList = java.lang.reflect.Array.newInstance(
+					java.lang.Integer.class,
+					posList.length,
+					3,
+				) as unknown as JavaObjectArray<JavaObjectArray<number>>;
+				for (let i = 0; i < posList.length; i++) {
+					const pos = posList[i];
+					javaPosList[i][0] = pos[0];
+					javaPosList[i][1] = pos[1];
+					javaPosList[i][2] = pos[2];
+				}
+				posListHash = Arrays.deepHashCode(javaPosList);
 			}
-			const posListHash = Arrays.deepHashCode(javaPosList);
 			const key = `${entity.getUniqueID()}_${partsKey}_${posListHash}`;
 			const glList = NGTOBuilderUtilClient.glCache.get(key);
 			if (!glList) {

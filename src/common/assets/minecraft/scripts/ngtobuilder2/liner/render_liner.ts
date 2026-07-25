@@ -659,25 +659,21 @@ function renderForToolUser(
 	const isMasking = dataMap.getBoolean("isMasking");
 	const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
 	if (heldNGTO && bezierCollector.size(entity) > 0) {
-		const hash =
-			String(entity.getEntityId()) +
-			"|" +
-			NGTOBuilderUtil.getNGTOHash(heldNGTO) +
-			"|" +
-			String(interpolationMode) +
-			"|" +
-			String(diffusionRate) +
-			"|" +
-			bezierCollector.getCacheKey(entity) +
-			"|" +
-			String(isMirrorX) +
-			String(isMirrorY) +
-			String(isMirrorZ) +
-			String(offsetNGTOV) +
-			String(offsetNGTOH) +
-			String(ngtoRotate) +
-			String(isPlaceAirBlock) +
-			String(isMasking);
+		const hash = [
+			String(entity.getEntityId()),
+			NGTOBuilderUtil.getNGTOCacheKey(heldNGTO),
+			String(interpolationMode),
+			String(diffusionRate),
+			bezierCollector.getCacheKey(entity),
+			String(isMirrorX),
+			String(isMirrorY),
+			String(isMirrorZ),
+			String(offsetNGTOV),
+			String(offsetNGTOH),
+			String(ngtoRotate),
+			String(isPlaceAirBlock),
+			String(isMasking),
+		].join("|");
 		let posList: Pos[] = posListCache.get(hash);
 		if (!posList || posList.length === 0) {
 			let ngto = heldNGTO;
@@ -766,6 +762,7 @@ function renderForToolUser(
 			entity,
 			posList,
 			true,
+			hash,
 		);
 		GL11.glPopMatrix();
 	}
