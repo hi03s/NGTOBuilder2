@@ -1052,10 +1052,7 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 	const player = MCWrapperClient.getPlayer();
 	const hostPlayerEntityId = dataMap.getString("hostPlayerEntityId");
 	let hostPlayer = null;
-	if (hostPlayerEntityId !== "")
-		hostPlayer = world.getEntityByID(
-			Number(hostPlayerEntityId),
-		) as unknown as EntityPlayer;
+	if (hostPlayerEntityId !== "") hostPlayer = world.getEntityByID(Number(hostPlayerEntityId)) as unknown as EntityPlayer;
 	const prevIsLeftClick = dataMap.getBoolean("prevIsLeftClick");
 	const prevIsRightClick = dataMap.getBoolean("prevIsRightClick");
 	if (hostPlayer === null) {
@@ -1072,29 +1069,21 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 	const isVersionChecked = dataMap.getBoolean("isVersionChecked");
 	RTMApiCompat.doFollowing(entity, hostPlayer); //1.12用
 	if (hostPlayer && hostPlayer === player) {
-		if (isLeftClick !== prevIsLeftClick)
-			dataMap.setBoolean("prevIsLeftClick", isLeftClick, 0);
-		if (isRightClick !== prevIsRightClick)
-			dataMap.setBoolean("prevIsRightClick", isRightClick, 0);
+		if (isLeftClick !== prevIsLeftClick) dataMap.setBoolean("prevIsLeftClick", isLeftClick, 0);
+		if (isRightClick !== prevIsRightClick) dataMap.setBoolean("prevIsRightClick", isRightClick, 0);
 		if (renderer.currentMatId === 0 && pass === 0) keyManager.update();
-		if (VERSIONS_server != Version && !isVersionChecked) {
+		if (VERSIONS_server !== "" && VERSIONS_server != Version && !isVersionChecked) {
 			dataMap.setBoolean("isVersionChecked", true, 0);
-			NGTLog.sendChatMessage(sender, "§cVersions don't match!");
-			NGTLog.sendChatMessage(sender, "§cClient:" + Version);
-			NGTLog.sendChatMessage(sender, "§cServer:" + VERSIONS_server);
+			NGTLog.sendChatMessage(sender, `§cVersions don't match!`);
+			NGTLog.sendChatMessage(sender, `§cClient: ${Version}`);
+			NGTLog.sendChatMessage(sender, `§cServer: ${VERSIONS_server}`);
 		}
 		const showHelpMessage = dataMap.getBoolean("showHelpMessage");
 		if (!showHelpMessage) {
 			dataMap.setBoolean("showHelpMessage", true, 0);
 			NGTLog.sendChatMessage(sender, keyManager.getDescription("showHelp"));
 		}
-		if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0)
-			keyInput(
-				hostPlayer,
-				entity,
-				!prevIsRightClick && isRightClick,
-				!prevIsLeftClick && isLeftClick,
-			);
+		if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) keyInput(hostPlayer, entity, !prevIsRightClick && isRightClick, !prevIsLeftClick && isLeftClick);
 		renderForToolUser(entity, pass, par3);
 	}
 }
