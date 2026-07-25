@@ -499,6 +499,14 @@ export class NGTOBuilderUtil {
 		);
 	}
 
+	/**
+	 * NGTOを描画キャッシュ内で識別するキーを返す。
+	 * 同じ寸法でも内容が異なるNGTOを区別するため、オブジェクトの識別値を含める。
+	 */
+	static getNGTOCacheKey(ngto: NGTObject): string {
+		return `${java.lang.System.identityHashCode(ngto)}:${this.getNGTOHash(ngto)}`;
+	}
+
 	//小数点を含む座標を与えること(ブロック座標だとズレます)
 	static getRailMapAt(
 		entity: Entity,

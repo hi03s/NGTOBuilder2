@@ -839,27 +839,26 @@ function renderForToolUser(
 		const isBuildSupportBlocks = dataMap.getBoolean("isBuildSupportBlocks");
 		const supportY = dataMap.getInt("supportY");
 		const entityId = String(entity.getEntityId());
-		const ngtoHash = NGTOBuilderUtil.getNGTOHash(ngto);
-		const qHash = q.getHash();
-		const hash =
-			entityId +
-			ngtoHash +
-			qHash +
-			String(interpolationMode) +
-			String(isPlaceAirBlock) +
-			String(diffusionRate) +
-			String(isMirrorX) +
-			String(isMirrorY) +
-			String(isMirrorZ) +
-			String(supportY) +
-			String(isBuildSupportBlocks) +
-			String(offsetY);
+		const hash = [
+			entityId,
+			NGTOBuilderUtil.getNGTOCacheKey(ngto),
+			q.getHash(),
+			String(interpolationMode),
+			String(isPlaceAirBlock),
+			String(diffusionRate),
+			String(isMirrorX),
+			String(isMirrorY),
+			String(isMirrorZ),
+			String(supportY),
+			String(isBuildSupportBlocks),
+			String(offsetY),
+		].join("|");
 		let posList = posListCache.get(hash); //相対座標で管理
 		if (!posList) {
 			const isHuge = ngto.xSize * ngto.ySize * ngto.zSize > 20000;
 			let supportRBO = new RotatableBlockObject();
-			if (isBuildSupportBlocks && offsetY - 1 + supportY >= 1) {
-				supportRBO = RotatableBlockObjectFactory.createWalls(
+			if (isBuildSupportBlocks && offsetY - 1 + supportY >= 2) {
+				supportRBO = RotatableBlockObjectFactory.createBox(
 					new BlockSet(RTMApiCompat.getBlockStone(), 0),
 					ngto.xSize,
 					offsetY - 1 + supportY,
@@ -877,7 +876,7 @@ function renderForToolUser(
 				//巨大ブロックは代替表示
 				const hugePosList = NGTOBuilderUtilClient.getOutsideFramePosList(ngto);
 				const blockObj = RotatableBlockObject.createFromPosList(hugePosList);
-				blockObj.merge(supportRBO);
+				blockObj.mergeBefore(supportRBO);
 				if (isMirrorX) blockObj.mirrorX();
 				if (isMirrorZ) blockObj.mirrorZ();
 				if (isMirrorY) blockObj.mirrorY();
@@ -895,7 +894,7 @@ function renderForToolUser(
 					ngto,
 					isPlaceAirBlock,
 				);
-				blockObj.merge(supportRBO);
+				blockObj.mergeBefore(supportRBO);
 				if (isMirrorX) blockObj.mirrorX();
 				if (isMirrorZ) blockObj.mirrorZ();
 				if (isMirrorY) blockObj.mirrorY();
