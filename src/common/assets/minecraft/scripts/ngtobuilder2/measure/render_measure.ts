@@ -42,16 +42,16 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL); //オプションキー
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, true, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, true, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 	keyManager.register(
 		"markerFix",
 		Keyboard.KEY_RETURN,
 		false,
-		"マーカーを地上に設置する",
+		`マーカーを地上に設置する`,
 	);
 
 	//ーーカーソル操作ーー
@@ -59,7 +59,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"resetSelected",
 		Keyboard.KEY_C,
 		false,
-		"すべての選択をリセットする",
+		`すべての選択をリセットする`,
 	);
 
 	//-------------------

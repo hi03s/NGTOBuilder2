@@ -47,11 +47,11 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	//##  ユーザー設定  ##
 	//###################
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL); //オプションキーに使用するキー
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, false, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 
 	//keyManager.registerの書き方
 	//keyManager.register("ID", キーコード, オプションキーを使用するかどうか, "説明文");

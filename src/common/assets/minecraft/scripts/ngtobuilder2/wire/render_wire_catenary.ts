@@ -52,79 +52,79 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL); //オプションキー
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, false, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 	//ーーカーソル操作ーー
 	keyManager.register(
 		"resetSelected",
 		Keyboard.KEY_C,
 		false,
-		"すべての選択をリセットする",
+		`すべての選択をリセットする`,
 	);
 	//ーー機能ーー
 	keyManager.register(
 		"isDeviation",
 		Keyboard.KEY_O,
 		false,
-		"架線偏位を切り替える",
+		`架線偏位を切り替える`,
 	);
 	keyManager.register(
 		"isDeviationInvert",
 		Keyboard.KEY_O,
 		true,
-		"架線偏位の左右を入れ替える",
+		`架線偏位の左右を入れ替える`,
 	);
 	keyManager.register(
 		"isBeamWire",
 		Keyboard.KEY_I,
 		false,
-		"ワイヤー式ビーム設置の切り替え",
+		`ワイヤー式ビーム設置の切り替え`,
 	);
 	keyManager.register(
 		"isBeamInsulatorMode",
 		Keyboard.KEY_I,
 		true,
-		"ワイヤー式ビームの碍子の設置位置を切り替える",
+		`ワイヤー式ビームの碍子の設置位置を切り替える`,
 	);
 	//ーー架線操作ーー
 	keyManager.register(
 		"laneLeft",
 		Keyboard.KEY_LEFT,
 		true,
-		"左にレーンを増やす/右のレーンを減らす",
+		`左にレーンを増やす/右のレーンを減らす`,
 	);
 	keyManager.register(
 		"laneRight",
 		Keyboard.KEY_RIGHT,
 		true,
-		"右にレーンを増やす/左のレーンを減らす",
+		`右にレーンを増やす/左のレーンを減らす`,
 	);
 	keyManager.register(
 		"laneDistanceIncrease",
 		Keyboard.KEY_RIGHT,
 		false,
-		"レーン間の距離を増やす",
+		`レーン間の距離を増やす`,
 	);
 	keyManager.register(
 		"laneDistanceDecrease",
 		Keyboard.KEY_LEFT,
 		false,
-		"レーン間の距離を減らす",
+		`レーン間の距離を減らす`,
 	);
 	keyManager.register(
 		"beamDistanceIncrease",
 		Keyboard.KEY_UP,
 		false,
-		"ワイヤー式ビームの長さを0.1m増やす",
+		`ワイヤー式ビームの長さを0.1m増やす`,
 	);
 	keyManager.register(
 		"beamDistanceDecrease",
 		Keyboard.KEY_DOWN,
 		false,
-		"ワイヤー式ビームの長さを0.1m減らす",
+		`ワイヤー式ビームの長さを0.1m減らす`,
 	);
 
 	//-------------------

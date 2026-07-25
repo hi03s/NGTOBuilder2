@@ -45,91 +45,91 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL); //オプションキー
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, false, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 	//ーーカーソル操作ーー
 	keyManager.register(
 		"selectYUp",
 		Keyboard.KEY_UP,
 		false,
-		"カーソルの高さを上げる",
+		`カーソルの高さを上げる`,
 	);
 	keyManager.register(
 		"selectYDown",
 		Keyboard.KEY_DOWN,
 		false,
-		"カーソルの高さを下げる",
+		`カーソルの高さを下げる`,
 	);
 	keyManager.register(
 		"resetSelectY",
 		Keyboard.KEY_F,
 		false,
-		"カーソルの高さをリセットする",
+		`カーソルの高さをリセットする`,
 	);
 	keyManager.register(
 		"adjustSelectY",
 		Keyboard.KEY_F,
 		true,
-		"カーソルの高さを合わせる",
+		`カーソルの高さを合わせる`,
 	);
 	keyManager.register(
 		"resetSelected",
 		Keyboard.KEY_C,
 		false,
-		"すべての選択とNGTOの状態をリセットする",
+		`すべての選択とNGTOの状態をリセットする`,
 	);
 	//ーー機能ーー
 	keyManager.register(
 		"isPlaceAirBlock",
 		Keyboard.KEY_I,
 		false,
-		"空気ブロックの設置を切り替え",
+		`空気ブロックの設置を切り替え`,
 	);
 	keyManager.register(
 		"isMasking",
 		Keyboard.KEY_O,
 		false,
-		"ブロック置換モード切り替え",
+		`ブロック置換モード切り替え`,
 	);
 	keyManager.register(
 		"reverseMarker",
 		Keyboard.KEY_P,
 		false,
-		"マーカーを反転する",
+		`マーカーを反転する`,
 	);
 	//ーーNGTO操作ーー
 	keyManager.register(
 		"offsetUp",
 		Keyboard.KEY_UP,
 		true,
-		"NGTOをオフセット(上)",
+		`NGTOをオフセット(上)`,
 	);
 	keyManager.register(
 		"offsetDown",
 		Keyboard.KEY_DOWN,
 		true,
-		"NGTOをオフセット(下)",
+		`NGTOをオフセット(下)`,
 	);
 	keyManager.register(
 		"offsetLeft",
 		Keyboard.KEY_LEFT,
 		true,
-		"NGTOをオフセット(左)",
+		`NGTOをオフセット(左)`,
 	);
 	keyManager.register(
 		"offsetRight",
 		Keyboard.KEY_RIGHT,
 		true,
-		"NGTOをオフセット(右)",
+		`NGTOをオフセット(右)`,
 	);
-	keyManager.register("ngtoRotate", Keyboard.KEY_R, false, "NGTOを+90度回転");
-	keyManager.register("ngtoRotateR", Keyboard.KEY_R, true, "NGTOを-90度回転");
-	keyManager.register("mirrorX", Keyboard.KEY_J, false, "X軸の鏡像の切り替え");
-	keyManager.register("mirrorY", Keyboard.KEY_K, false, "Y軸の鏡像の切り替え");
-	keyManager.register("mirrorZ", Keyboard.KEY_L, false, "Z軸の鏡像の切り替え");
+	keyManager.register("ngtoRotate", Keyboard.KEY_R, false, `NGTOを+90度回転`);
+	keyManager.register("ngtoRotateR", Keyboard.KEY_R, true, `NGTOを-90度回転`);
+	keyManager.register("mirrorX", Keyboard.KEY_J, false, `X軸の鏡像の切り替え`);
+	keyManager.register("mirrorY", Keyboard.KEY_K, false, `Y軸の鏡像の切り替え`);
+	keyManager.register("mirrorZ", Keyboard.KEY_L, false, `Z軸の鏡像の切り替え`);
 
 	//-------------------
 	//--  ユーザー設定  --

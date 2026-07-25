@@ -48,69 +48,69 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL); //オプションキー
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);//テンプレート文字列で文字化け解消
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, false, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 	//ーーカーソル操作ーー
 	keyManager.register(
 		"selectYUp",
 		Keyboard.KEY_UP,
 		false,
-		"カーソルの高さを上げる",
+		`カーソルの高さを上げる`,
 	);
 	keyManager.register(
 		"selectYDown",
 		Keyboard.KEY_DOWN,
 		false,
-		"カーソルの高さを下げる",
+		`カーソルの高さを下げる`,
 	);
 	keyManager.register(
 		"resetSelectY",
 		Keyboard.KEY_F,
 		false,
-		"カーソルの高さをリセットする",
+		`カーソルの高さをリセットする`,
 	);
 	keyManager.register(
 		"adjustSelectY",
 		Keyboard.KEY_F,
 		true,
-		"カーソルの高さを合わせる",
+		`カーソルの高さを合わせる`,
 	);
 	keyManager.register(
 		"resetSelected",
 		Keyboard.KEY_C,
 		false,
-		"すべての選択とNGTOの状態をリセットする",
+		`すべての選択とNGTOの状態をリセットする`,
 	);
 	//ーー地形操作ーー
 	keyManager.register(
 		"widthUp",
 		Keyboard.KEY_RIGHT,
 		true,
-		"地表の幅を拡大する",
+		`地表の幅を拡大する`,
 	);
 	keyManager.register(
 		"widthDown",
 		Keyboard.KEY_LEFT,
 		true,
-		"地表の幅を縮小する",
+		`地表の幅を縮小する`,
 	);
 	keyManager.register(
 		"surfaceYUp",
 		Keyboard.KEY_UP,
 		true,
-		"地表の高さを上げる",
+		`地表の高さを上げる`,
 	);
 	keyManager.register(
 		"surfaceYDown",
 		Keyboard.KEY_DOWN,
 		true,
-		"地表の高さを下げる",
+		`地表の高さを下げる`,
 	);
-	keyManager.register("minYUp", Keyboard.KEY_O, true, "底の高さを上げる");
-	keyManager.register("minYDown", Keyboard.KEY_L, true, "底の高さを下げる");
+	keyManager.register("minYUp", Keyboard.KEY_O, true, `底の高さを上げる`);
+	keyManager.register("minYDown", Keyboard.KEY_L, true, `底の高さを下げる`);
 
 	//-------------------
 	//--  ユーザー設定  --

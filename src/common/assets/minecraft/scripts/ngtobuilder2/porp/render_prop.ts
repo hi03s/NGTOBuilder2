@@ -50,123 +50,123 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL); //オプションキー
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, false, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 	//ーー機能ーー
 	keyManager.register(
 		"isBuildSupportBlocks",
 		Keyboard.KEY_U,
 		false,
-		"足場の設置を切り替え",
+		`足場の設置を切り替え`,
 	);
 	keyManager.register(
 		"isPlaceAirBlock",
 		Keyboard.KEY_I,
 		false,
-		"空気ブロックの設置を切り替え",
+		`空気ブロックの設置を切り替え`,
 	);
 	keyManager.register(
 		"isWorldAxis",
 		Keyboard.KEY_O,
 		false,
-		"回転軸の基準を切り替え",
+		`回転軸の基準を切り替え`,
 	);
 	keyManager.register(
 		"changeSnapNext",
 		Keyboard.KEY_P,
 		false,
-		"スナップ角度を変更(next)",
+		`スナップ角度を変更(next)`,
 	);
 	keyManager.register(
 		"changeSnapPrev",
 		Keyboard.KEY_P,
 		true,
-		"スナップ角度を変更(prev)",
+		`スナップ角度を変更(prev)`,
 	);
 	keyManager.register(
 		"setRandomAngle",
 		Keyboard.KEY_R,
 		false,
-		"Yaw角度をランダムにセット",
+		`Yaw角度をランダムにセット`,
 	);
 	keyManager.register(
 		"setToPlayerAngle",
 		Keyboard.KEY_F,
 		false,
-		"角度をプレイヤーの方向にセット",
+		`角度をプレイヤーの方向にセット`,
 	);
-	keyManager.register("mirrorX", Keyboard.KEY_J, false, "X軸の鏡像の切り替え");
-	keyManager.register("mirrorY", Keyboard.KEY_K, false, "Y軸の鏡像の切り替え");
-	keyManager.register("mirrorZ", Keyboard.KEY_L, false, "Z軸の鏡像の切り替え");
+	keyManager.register("mirrorX", Keyboard.KEY_J, false, `X軸の鏡像の切り替え`);
+	keyManager.register("mirrorY", Keyboard.KEY_K, false, `Y軸の鏡像の切り替え`);
+	keyManager.register("mirrorZ", Keyboard.KEY_L, false, `Z軸の鏡像の切り替え`);
 	keyManager.register(
 		"supportYUp",
 		Keyboard.KEY_UP,
 		true,
-		"足場ブロックの高さを上げる",
+		`足場ブロックの高さを上げる`,
 	);
 	keyManager.register(
 		"supportYDown",
 		Keyboard.KEY_DOWN,
 		true,
-		"足場ブロックの高さを下げる",
+		`足場ブロックの高さを下げる`,
 	);
 	//ーー俯瞰モードーー
 	keyManager.register(
 		"posYUp",
 		Keyboard.KEY_UP,
 		false,
-		"カーソルの高さを上げる",
+		`カーソルの高さを上げる`,
 	);
 	keyManager.register(
 		"posYDown",
 		Keyboard.KEY_DOWN,
 		false,
-		"カーソルの高さを下げる",
+		`カーソルの高さを下げる`,
 	);
-	keyManager.register("resetPos", Keyboard.KEY_C, false, "状態をリセットする");
-	keyManager.register("rotationL", Keyboard.KEY_LEFT, false, "左回転");
-	keyManager.register("rotationR", Keyboard.KEY_RIGHT, false, "右回転");
+	keyManager.register("resetPos", Keyboard.KEY_C, false, `状態をリセットする`);
+	keyManager.register("rotationL", Keyboard.KEY_LEFT, false, `左回転`);
+	keyManager.register("rotationR", Keyboard.KEY_RIGHT, false, `右回転`);
 	//ーー仮置きモードーー
 	keyManager.register(
 		"rotationYawL",
 		Keyboard.KEY_LEFT,
 		false,
-		"Yaw回転(Left)",
+		`Yaw回転(Left)`,
 	);
 	keyManager.register(
 		"rotationYawR",
 		Keyboard.KEY_RIGHT,
 		false,
-		"Yaw回転(Right)",
+		`Yaw回転(Right)`,
 	);
 	keyManager.register(
 		"rotationPitchUp",
 		Keyboard.KEY_UP,
 		false,
-		"Pitch回転(Up)",
+		`Pitch回転(Up)`,
 	);
 	keyManager.register(
 		"rotationPitchDown",
 		Keyboard.KEY_DOWN,
 		false,
-		"Pitch回転(Down)",
+		`Pitch回転(Down)`,
 	);
 	keyManager.register(
 		"rotationRollL",
 		Keyboard.KEY_LEFT,
 		true,
-		"Roll回転(Left)",
+		`Roll回転(Left)`,
 	);
 	keyManager.register(
 		"rotationRollR",
 		Keyboard.KEY_RIGHT,
 		true,
-		"Roll回転(Right)",
+		`Roll回転(Right)`,
 	);
-	keyManager.register("resetRotation", Keyboard.KEY_C, true, "回転をリセット");
+	keyManager.register("resetRotation", Keyboard.KEY_C, true, `回転をリセット`);
 
 	//-------------------
 	//--  ユーザー設定  --

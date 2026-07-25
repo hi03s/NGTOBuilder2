@@ -35,18 +35,18 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, false, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 
 	//ーーカーソル操作ーー
 	keyManager.register(
 		"resetSelected",
 		Keyboard.KEY_C,
 		false,
-		"すべての選択をリセットする",
+		`すべての選択をリセットする`,
 	);
 
 	//ーービーム操作ーー
@@ -54,31 +54,31 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"isBeamInsulatorMode",
 		Keyboard.KEY_P,
 		false,
-		"ワイヤー式ビームの碍子の設置位置を切り替える",
+		`ワイヤー式ビームの碍子の設置位置を切り替える`,
 	);
 	keyManager.register(
 		"xOffsetIncrease",
 		Keyboard.KEY_RIGHT,
 		true,
-		"中心を右にずらす",
+		`中心を右にずらす`,
 	);
 	keyManager.register(
 		"xOffsetDecrease",
 		Keyboard.KEY_LEFT,
 		true,
-		"中心を左にずらす",
+		`中心を左にずらす`,
 	);
 	keyManager.register(
 		"beamDistanceIncrease",
 		Keyboard.KEY_RIGHT,
 		false,
-		"ビームの半幅を0.1m増やす",
+		`ビームの半幅を0.1m増やす`,
 	);
 	keyManager.register(
 		"beamDistanceDecrease",
 		Keyboard.KEY_LEFT,
 		false,
-		"ビームの半幅を0.1m減らす",
+		`ビームの半幅を0.1m減らす`,
 	);
 
 	ignoreItemList = [RTMItem.itemWire, RTMItem.installedObject];

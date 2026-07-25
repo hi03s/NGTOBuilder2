@@ -46,42 +46,42 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL); //オプションキー
-	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
-	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
-	keyManager.register("build", Keyboard.KEY_RETURN, false, "生成する");
-	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, "生成を中止する");
-	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
+	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
+	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
+	keyManager.register("build", Keyboard.KEY_RETURN, false, `生成する`);
+	keyManager.register("cancelBuild", Keyboard.KEY_BACK, true, `生成を中止する`);
+	keyManager.register("undo", Keyboard.KEY_Z, true, `Undo`);
 	//ーーカーソル操作ーー
 	keyManager.register(
 		"selectYUp",
 		Keyboard.KEY_UP,
 		false,
-		"カーソルの高さを上げる",
+		`カーソルの高さを上げる`,
 	);
 	keyManager.register(
 		"selectYDown",
 		Keyboard.KEY_DOWN,
 		false,
-		"カーソルの高さを下げる",
+		`カーソルの高さを下げる`,
 	);
 	keyManager.register(
 		"resetSelectY",
 		Keyboard.KEY_F,
 		false,
-		"カーソルの高さをリセットする",
+		`カーソルの高さをリセットする`,
 	);
 	//keyManager.register("adjustSelectY", Keyboard.KEY_F, true, "カーソルの高さを合わせる");
 	keyManager.register(
 		"resetSelected",
 		Keyboard.KEY_C,
 		false,
-		"すべての選択をリセットする",
+		`すべての選択をリセットする`,
 	);
 	keyManager.register(
 		"reverseMarker",
 		Keyboard.KEY_P,
 		false,
-		"マーカーを反転する",
+		`マーカーを反転する`,
 	);
 
 	//-------------------
