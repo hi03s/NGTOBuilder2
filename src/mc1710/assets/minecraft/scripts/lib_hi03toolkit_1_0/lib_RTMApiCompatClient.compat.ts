@@ -1,5 +1,6 @@
 import { HashMap } from "java.util";
 import { BlockUtil, NGTObject } from "jp.ngt.ngtlib.block";
+import { GuiItemMiniature } from "jp.ngt.mcte.gui";
 import { DisplayList, GLHelper, NGTRenderer } from "jp.ngt.ngtlib.renderer";
 import { MCWrapperClient, NGTUtil } from "jp.ngt.ngtlib.util";
 import { NGTWorld } from "jp.ngt.ngtlib.world";
@@ -102,8 +103,7 @@ export class RTMApiCompatClient {
 	}
 
 	static isMiniatureGui(screen: unknown): boolean {
-		void screen;
-		return false;
+		return screen instanceof GuiItemMiniature;
 	}
 
 	static getRendererWithScript(

@@ -5,6 +5,7 @@ import {
 	TileEntityPlaceable,
 } from "jp.ngt.ngtlib.block";
 import { NGTLog } from "jp.ngt.ngtlib.io";
+import { ItemMiniature } from "jp.ngt.mcte.item";
 import { RTMItem } from "jp.ngt.rtm";
 import { Connection, TileEntityInsulator } from "jp.ngt.rtm.electric";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
@@ -21,6 +22,16 @@ import { TileEntity } from "net.minecraft.tileentity";
 import { BlockPos } from "net.minecraft.util.math";
 import { World } from "net.minecraft.world";
 import { Loader } from "net.minecraftforge.fml.common";
+
+declare const Packages: {
+	net: {
+		minecraft: {
+			block: {
+				ITileEntityProvider: Function;
+			};
+		};
+	};
+};
 
 export type Pos = [x: number, y: number, z: number];
 
@@ -115,6 +126,9 @@ export class RTMApiCompat {
 		if (!blockSet || !blockSet.block) return false;
 		const block = blockSet.block;
 		try {
+			const tileEntityProvider =
+				Packages.net.minecraft.block.ITileEntityProvider;
+			if (block instanceof tileEntityProvider) return true;
 			return block.hasTileEntity(block.getStateFromMeta(blockSet.metadata));
 		} catch (err) {
 			NGTLog.debug(
@@ -168,8 +182,7 @@ export class RTMApiCompat {
 	}
 
 	static getNGTObjectFromItemNBT(nbt: NBTTagCompound): NGTObject | null {
-		void nbt;
-		return null;
+		return ItemMiniature.getNGTObject(nbt);
 	}
 
 	static getRailPitch(railMap: RailMap, split: number, index: number): number {
