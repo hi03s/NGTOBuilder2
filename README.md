@@ -1,9 +1,10 @@
 # NGTO Builder 2
 
 [![Static Badge](https://img.shields.io/badge/RTM-1.7.10.46%EF%BD%9E-00cd00)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.7.10)
-[![Static Badge](https://img.shields.io/badge/KaizPatch-1.9.6%EF%BD%9E-57b57b)](https://github.com/Kai-Z-JP/KaizPatchX)
+[![Static Badge](https://img.shields.io/badge/KaizPatch-1.10.1%EF%BD%9E-57b57b)](https://github.com/Kai-Z-JP/KaizPatchX)
 [![Static Badge](https://img.shields.io/badge/RTM-2.4.24%EF%BD%9E-46bcff)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2)
 [![Static Badge](https://img.shields.io/badge/fixRTM-2.0.28%EF%BD%9E-1082c3)](https://github.com/fixrtm/fixRTM)
+[![Static Badge](https://img.shields.io/badge/AppleExtended-2.4.4%EF%BD%9E-f4a542)](https://github.com/ringo-1234/AppleExtended)
 
 ## 概要 / About
 
@@ -71,13 +72,21 @@ Places overhead wires using the wire item you are holding and the insulators in 
 
 ### MC1.7.10
 
-- [RTM1.7.10.44～](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.7.10)
-- [KaizPatchX-1.8.0～](https://github.com/Kai-Z-JP/KaizPatchX)
+- [RTM1.7.10.46～](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.7.10) ※1
+- [KaizPatchX-1.10.1～](https://github.com/Kai-Z-JP/KaizPatchX)
 
 ### MC1.12
 
-- [RTM2.4.24～](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2)
+- [RTM2.4.24～](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2) ※1
 - [fixRTM-2.0.28～](https://img.shields.io/badge/fixRTM-2.0.28%EF%BD%9E-1082c3)
+- [AppleExtended-2.4.4～](https://github.com/ringo-1234/AppleExtended)
+
+### MC1.21.1
+
+- ~~[RTMU(未対応/調査中)](https://github.com/325-Sunnygo/RealTrainModUnofficial)~~  
+  
+※1:offsetが未実装のため、一部のブロックがプレビューどおりに設置されません。  
+Due to the "offset" not being implemented, some blocks are not placed exactly as shown in the preview.
 
 ## 導入方法 / How to install
 
