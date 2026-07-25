@@ -315,12 +315,12 @@ function keyInput(
 			pos: buildPos,
 		};
 		NGTOBuilderUtil.sendJsonData(dataMap, "sendData", sendData);
-		NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成中...");
+		NGTLog.sendChatMessage(sender, `[NGTO Builder2] 生成中...`);
 	}
 
 	//生成を中止する
 	if (keyManager.pressed("cancelBuild") && isBuilding) {
-		NGTLog.sendChatMessage(sender, "[NGTO Builder2] 生成を中止");
+		NGTLog.sendChatMessage(sender, `[NGTO Builder2] 生成を中止`);
 		dataMap.setBoolean("cancelBuild", true, 1);
 	}
 
