@@ -265,7 +265,7 @@ function keyInput(
 		dataMap.setBoolean("isBeamInsulatorMode", !isBeamInsulatorMode, 0);
 		NGTLog.sendChatMessage(
 			sender,
-			`ワイヤー式ビームの碍子の設置位置: ${isBeamInsulatorMode ? "空中" : "地面"}`,
+			`ワイヤー式ビームの碍子の設置位置: ${isBeamInsulatorMode ? `空中` : `地面`}`,
 		);
 		rebuildBeam(entity, baseCollector, beamCollector, dataMap);
 	}

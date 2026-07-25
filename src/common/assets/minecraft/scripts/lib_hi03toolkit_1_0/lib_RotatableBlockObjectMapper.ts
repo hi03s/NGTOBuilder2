@@ -173,17 +173,17 @@ export class BlockDiffusionMode {
 	static readonly NONE = 2;
 
 	private static readonly modes: BlockDiffusionMode[] = [
-		new BlockDiffusionMode(BlockDiffusionMode.XZ, "xz", "XZ拡散 [Medium]", 0.2),
+		new BlockDiffusionMode(BlockDiffusionMode.XZ, "xz", `XZ拡散 [Medium]`, 0.2),
 		new BlockDiffusionMode(
 			BlockDiffusionMode.XYZ,
 			"xyz",
-			"XYZ拡散 [High]",
+			`XYZ拡散 [High]`,
 			0.2,
 		),
 		new BlockDiffusionMode(
 			BlockDiffusionMode.NONE,
 			"none",
-			"補間なし [Low]",
+			`補間なし [Low]`,
 			0,
 		),
 	];

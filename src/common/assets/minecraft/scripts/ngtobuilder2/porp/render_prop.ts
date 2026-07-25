@@ -359,7 +359,7 @@ function keyInput(
 		dataMap.setBoolean("isWorldAxis", isWorldAxis, 0);
 		NGTLog.sendChatMessage(
 			sender,
-			`[NGTO Builder2] 回転軸: ${isWorldAxis ? "ワールド軸" : "ローカル軸"}`,
+			`[NGTO Builder2] 回転軸: ${isWorldAxis ? `ワールド軸` : `ローカル軸`}`,
 		);
 	}
 
