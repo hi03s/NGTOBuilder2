@@ -24,5 +24,6 @@
 	"doCulling": false,
 	"changeYawOnStopping": false,
 	"accuracy": "LOW",
-	"tags": "ngto builder 2 hi03"
+	"tags": "ngto builder 2 hi03",
+	"customIconTexture": "textures/ngtobuilder2/porp/icon_prop_pattern.png"
 }
