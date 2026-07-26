@@ -24,7 +24,7 @@ Before using NGTO Builder 2, **make sure to back up your world data**. There hav
 The author is not responsible for any damage or loss caused by using this pack.
 
 ## ダウンロード / Download
-
+- [ダウンロード / Download](https://drive.google.com/file/d/1GgzXnih1sC4GH5fL-E9cit6_kFX0aeWh/view?usp=sharing)
 - [最新リリース / New Release](https://github.com/hi03s/NGTOBuilder2/releases)
 
 ## 使い方解説記事 / How to use
