@@ -5,6 +5,7 @@
 [![Static Badge](https://img.shields.io/badge/RTM-2.4.24%EF%BD%9E-46bcff)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2)
 [![Static Badge](https://img.shields.io/badge/fixRTM-2.0.28%EF%BD%9E-1082c3)](https://github.com/fixrtm/fixRTM)
 [![Static Badge](https://img.shields.io/badge/AppleExtended-2.4.4%EF%BD%9E-f4a542)](https://github.com/ringo-1234/AppleExtended)
+[![Static Badge](https://img.shields.io/badge/RTMUnofficial-1.0.15%EF%BD%9E-ffb6ca)](https://github.com/325-Sunnygo/RealTrainModUnofficial)
 
 ## 概要 / About
 
@@ -25,6 +26,10 @@ The author is not responsible for any damage or loss caused by using this pack.
 ## ダウンロード / Download
 
 - [最新リリース / New Release](https://github.com/hi03s/NGTOBuilder2/releases)
+
+## 使い方解説記事 / How to use
+
+- 準備中
 
 ## ツール内容 / Tools
 
@@ -83,7 +88,7 @@ Places overhead wires using the wire item you are holding and the insulators in 
 
 ### MC1.21.1
 
-- ~~[RTMU(未対応/調査中)](https://github.com/325-Sunnygo/RealTrainModUnofficial)~~  
+- [RTMUnofficial-1.0.15～](https://github.com/325-Sunnygo/RealTrainModUnofficial)  
   
 ※1:offsetが未実装のため、一部のブロックがプレビューどおりに設置されません。  
 Due to the "offset" not being implemented, some blocks are not placed exactly as shown in the preview.
