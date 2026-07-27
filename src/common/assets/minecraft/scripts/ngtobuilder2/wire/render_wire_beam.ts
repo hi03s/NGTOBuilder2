@@ -48,6 +48,18 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		false,
 		`すべての選択をリセットする`,
 	);
+	keyManager.register(
+		"insulatorHeightIncrease",
+		Keyboard.KEY_UP,
+		false,
+		`碍子の位置を1ブロック上げる`,
+	);
+	keyManager.register(
+		"insulatorHeightDecrease",
+		Keyboard.KEY_DOWN,
+		false,
+		`碍子の位置を1ブロック下げる`,
+	);
 
 	//ーービーム操作ーー
 	keyManager.register(
@@ -131,6 +143,8 @@ function keyInput(
 		);
 		NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelected"));
+		NGTLog.sendChatMessage(sender, keyManager.getDescription("insulatorHeightIncrease"));
+		NGTLog.sendChatMessage(sender, keyManager.getDescription("insulatorHeightDecrease"));
 
 		NGTLog.sendChatMessage(sender, `---ビーム操作---`);
 		NGTLog.sendChatMessage(
@@ -165,6 +179,7 @@ function keyInput(
 
 	let xOffset = dataMap.getDouble("xOffset");
 	let beamDistance = dataMap.getDouble("beamDistance");
+	let insulatorHeightOffset = dataMap.getInt("insulatorHeightOffset");
 	const isBuilding = dataMap.getBoolean("isBuilding");
 	const isUndo = dataMap.getBoolean("isUndo");
 
@@ -232,7 +247,10 @@ function keyInput(
 			baseCollector.add(
 				entity,
 				rmPosZX[1],
-				Math.floor(rmPosY) + 5.5 + heightOffsetY,
+				Math.floor(rmPosY) +
+					5.5 +
+					heightOffsetY +
+					insulatorHeightOffset,
 				rmPosZX[0],
 				1,
 				rmYaw,
@@ -257,6 +275,25 @@ function keyInput(
 		baseCollector.clear(entity);
 		beamCollector.clear(entity);
 		dataMap.setDouble("xOffset", 0, 0);
+		dataMap.setInt("insulatorHeightOffset", 0, 0);
+	}
+
+	//碍子の高さを1ブロック単位で調整する
+	if (keyManager.pressed("insulatorHeightIncrease")) {
+		insulatorHeightOffset += 1;
+		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
+		NGTLog.sendChatMessage(
+			sender,
+			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
+		);
+	}
+	if (keyManager.pressed("insulatorHeightDecrease")) {
+		insulatorHeightOffset -= 1;
+		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
+		NGTLog.sendChatMessage(
+			sender,
+			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
+		);
 	}
 
 	//ワイヤー式ビームの碍子の設置位置を切り替える
@@ -375,6 +412,10 @@ function renderForToolUser(
 			const rmPosZX = lookingRailMap.getRailPos(split, rmIndex);
 			const rmPosY = lookingRailMap.getRailHeight(split, rmIndex);
 			let rmYaw = RTMApiCompat.getRailYaw(lookingRailMap, split, rmIndex);
+			const heightOffsetY = rmPosY - Math.floor(rmPosY) - 1 / 16;
+			const insulatorHeightOffset = dataMap.getInt(
+				"insulatorHeightOffset",
+			);
 			if (keyManager.downOptionKey()) rmYaw += 180;
 
 			GL11.glPushMatrix();
@@ -383,6 +424,18 @@ function renderForToolUser(
 			GL11.glRotatef(rmYaw, 0, 1, 0);
 			point_rail.render(renderer);
 			GL11.glPopMatrix();
+
+			renderBlockPreview(
+				rmPosZX[1],
+				Math.floor(rmPosY) +
+					5.5 +
+					heightOffsetY +
+					insulatorHeightOffset,
+				rmPosZX[0],
+				posX,
+				posY,
+				posZ,
+			);
 		}
 	}
 
@@ -589,6 +642,10 @@ function getHeldWire(player: EntityPlayer): ItemStack | null {
 	return itemStack && itemStack.getItem() === RTMItem.itemWire
 		? itemStack
 		: null;
+}
+
+function formatBlockOffset(offset: number): string {
+	return `${offset > 0 ? "+" : ""}${offset}ブロック`;
 }
 
 function renderBlockPreview(

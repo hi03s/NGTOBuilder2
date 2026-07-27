@@ -63,6 +63,18 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		false,
 		`すべての選択をリセットする`,
 	);
+	keyManager.register(
+		"insulatorHeightIncrease",
+		Keyboard.KEY_UP,
+		false,
+		`碍子の位置を1ブロック上げる`,
+	);
+	keyManager.register(
+		"insulatorHeightDecrease",
+		Keyboard.KEY_DOWN,
+		false,
+		`碍子の位置を1ブロック下げる`,
+	);
 	//ーー機能ーー
 	keyManager.register(
 		"isDeviation",
@@ -116,13 +128,13 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager.register(
 		"beamDistanceIncrease",
 		Keyboard.KEY_UP,
-		false,
+		true,
 		`ワイヤー式ビームの長さを0.1m増やす`,
 	);
 	keyManager.register(
 		"beamDistanceDecrease",
 		Keyboard.KEY_DOWN,
-		false,
+		true,
 		`ワイヤー式ビームの長さを0.1m減らす`,
 	);
 
@@ -183,6 +195,14 @@ function keyInput(
 		);
 		NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelected"));
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("insulatorHeightIncrease"),
+		);
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("insulatorHeightDecrease"),
+		);
 		//ーー機能ーー
 		NGTLog.sendChatMessage(sender, `---機能---`);
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("isDeviation"));
@@ -242,6 +262,7 @@ function keyInput(
 
 	let laneCount = dataMap.getInt("laneCount");
 	let laneDistance = dataMap.getDouble("laneDistance");
+	let insulatorHeightOffset = dataMap.getInt("insulatorHeightOffset");
 	const isBuilding = dataMap.getBoolean("isBuilding");
 	const isUndo = dataMap.getBoolean("isUndo");
 	const posList = collectorList[0].getAll(entity);
@@ -323,7 +344,10 @@ function keyInput(
 			collectorList[0].add(
 				entity,
 				rmPosZX[1] + deviationOffsetVec.getX(),
-				Math.floor(rmPosY) + 5.5 + heightOffsetY,
+				Math.floor(rmPosY) +
+					5.5 +
+					heightOffsetY +
+					insulatorHeightOffset,
 				rmPosZX[0] + deviationOffsetVec.getZ(),
 				1,
 				rmYaw,
@@ -370,9 +394,28 @@ function keyInput(
 	if (keyManager.pressed("resetSelected")) {
 		collectorList[0].clear(entity);
 		bezierCollector.clear(entity);
+		dataMap.setInt("insulatorHeightOffset", 0, 0);
 
 		//左右の並行レーンがあれば再構築する
 		rebuildParallelLane(entity, collectorList, beamCollector, dataMap);
+	}
+
+	//碍子の高さを1ブロック単位で調整する
+	if (keyManager.pressed("insulatorHeightIncrease")) {
+		insulatorHeightOffset += 1;
+		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
+		NGTLog.sendChatMessage(
+			sender,
+			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
+		);
+	}
+	if (keyManager.pressed("insulatorHeightDecrease")) {
+		insulatorHeightOffset -= 1;
+		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
+		NGTLog.sendChatMessage(
+			sender,
+			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
+		);
 	}
 
 	//架線偏位を切り替える
@@ -600,6 +643,7 @@ function renderForToolUser(
 
 	const isDeviation = dataMap.getBoolean("isDeviation");
 	const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
+	const insulatorHeightOffset = dataMap.getInt("insulatorHeightOffset");
 
 	let collectorList = collectorListCache.get(entity);
 	if (!collectorList) {
@@ -653,7 +697,11 @@ function renderForToolUser(
 			const heightOffsetY = rmPosY - Math.floor(rmPosY) - 1 / 16; //勾配Y差分
 			const currentPos: Pos = [
 				rmPosZX[1] + insulatorOffset[0] + deviationOffsetVec.getX(),
-				Math.floor(rmPosY) + 5.5 + heightOffsetY + insulatorOffset[1],
+				Math.floor(rmPosY) +
+					5.5 +
+					heightOffsetY +
+					insulatorHeightOffset +
+					insulatorOffset[1],
 				rmPosZX[0] + insulatorOffset[2] + deviationOffsetVec.getZ(),
 			];
 
@@ -691,7 +739,10 @@ function renderForToolUser(
 					GL11.glPushMatrix();
 					GL11.glTranslatef(
 						rmPosZX[1] + deviationOffsetVec.getX(),
-						rmPosY + 5.5 + heightOffsetY,
+						rmPosY +
+							5.5 +
+							heightOffsetY +
+							insulatorHeightOffset,
 						rmPosZX[0] + deviationOffsetVec.getZ(),
 					);
 					GL11.glTranslatef(-posX, -posY, -posZ);
@@ -720,7 +771,10 @@ function renderForToolUser(
 			GL11.glPushMatrix();
 			GL11.glTranslatef(
 				rmPosZX[1] + deviationOffsetVec.getX(),
-				Math.floor(rmPosY) + 5.5 + heightOffsetY,
+				Math.floor(rmPosY) +
+					5.5 +
+					heightOffsetY +
+					insulatorHeightOffset,
 				rmPosZX[0] + deviationOffsetVec.getZ(),
 			);
 			GL11.glTranslatef(-posX, -posY, -posZ);
@@ -731,7 +785,12 @@ function renderForToolUser(
 			GL11.glPushMatrix();
 			GL11.glTranslatef(
 				Math.floor(rmPosZX[1] + deviationOffsetVec.getX()) + 0.5,
-				Math.floor(rmPosY + 5.5 + heightOffsetY) + 0.5,
+				Math.floor(
+					rmPosY +
+						5.5 +
+						heightOffsetY +
+						insulatorHeightOffset,
+				) + 0.5,
 				Math.floor(rmPosZX[0] + deviationOffsetVec.getZ()) + 0.5,
 			);
 			GL11.glTranslatef(-posX, -posY, -posZ);
@@ -1003,6 +1062,10 @@ function getBeamWire(player: EntityPlayer): ItemStack | null {
 		}
 	}
 	return null;
+}
+
+function formatBlockOffset(offset: number): string {
+	return `${offset > 0 ? "+" : ""}${offset}ブロック`;
 }
 
 function applyRotationSide(blockSide: number): void {
