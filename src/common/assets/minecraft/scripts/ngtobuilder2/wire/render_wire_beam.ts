@@ -52,13 +52,13 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"insulatorHeightIncrease",
 		Keyboard.KEY_UP,
 		false,
-		`碍子の位置を1ブロック上げる`,
+		`選択予定/選択済みの碍子を一括で1ブロック上げる`,
 	);
 	keyManager.register(
 		"insulatorHeightDecrease",
 		Keyboard.KEY_DOWN,
 		false,
-		`碍子の位置を1ブロック下げる`,
+		`選択予定/選択済みの碍子を一括で1ブロック下げる`,
 	);
 
 	//ーービーム操作ーー
@@ -282,6 +282,8 @@ function keyInput(
 	if (keyManager.pressed("insulatorHeightIncrease")) {
 		insulatorHeightOffset += 1;
 		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
+		baseCollector.translateY(entity, 1);
+		rebuildBeam(entity, baseCollector, beamCollector, dataMap);
 		NGTLog.sendChatMessage(
 			sender,
 			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
@@ -290,6 +292,8 @@ function keyInput(
 	if (keyManager.pressed("insulatorHeightDecrease")) {
 		insulatorHeightOffset -= 1;
 		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
+		baseCollector.translateY(entity, -1);
+		rebuildBeam(entity, baseCollector, beamCollector, dataMap);
 		NGTLog.sendChatMessage(
 			sender,
 			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
