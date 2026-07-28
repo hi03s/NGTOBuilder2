@@ -85,10 +85,8 @@ function keyInput(
 	const isReset = dataMap.getBoolean("isReset");
 
 	//保存したデータが有れば復元する
-	const savedSelectedPosListData = dataMap.getString("selectedPosList");
-	const savedSelectedPosList: Pos[] = savedSelectedPosListData
-		? JSON.parse(savedSelectedPosListData.replace(/☆/g, ","))
-		: [];
+	const savedSelectedPosList =
+		NGTOBuilderUtil.getJsonData<Pos[]>(dataMap, "selectedPosList") || [];
 	if (
 		!isReset &&
 		savedSelectedPosList.length > 0 &&
@@ -532,10 +530,8 @@ function renderForOtherUser(
 	const posX = MCWrapper.getPosX(entity);
 	const posY = MCWrapper.getPosY(entity);
 	const posZ = MCWrapper.getPosZ(entity);
-	const posListData = dataMap.getString("selectedPosList");
-	const posList: Pos[] = posListData
-		? JSON.parse(posListData.replace(/☆/g, ","))
-		: [];
+	const posList =
+		NGTOBuilderUtil.getJsonData<Pos[]>(dataMap, "selectedPosList") || [];
 
 	//本体
 	if (posList.length > 0) body_dismount.render(renderer);
@@ -770,6 +766,5 @@ function renderWire(pos1: Pos, pos2: Pos, parts: Parts): void {
 function syncSelectedPosList(entity: EntityVehicle): void {
 	const dataMap = entity.getResourceState().getDataMap();
 	const posList = posCollector.getAll(entity);
-	const jsonPosList = JSON.stringify(posList).replace(/,/g, "☆");
-	dataMap.setString("selectedPosList", jsonPosList, 3);
+	NGTOBuilderUtil.sendJsonData(dataMap, "selectedPosList", posList, 3);
 }

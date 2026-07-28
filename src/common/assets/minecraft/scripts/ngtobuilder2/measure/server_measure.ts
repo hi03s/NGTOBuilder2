@@ -84,10 +84,11 @@ function onUpdate2(
 		dataMap.setBoolean("isReset", false, 1);
 
 		//最後の座標があればそこにテレポート
-		const posListData = dataMap.getString("selectedPosList");
-		const posList: number[][] = posListData
-			? JSON.parse(posListData.replace(/☆/g, ","))
-			: [];
+		const posList =
+			NGTOBuilderUtil.getJsonData<number[][]>(
+				dataMap,
+				"selectedPosList",
+			) || [];
 		if (posList.length > 0) {
 			const lastPos = posList[posList.length - 1];
 			entity.setPosition(lastPos[0] + 0.5, lastPos[1] + 1, lastPos[2] + 0.5);

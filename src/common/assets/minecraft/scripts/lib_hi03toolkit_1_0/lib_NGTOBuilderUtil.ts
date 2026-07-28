@@ -300,11 +300,18 @@ export class NGTOBuilderUtil {
 	 * @param dataMap
 	 * @param key
 	 * @param object 連想配列もしくは配列
+	 * @param flag DataMapの同期・保存フラグ
 	 */
-	static sendJsonData(dataMap: DataMap, key: string, object: object): void {
-		const json = JSON.stringify(object).replace(/,/g, "☆");
+	static sendJsonData(
+		dataMap: DataMap,
+		key: string,
+		object: object,
+		flag = 1,
+	): void {
+		// const json = JSON.stringify(object).replace(/,/g, "☆");
+		const json = JSON.stringify(object).split(",").join("\u2606");
 		const val = dataMap.getString(key);
-		if (val !== json) dataMap.setString(key, json, 1);
+		if (val !== json) dataMap.setString(key, json, flag);
 	}
 
 	/**
@@ -314,7 +321,8 @@ export class NGTOBuilderUtil {
 	 * @returns
 	 */
 	static getJsonData<T>(dataMap: DataMap, key: string): T | null {
-		const data = dataMap.getString(key).replace(/☆/g, ",");
+		// const data = dataMap.getString(key).replace(/☆/g, ",");
+		const data = dataMap.getString(key).split("\u2606").join(",");
 		if (data === "") return null;
 		try {
 			return JSON.parse(data);
