@@ -75,6 +75,15 @@ export class InsulatorCollector {
 		list.reverse();
 	}
 
+	translateY(entity: Entity, offsetY: number): void {
+		if (offsetY === 0) return;
+		const list = this.getAll(entity);
+		for (let i = 0; i < list.length; i++) {
+			list[i][1] += offsetY;
+		}
+		this.rebuildKeySet(entity);
+	}
+
 	clear(entity: Entity): void {
 		this.posMap.put(entity, []);
 		this.keyMap.put(entity, new HashMap());

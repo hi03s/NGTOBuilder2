@@ -179,6 +179,27 @@ export class BezierCollector {
 		return list[list.length - 1];
 	}
 
+	translateY(entity: Entity, offsetY: number): void {
+		if (offsetY === 0) return;
+		const list = this.getOrCreateList(entity);
+		const translatedList: BezierCurve3D[] = [];
+		for (let i = 0; i < list.length; i++) {
+			const controlPoints = list[i].getControlPoints();
+			for (let j = 0; j < controlPoints.length; j++) {
+				controlPoints[j][1] += offsetY;
+			}
+			translatedList.push(
+				new BezierCurve3D(
+					controlPoints[0],
+					controlPoints[1],
+					controlPoints[2],
+					controlPoints[3],
+				),
+			);
+		}
+		this.set(entity, translatedList);
+	}
+
 	size(entity: Entity): number {
 		const list = this.getOrCreateList(entity);
 		return list.length;
