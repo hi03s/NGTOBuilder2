@@ -95,7 +95,7 @@ function keyInput(
 		dataMap.setBoolean("isReset", true, 1);
 		for (let i = 0; i < savedSelectedPosList.length; i++) {
 			const pos = savedSelectedPosList[i];
-			posCollector.add(entity, pos[0], pos[1], pos[2]);
+			posCollector.add(entity, pos[0], pos[1], pos[2], true);
 		}
 	}
 
@@ -187,7 +187,7 @@ function keyInput(
 		const lookingPosZ = isSnap
 			? Math.round(lookingPos.posZ * 2) / 2
 			: lookingPos.posZ;
-		posCollector.add(entity, lookingPosX, lookingPosY, lookingPosZ);
+		posCollector.add(entity, lookingPosX, lookingPosY, lookingPosZ, true);
 		syncSelectedPosList(entity);
 	}
 
