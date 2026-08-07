@@ -143,16 +143,20 @@ function onUpdate2(
 						minY = Math.min(minY, pos[1] + depth, maxY);
 					}
 				}
+				//上下端を先にブロック座標化し、非整数の高さで列全体がずれないようにする
+				const minBlockY = Math.floor(minY);
 				//ベジェ曲線展開
 				for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
 					const bezier = bezierList[bezierIdx];
 					const split = Math.max(1, Math.floor(bezier.getLength() * 2));
 					for (let idx = 0; idx <= split; idx++) {
 						const pos = bezier.getPoint(split, idx);
-						const maxY = pos[1] + surfaceY;
-						const diffY = pos[1] - minY;
 						const yaw = bezier.getYaw(split, idx);
-						const boxHeight = Math.max(Math.abs(maxY - minY), 1);
+						const maxBlockY = Math.max(
+							Math.floor(pos[1]) + surfaceY - 1,
+							minBlockY,
+						);
+						const boxHeight = maxBlockY - minBlockY + 1;
 						const rbo = RotatableBlockObjectFactory.createBox(
 							blockSet,
 							boxWidth,
@@ -165,7 +169,7 @@ function onUpdate2(
 						rbo.movePivotToBase();
 						rbo.offset(
 							Math.floor(pos[0]) - Math.floor(origin[0]),
-							Math.floor(pos[1]) - Math.floor(origin[1]) - diffY, //起点が壁の底
+							minBlockY - Math.floor(origin[1]),
 							Math.floor(pos[2]) - Math.floor(origin[2]),
 						);
 						margedRBO.merge(rbo);

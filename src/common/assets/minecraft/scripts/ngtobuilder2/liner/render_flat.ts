@@ -599,6 +599,8 @@ function renderForToolUser(
 					minY = Math.min(minY, pos[1] + depth, maxY);
 				}
 			}
+			//上下端を先にブロック座標化し、非整数の高さで列全体がずれないようにする
+			const minBlockY = Math.floor(minY);
 			//ベジェ曲線展開
 			const boxWidth = fieldWidth * 2 + 1;
 			const isHuge = boxWidth > 40;
@@ -608,10 +610,12 @@ function renderForToolUser(
 				for (let idx = 0; idx <= split; idx++) {
 					const isEdge = idx === 0 || idx === split;
 					const pos = bezier.getPoint(split, idx);
-					const maxY = pos[1] + surfaceY;
-					const diffY = pos[1] - minY;
 					const yaw = bezier.getYaw(split, idx);
-					const boxHeight = Math.max(Math.abs(maxY - minY), 1);
+					const maxBlockY = Math.max(
+						Math.floor(pos[1]) + surfaceY - 1,
+						minBlockY,
+					);
+					const boxHeight = maxBlockY - minBlockY + 1;
 					//const rbo = RotatableBlockObjectFactory.createBox(new BlockSet(RTMApiCompat.getBlockStone(), 0), boxWidth, boxHeight, 1);
 					const rbo = new RotatableBlockObject();
 					const topRBO = isHuge
@@ -639,7 +643,7 @@ function renderForToolUser(
 					rbo.movePivotToBase();
 					rbo.offset(
 						Math.floor(pos[0]) - Math.floor(origin[0]),
-						Math.floor(pos[1]) - Math.floor(origin[1]) - diffY, //起点が壁の底
+						minBlockY - Math.floor(origin[1]),
 						Math.floor(pos[2]) - Math.floor(origin[2]),
 					);
 					margedRBO.merge(rbo);
