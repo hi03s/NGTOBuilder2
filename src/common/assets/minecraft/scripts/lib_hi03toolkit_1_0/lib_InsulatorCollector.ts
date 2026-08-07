@@ -75,11 +75,21 @@ export class InsulatorCollector {
 		list.reverse();
 	}
 
+	/**
+	 * 碍子の高さをまとめて動かす
+	 * 1ブロック未満の移動にも対応するため、実座標に戻してからblockYとoffsetYに割り直す
+	 * @param entity
+	 * @param offsetY 移動量(ブロック単位、小数可)
+	 */
 	translateY(entity: Entity, offsetY: number): void {
 		if (offsetY === 0) return;
 		const list = this.getAll(entity);
 		for (let i = 0; i < list.length; i++) {
-			list[i][1] += offsetY;
+			const pos = list[i];
+			const posY = pos[1] + 0.5 + pos[5] + offsetY;
+			const blockY = Math.floor(posY);
+			pos[1] = blockY;
+			pos[5] = posY - (blockY + 0.5);
 		}
 		this.rebuildKeySet(entity);
 	}

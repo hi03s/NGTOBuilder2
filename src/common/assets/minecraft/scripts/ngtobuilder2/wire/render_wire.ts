@@ -143,7 +143,7 @@ function keyInput(
 		: RTMApiCompatClient.getModelSetList("ModelConnector");
 
 	if (keyManager.pressed("showHelp")) {
-		NGTLog.sendChatMessage(sender, `---NGTO Builder2 ライン設置 操作方法---`);
+		NGTLog.sendChatMessage(sender, `---NGTO Builder2 ワイヤー設置 操作方法---`);
 		//ーー共通ーー
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("endEdit"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("build"));

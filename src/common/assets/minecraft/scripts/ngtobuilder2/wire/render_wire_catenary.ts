@@ -67,13 +67,25 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"insulatorHeightIncrease",
 		Keyboard.KEY_UP,
 		false,
-		`選択予定/選択済みの碍子を一括で1ブロック上げる`,
+		`選択予定/選択済みの碍子を一括で刻み幅だけ上げる`,
 	);
 	keyManager.register(
 		"insulatorHeightDecrease",
 		Keyboard.KEY_DOWN,
 		false,
-		`選択予定/選択済みの碍子を一括で1ブロック下げる`,
+		`選択予定/選択済みの碍子を一括で刻み幅だけ下げる`,
+	);
+	keyManager.register(
+		"changeHeightStepNext",
+		Keyboard.KEY_K,
+		false,
+		`高さの刻み幅を変更(next)`,
+	);
+	keyManager.register(
+		"changeHeightStepPrev",
+		Keyboard.KEY_K,
+		true,
+		`高さの刻み幅を変更(prev)`,
 	);
 	//ーー機能ーー
 	keyManager.register(
@@ -141,6 +153,8 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	//-------------------
 	//--  ユーザー設定  --
 	//-------------------
+	//高さの刻み幅リスト(ブロック単位) 先頭が既定値
+	heightStepList = [1, 1 / 2, 1 / 4, 1 / 8, 1 / 16];
 	ignoreItemList = [RTMItem.itemWire, RTMItem.installedObject];
 	//posCollector = new InsulatorCollector();
 	bezierCollector = new BezierCollector();
@@ -149,6 +163,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	initParts();
 }
 var ignoreItemList: Item[];
+var heightStepList: number[];
 let wireModelList: { [name: string]: ModelSetWire };
 let connectorModelList: { [name: string]: ModelSetConnector };
 var keyManager: InputManager;
@@ -180,7 +195,7 @@ function keyInput(
 	}
 
 	if (keyManager.pressed("showHelp")) {
-		NGTLog.sendChatMessage(sender, `---NGTO Builder2 ライン設置 操作方法---`);
+		NGTLog.sendChatMessage(sender, `---NGTO Builder2 架線設置 操作方法---`);
 		//ーー共通ーー
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("endEdit"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("build"));
@@ -202,6 +217,14 @@ function keyInput(
 		NGTLog.sendChatMessage(
 			sender,
 			keyManager.getDescription("insulatorHeightDecrease"),
+		);
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("changeHeightStepNext"),
+		);
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("changeHeightStepPrev"),
 		);
 		//ーー機能ーー
 		NGTLog.sendChatMessage(sender, `---機能---`);
@@ -262,7 +285,7 @@ function keyInput(
 
 	let laneCount = dataMap.getInt("laneCount");
 	let laneDistance = dataMap.getDouble("laneDistance");
-	let insulatorHeightOffset = dataMap.getInt("insulatorHeightOffset");
+	let insulatorHeightOffset = dataMap.getDouble("insulatorHeightOffset");
 	const isBuilding = dataMap.getBoolean("isBuilding");
 	const isUndo = dataMap.getBoolean("isUndo");
 	const posList = collectorList[0].getAll(entity);
@@ -394,33 +417,56 @@ function keyInput(
 	if (keyManager.pressed("resetSelected")) {
 		collectorList[0].clear(entity);
 		bezierCollector.clear(entity);
-		dataMap.setInt("insulatorHeightOffset", 0, 0);
+		dataMap.setDouble("insulatorHeightOffset", 0, 0);
 
 		//左右の並行レーンがあれば再構築する
 		rebuildParallelLane(entity, collectorList, beamCollector, dataMap);
 	}
 
-	//碍子の高さを1ブロック単位で調整する
+	//碍子の高さを現在の刻み幅で調整する
+	const heightStepIdx = getHeightStepIndex(dataMap);
+	const heightStep = heightStepList[heightStepIdx];
 	if (keyManager.pressed("insulatorHeightIncrease")) {
-		insulatorHeightOffset += 1;
-		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
-		collectorList[0].translateY(entity, 1);
-		bezierCollector.translateY(entity, 1);
-		rebuildParallelLane(entity, collectorList, beamCollector, dataMap);
-		NGTLog.sendChatMessage(
+		insulatorHeightOffset = translateInsulatorHeight(
+			entity,
+			collectorList,
+			beamCollector,
+			dataMap,
 			sender,
-			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
+			insulatorHeightOffset,
+			heightStep,
 		);
 	}
 	if (keyManager.pressed("insulatorHeightDecrease")) {
-		insulatorHeightOffset -= 1;
-		dataMap.setInt("insulatorHeightOffset", insulatorHeightOffset, 0);
-		collectorList[0].translateY(entity, -1);
-		bezierCollector.translateY(entity, -1);
-		rebuildParallelLane(entity, collectorList, beamCollector, dataMap);
+		insulatorHeightOffset = translateInsulatorHeight(
+			entity,
+			collectorList,
+			beamCollector,
+			dataMap,
+			sender,
+			insulatorHeightOffset,
+			-heightStep,
+		);
+	}
+
+	//高さの刻み幅を変更(次)
+	if (keyManager.pressed("changeHeightStepNext")) {
+		const nextIdx = (heightStepIdx + 1) % heightStepList.length;
+		dataMap.setInt("heightStepIndex", nextIdx, 0);
 		NGTLog.sendChatMessage(
 			sender,
-			`碍子の高さ補正: ${formatBlockOffset(insulatorHeightOffset)}`,
+			`[NGTO Builder2] 高さの刻み幅: ${formatBlockOffset(heightStepList[nextIdx])}`,
+		);
+	}
+
+	//高さの刻み幅を変更(前)
+	if (keyManager.pressed("changeHeightStepPrev")) {
+		const prevIdx =
+			(heightStepIdx - 1 + heightStepList.length) % heightStepList.length;
+		dataMap.setInt("heightStepIndex", prevIdx, 0);
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] 高さの刻み幅: ${formatBlockOffset(heightStepList[prevIdx])}`,
 		);
 	}
 
@@ -649,7 +695,7 @@ function renderForToolUser(
 
 	const isDeviation = dataMap.getBoolean("isDeviation");
 	const isDeviationInvert = dataMap.getBoolean("isDeviationInvert");
-	const insulatorHeightOffset = dataMap.getInt("insulatorHeightOffset");
+	const insulatorHeightOffset = dataMap.getDouble("insulatorHeightOffset");
 
 	let collectorList = collectorListCache.get(entity);
 	if (!collectorList) {
@@ -1070,8 +1116,49 @@ function getBeamWire(player: EntityPlayer): ItemStack | null {
 	return null;
 }
 
+/**
+ * 現在選択している高さの刻み幅のindexを取得する
+ * heightStepListの範囲外になっていた場合は先頭(既定値)に戻す
+ */
+function getHeightStepIndex(dataMap: DataMap): number {
+	const index = dataMap.getInt("heightStepIndex");
+	if (index < 0 || index >= heightStepList.length) return 0;
+	return index;
+}
+
+/**
+ * 選択予定/選択済みの碍子の高さをまとめて動かす
+ * @param currentOffset 現在の高さ補正
+ * @param delta 移動量(ブロック単位、小数可)
+ * @returns 移動後の高さ補正
+ */
+function translateInsulatorHeight(
+	entity: EntityVehicle,
+	collectorList: InsulatorCollector[],
+	beamCollector: InsulatorCollector,
+	dataMap: DataMap,
+	sender: ICommandSender,
+	currentOffset: number,
+	delta: number,
+): number {
+	const offset = currentOffset + delta;
+	dataMap.setDouble("insulatorHeightOffset", offset, 0);
+	collectorList[0].translateY(entity, delta);
+	bezierCollector.translateY(entity, delta);
+	rebuildParallelLane(entity, collectorList, beamCollector, dataMap);
+	NGTLog.sendChatMessage(
+		sender,
+		`碍子の高さ補正: ${formatBlockOffset(offset)}`,
+	);
+	return offset;
+}
+
 function formatBlockOffset(offset: number): string {
-	return `${offset > 0 ? "+" : ""}${offset}ブロック`;
+	//小数の誤差が表示に出ないように丸める
+	const rounded = Math.round(offset * 10000) / 10000;
+	let text = String(rounded);
+	if (text.indexOf("e") >= 0) text = rounded.toFixed(4);
+	return `${rounded > 0 ? "+" : ""}${text}ブロック`;
 }
 
 function applyRotationSide(blockSide: number): void {
