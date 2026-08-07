@@ -1,0 +1,95 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # 初回はGradleがMinecraft/Forgeのdecompワークスペースを構築するため非常に時間がかかる
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # rtmxのテンプレート(build.gradle.kts)がJavaツールチェーン17を要求する
+      - uses: actions/setup-java@v4
+        id: jdk
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # ~/.rtmx  : rtmxが生成するGradleプロジェクトとJARパスのキャッシュ
+      # ~/.gradle: Gradle本体・依存・Minecraftのdecomp成果物
+      # scanコンフィグ(rtmx.json)が変わると作り直しになるためキーに含める
+      - name: Cache Gradle and rtmx workspace
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rtmx
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: rtmx-${{ runner.os }}-${{ hashFiles('rtmx.json') }}
+          restore-keys: |
+            rtmx-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # .npmrcのgradle-java-homeは開発者ローカルのWindowsパスなので、
+      # 環境変数で上書きする(rtmxはnpm_config_gradle_java_homeを優先して読む)。
+      # 実際に使われた値はログの "[rtmx] Gradle Java Home:" で確認できる。
+      - name: Generate typings
+        env:
+          npm_config_gradle_java_home: ${{ steps.jdk.outputs.path }}
+        run: pnpm run gen
+
+      - name: Build and pack
+        run: pnpm run zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NGTOBuilder2-${{ github.sha }}
+          path: artifacts/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: NGTOBuilder2-${{ github.sha }}
+          path: artifacts
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            artifacts/*.zip
