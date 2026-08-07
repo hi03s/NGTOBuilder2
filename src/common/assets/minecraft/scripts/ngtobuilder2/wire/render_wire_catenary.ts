@@ -67,37 +67,25 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"insulatorHeightIncrease",
 		Keyboard.KEY_UP,
 		false,
-		`選択予定/選択済みの碍子を一括で1ブロック上げる`,
+		`選択予定/選択済みの碍子を一括で刻み幅だけ上げる`,
 	);
 	keyManager.register(
 		"insulatorHeightDecrease",
 		Keyboard.KEY_DOWN,
 		false,
-		`選択予定/選択済みの碍子を一括で1ブロック下げる`,
-	);
-	keyManager.register(
-		"insulatorHeightFineIncrease",
-		Keyboard.KEY_PRIOR,
-		false,
-		`選択予定/選択済みの碍子を一括で微調整分だけ上げる`,
-	);
-	keyManager.register(
-		"insulatorHeightFineDecrease",
-		Keyboard.KEY_NEXT,
-		false,
-		`選択予定/選択済みの碍子を一括で微調整分だけ下げる`,
+		`選択予定/選択済みの碍子を一括で刻み幅だけ下げる`,
 	);
 	keyManager.register(
 		"changeHeightStepNext",
-		Keyboard.KEY_P,
+		Keyboard.KEY_K,
 		false,
-		`高さの微調整幅を変更(next)`,
+		`高さの刻み幅を変更(next)`,
 	);
 	keyManager.register(
 		"changeHeightStepPrev",
-		Keyboard.KEY_P,
+		Keyboard.KEY_K,
 		true,
-		`高さの微調整幅を変更(prev)`,
+		`高さの刻み幅を変更(prev)`,
 	);
 	//ーー機能ーー
 	keyManager.register(
@@ -165,8 +153,8 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	//-------------------
 	//--  ユーザー設定  --
 	//-------------------
-	//高さの微調整幅リスト(ブロック単位)
-	heightStepList = [1 / 16, 1 / 8, 1 / 4, 1 / 2];
+	//高さの刻み幅リスト(ブロック単位) 先頭が既定値
+	heightStepList = [1, 1 / 2, 1 / 4, 1 / 8, 1 / 16];
 	ignoreItemList = [RTMItem.itemWire, RTMItem.installedObject];
 	//posCollector = new InsulatorCollector();
 	bezierCollector = new BezierCollector();
@@ -229,14 +217,6 @@ function keyInput(
 		NGTLog.sendChatMessage(
 			sender,
 			keyManager.getDescription("insulatorHeightDecrease"),
-		);
-		NGTLog.sendChatMessage(
-			sender,
-			keyManager.getDescription("insulatorHeightFineIncrease"),
-		);
-		NGTLog.sendChatMessage(
-			sender,
-			keyManager.getDescription("insulatorHeightFineDecrease"),
 		);
 		NGTLog.sendChatMessage(
 			sender,
@@ -443,34 +423,10 @@ function keyInput(
 		rebuildParallelLane(entity, collectorList, beamCollector, dataMap);
 	}
 
-	//碍子の高さを1ブロック単位で調整する
-	if (keyManager.pressed("insulatorHeightIncrease")) {
-		insulatorHeightOffset = translateInsulatorHeight(
-			entity,
-			collectorList,
-			beamCollector,
-			dataMap,
-			sender,
-			insulatorHeightOffset,
-			1,
-		);
-	}
-	if (keyManager.pressed("insulatorHeightDecrease")) {
-		insulatorHeightOffset = translateInsulatorHeight(
-			entity,
-			collectorList,
-			beamCollector,
-			dataMap,
-			sender,
-			insulatorHeightOffset,
-			-1,
-		);
-	}
-
-	//碍子の高さを1ブロック未満で微調整する
+	//碍子の高さを現在の刻み幅で調整する
 	const heightStepIdx = getHeightStepIndex(dataMap);
 	const heightStep = heightStepList[heightStepIdx];
-	if (keyManager.pressed("insulatorHeightFineIncrease")) {
+	if (keyManager.pressed("insulatorHeightIncrease")) {
 		insulatorHeightOffset = translateInsulatorHeight(
 			entity,
 			collectorList,
@@ -481,7 +437,7 @@ function keyInput(
 			heightStep,
 		);
 	}
-	if (keyManager.pressed("insulatorHeightFineDecrease")) {
+	if (keyManager.pressed("insulatorHeightDecrease")) {
 		insulatorHeightOffset = translateInsulatorHeight(
 			entity,
 			collectorList,
@@ -493,24 +449,24 @@ function keyInput(
 		);
 	}
 
-	//高さの微調整幅を変更(次)
+	//高さの刻み幅を変更(次)
 	if (keyManager.pressed("changeHeightStepNext")) {
 		const nextIdx = (heightStepIdx + 1) % heightStepList.length;
 		dataMap.setInt("heightStepIndex", nextIdx, 0);
 		NGTLog.sendChatMessage(
 			sender,
-			`[NGTO Builder2] 高さの微調整幅: ${formatBlockOffset(heightStepList[nextIdx])}`,
+			`[NGTO Builder2] 高さの刻み幅: ${formatBlockOffset(heightStepList[nextIdx])}`,
 		);
 	}
 
-	//高さの微調整幅を変更(前)
+	//高さの刻み幅を変更(前)
 	if (keyManager.pressed("changeHeightStepPrev")) {
 		const prevIdx =
 			(heightStepIdx - 1 + heightStepList.length) % heightStepList.length;
 		dataMap.setInt("heightStepIndex", prevIdx, 0);
 		NGTLog.sendChatMessage(
 			sender,
-			`[NGTO Builder2] 高さの微調整幅: ${formatBlockOffset(heightStepList[prevIdx])}`,
+			`[NGTO Builder2] 高さの刻み幅: ${formatBlockOffset(heightStepList[prevIdx])}`,
 		);
 	}
 
@@ -1161,8 +1117,8 @@ function getBeamWire(player: EntityPlayer): ItemStack | null {
 }
 
 /**
- * 現在選択している高さの微調整幅のindexを取得する
- * heightStepListの範囲外になっていた場合は先頭に戻す
+ * 現在選択している高さの刻み幅のindexを取得する
+ * heightStepListの範囲外になっていた場合は先頭(既定値)に戻す
  */
 function getHeightStepIndex(dataMap: DataMap): number {
 	const index = dataMap.getInt("heightStepIndex");
