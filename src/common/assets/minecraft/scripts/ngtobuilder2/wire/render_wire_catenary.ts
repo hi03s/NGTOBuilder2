@@ -195,7 +195,7 @@ function keyInput(
 	}
 
 	if (keyManager.pressed("showHelp")) {
-		NGTLog.sendChatMessage(sender, `---NGTO Builder2 ライン設置 操作方法---`);
+		NGTLog.sendChatMessage(sender, `---NGTO Builder2 架線設置 操作方法---`);
 		//ーー共通ーー
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("endEdit"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("build"));
