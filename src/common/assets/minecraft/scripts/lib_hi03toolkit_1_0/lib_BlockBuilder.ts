@@ -9,6 +9,7 @@ import { Block, BlockDoor } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
+import { World } from "net.minecraft.world";
 import { RTMApiCompat } from "@target/assets/minecraft/scripts/lib_hi03toolkit_1_0/lib_RTMApiCompat";
 import { NGTLog } from "jp.ngt.ngtlib.io";
 
@@ -202,8 +203,9 @@ export class BlockBuilder {
 				);
 			}
 			if (RTMApiCompat.hasTileEntity(blockSet)) {
+				let tileEntity: TileEntity | null = null;
 				try {
-					const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
+					tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
 					if (tileEntity) {
 						BlockBuilder.setTileEntityData(
 							tileEntity,
@@ -212,17 +214,36 @@ export class BlockBuilder {
 							y,
 							z,
 							blockRotation,
+							entity,
+							world,
+						);
+					} else {
+						BlockBuilder.logTileEntityError(
+							"getTileEntity (tile entity was null)",
+							null,
+							entity,
+							world,
+							tileEntity,
+							blockSet,
+							x,
+							y,
+							z,
+							blockRotation,
 						);
 					}
-				}
-				catch (e) {
-					const tileEntity = RTMApiCompat.getTileEntity(world, x, y, z);
-					NGTLog.debug(`###  setTileEntityData ERROR  ###`);
-					NGTLog.debug(`world:${world}`);
-					NGTLog.debug(`tileEntity:${tileEntity}`);
-					NGTLog.debug(`blockSet:${blockSet}`);
-					NGTLog.debug(`pos:[${x}, ${y}, ${z}]`);
-					NGTLog.debug(`blockRotation:${blockRotation}`);
+				} catch (e) {
+					BlockBuilder.logTileEntityError(
+						"getTileEntity/call setTileEntityData",
+						e,
+						entity,
+						world,
+						tileEntity,
+						blockSet,
+						x,
+						y,
+						z,
+						blockRotation,
+					);
 				}
 			}
 		}
@@ -257,39 +278,159 @@ export class BlockBuilder {
 		y: number,
 		z: number,
 		yaw: number,
+		entity?: Entity,
+		world?: World,
 	): void {
 		if (y < 0 || y >= 256) {
 			NGTLog.debug("Skip TileEntity NBT: invalid y=" + y);
 			return;
 		}
 
-		const nbt = blockSet.nbt;
-		let prevX = 0;
-		let prevY = 0;
-		let prevZ = 0;
-		if (nbt) {
-			const _nbt = nbt.copy() as NBTTagCompound;
-			prevX = _nbt.getInteger("x");
-			prevY = _nbt.getInteger("y");
-			prevZ = _nbt.getInteger("z");
-			_nbt.setInteger("x", x);
-			_nbt.setInteger("y", y);
-			_nbt.setInteger("z", z);
+		let phase = "read blockSet.nbt";
+		try {
+			const nbt = blockSet.nbt;
+			let prevX = 0;
+			let prevY = 0;
+			let prevZ = 0;
+			if (nbt) {
+				phase = "copy NBT";
+				const _nbt = nbt.copy() as NBTTagCompound;
+				phase = "read previous NBT position";
+				prevX = _nbt.getInteger("x");
+				prevY = _nbt.getInteger("y");
+				prevZ = _nbt.getInteger("z");
+				phase = "write target NBT position";
+				_nbt.setInteger("x", x);
+				_nbt.setInteger("y", y);
+				_nbt.setInteger("z", z);
 
-			tile.readFromNBT(_nbt);
+				phase = "tile.readFromNBT";
+				tile.readFromNBT(_nbt);
 
-			RTMApiCompat.setResourceName(tile, _nbt.getString("ModelName")); //1.12専用
+				phase = "setResourceName";
+				RTMApiCompat.setResourceName(tile, _nbt.getString("ModelName")); //1.12専用
+			}
+			if (tile instanceof TileEntityCustom) {
+				phase = "TileEntityCustom.setPos";
+				//RTM側のsetPos
+				tile.setPos(x, y, z, prevX, prevY, prevZ);
+			} else {
+				phase = "Minecraft TileEntity.setPos";
+				//Minecraft側のsetPos
+				RTMApiCompat.setPos(tile, x, y, z);
+			}
+			if (tile instanceof TileEntityPlaceable) {
+				phase = "TileEntityPlaceable.getRotation";
+				const rotation = tile.getRotation() + yaw;
+				phase = "TileEntityPlaceable.setRotation";
+				tile.setRotation(rotation, true);
+			}
+		} catch (e) {
+			BlockBuilder.logTileEntityError(
+				phase,
+				e,
+				entity,
+				world,
+				tile,
+				blockSet,
+				x,
+				y,
+				z,
+				yaw,
+			);
 		}
-		if (tile instanceof TileEntityCustom) {
-			//RTM側のsetPos
-			tile.setPos(x, y, z, prevX, prevY, prevZ);
-		} else {
-			//Minecraft側のsetPos
-			RTMApiCompat.setPos(tile, x, y, z);
+	}
+
+	private static safeString(value: any): string {
+		try {
+			return String(value);
+		} catch (e) {
+			return `<failed to stringify: ${String(e)}>`;
 		}
-		if (tile instanceof TileEntityPlaceable) {
-			const rotation = tile.getRotation() + yaw;
-			tile.setRotation(rotation, true);
+	}
+
+	private static className(value: any): string {
+		try {
+			return value && value.getClass
+				? String(value.getClass().getName())
+				: typeof value;
+		} catch (e) {
+			return `<unknown: ${BlockBuilder.safeString(e)}>`;
 		}
+	}
+
+	private static logException(error: any): void {
+		if (!error) {
+			NGTLog.debug("exception:<none>");
+			return;
+		}
+
+		NGTLog.debug(`exception:${BlockBuilder.safeString(error)}`);
+		try {
+			if (error.name) NGTLog.debug(`exception.name:${error.name}`);
+			if (error.message) NGTLog.debug(`exception.message:${error.message}`);
+			if (error.stack) NGTLog.debug(`exception.stack:\n${error.stack}`);
+		} catch (detailError) {
+			NGTLog.debug(
+				`exception JS details unavailable:${BlockBuilder.safeString(detailError)}`,
+			);
+		}
+
+		try {
+			let cause = error.javaException || error;
+			for (let depth = 0; cause && depth < 8; depth++) {
+				NGTLog.debug(
+					`javaCause[${depth}]:${BlockBuilder.className(cause)}: ${BlockBuilder.safeString(cause)}`,
+				);
+				if (cause.getStackTrace) {
+					const stackTrace = cause.getStackTrace();
+					for (let i = 0; i < stackTrace.length; i++) {
+						NGTLog.debug(`  at ${BlockBuilder.safeString(stackTrace[i])}`);
+					}
+				}
+				cause = cause.getCause ? cause.getCause() : null;
+			}
+		} catch (detailError) {
+			NGTLog.debug(
+				`exception Java details unavailable:${BlockBuilder.safeString(detailError)}`,
+			);
+		}
+	}
+
+	private static logTileEntityError(
+		phase: string,
+		error: any,
+		entity: Entity | undefined,
+		world: World | undefined,
+		tileEntity: TileEntity | null,
+		blockSet: BlockSet,
+		x: number,
+		y: number,
+		z: number,
+		blockRotation: number,
+	): void {
+		NGTLog.debug("###  setTileEntityData ERROR (detailed)  ###");
+		NGTLog.debug(`phase:${phase}`);
+		NGTLog.debug(
+			`side:${world ? (world.isRemote ? "CLIENT" : "SERVER") : "UNKNOWN"}`,
+		);
+		NGTLog.debug(
+			`entity:${BlockBuilder.safeString(entity)}, entityClass:${BlockBuilder.className(entity)}, entityId:${entity ? entity.getEntityId() : "unknown"}`,
+		);
+		NGTLog.debug(
+			`world:${BlockBuilder.safeString(world)}, worldClass:${BlockBuilder.className(world)}`,
+		);
+		NGTLog.debug(
+			`tileEntity:${BlockBuilder.safeString(tileEntity)}, tileClass:${BlockBuilder.className(tileEntity)}`,
+		);
+		NGTLog.debug(
+			`block:${BlockBuilder.safeString(blockSet.block)}, blockClass:${BlockBuilder.className(blockSet.block)}, blockId:${Block.getIdFromBlock(blockSet.block)}, metadata:${blockSet.metadata}`,
+		);
+		NGTLog.debug(`blockSet:${BlockBuilder.safeString(blockSet)}`);
+		NGTLog.debug(`nbt:${BlockBuilder.safeString(blockSet.nbt)}`);
+		NGTLog.debug(`pos:[${x}, ${y}, ${z}]`);
+		NGTLog.debug(`blockRotation:${blockRotation}`);
+		BlockBuilder.logException(error);
+		NGTLog.debug("###  setTileEntityData ERROR END  ###");
 	}
 }
