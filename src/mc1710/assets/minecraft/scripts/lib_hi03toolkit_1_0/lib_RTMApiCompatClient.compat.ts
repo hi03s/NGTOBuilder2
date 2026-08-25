@@ -31,6 +31,10 @@ type ModelSetWithModel = ModelSetBase & {
 	model: ModelObject;
 };
 
+type ModelConfigWithName = {
+	name: string;
+};
+
 export class RTMApiCompatClient {
 	static ngtoWorld = new HashMap<NGTObject, NGTWorld>();
 
@@ -123,7 +127,8 @@ export class RTMApiCompatClient {
 		const list: { [name: string]: T } = {};
 		for (let i = 0; i < allModelList.size(); i++) {
 			const modelSet = allModelList.get(i) as T;
-			const modelName = modelSet.getConfig().name;
+			const modelConfig = modelSet.getConfig() as ModelConfigWithName;
+			const modelName = modelConfig.name;
 			list[modelName] = modelSet;
 		}
 		return list;
