@@ -42,7 +42,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager = new InputManager();
 
 	//バージョン
-	Version = "2.2";
+	Version = "2.3";
 
 	//###################
 	//##  ユーザー設定  ##
@@ -100,6 +100,12 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		Keyboard.KEY_R,
 		false,
 		`Yaw角度をランダムにセット`,
+	);
+	keyManager.register(
+		"isAlwaysRandomYaw",
+		Keyboard.KEY_R,
+		true,
+		`常時Yawランダムを切り替え`,
 	);
 	keyManager.register(
 		"setToPlayerAngle",
@@ -183,6 +189,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 	collector = new PositionCollector();
 	quaternionManager = new HashMap();
+	previousRandomYawTarget = new HashMap();
 	posListCache = new HashMap();
 	prevNGTOData = new HashMap();
 	initParts();
@@ -192,8 +199,17 @@ var snapAngleList: number[];
 var Version: string;
 var collector: PositionCollector;
 var quaternionManager: HashMap<Entity, Quaternion>;
+var previousRandomYawTarget: HashMap<Entity, Pos>;
 var posListCache: HashMap<string, Pos[]>;
 var prevNGTOData: HashMap<Entity, NGTObject | null>;
+
+function randomizeYaw(quaternion: Quaternion, snapAngle: number): Quaternion {
+	const randomAngle = Math.random() * 360;
+	const newQuaternion = Quaternion.fromEuler(randomAngle, 0, 0);
+	quaternion = newQuaternion.multiply(quaternion); //ワールド上のYaw回転
+	quaternion = Quaternion.snapYawDelta(quaternion, snapAngle, true); //Y軸スナップ
+	return quaternion.normalizeSelf();
+}
 
 function keyInput(
 	hostPlayer: EntityPlayer,
@@ -225,6 +241,40 @@ function keyInput(
 	const currentSnapIdx = snapAngleList.indexOf(snapAngle);
 	const maxSnapIdx = snapAngleList.length;
 
+	//視線先が変わるたびにYaw角度をランダムにするモードを切り替え
+	if (keyManager.pressed("isAlwaysRandomYaw")) {
+		let isAlwaysRandomYaw = dataMap.getBoolean("isAlwaysRandomYaw");
+		isAlwaysRandomYaw = !isAlwaysRandomYaw;
+		dataMap.setBoolean("isAlwaysRandomYaw", isAlwaysRandomYaw, 0);
+		previousRandomYawTarget.remove(entity);
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] 常時Yawランダム: ${isAlwaysRandomYaw}`,
+		);
+	}
+
+	//同じ座標を見続けている間は同じYaw角度を維持する
+	if (dataMap.getBoolean("isAlwaysRandomYaw") && lookingPos) {
+		const previousTarget = previousRandomYawTarget.get(entity);
+		if (
+			!previousTarget ||
+			previousTarget[0] !== lookingPos.blockX ||
+			previousTarget[1] !== lookingPos.blockY ||
+			previousTarget[2] !== lookingPos.blockZ
+		) {
+			quaternion = randomizeYaw(quaternion, snapAngle);
+			quaternionManager.put(entity, quaternion);
+			previousRandomYawTarget.put(entity, [
+				lookingPos.blockX,
+				lookingPos.blockY,
+				lookingPos.blockZ,
+			] as Pos);
+		}
+	} else {
+		//視線をブロックから外した後に同じ座標へ戻った場合も再抽選する
+		previousRandomYawTarget.remove(entity);
+	}
+
 	//ヘルプ表示
 	if (keyManager.pressed("showHelp")) {
 		NGTLog.sendChatMessage(
@@ -254,6 +304,10 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("changeSnapNext"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("changeSnapPrev"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("setRandomAngle"));
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("isAlwaysRandomYaw"),
+		);
 		NGTLog.sendChatMessage(
 			sender,
 			keyManager.getDescription("setToPlayerAngle"),
@@ -424,11 +478,8 @@ function keyInput(
 
 	//Yaw角度をランダムにセット
 	if (keyManager.pressed("setRandomAngle")) {
-		const randomAngle = Math.random() * 360;
-		const newQuaternion = Quaternion.fromEuler(randomAngle, 0, 0);
-		quaternion = newQuaternion.multiply(quaternion); //ワールド上のYaw回転
-		quaternion = Quaternion.snapYawDelta(quaternion, snapAngle, true); //Y軸スナップ
-		quaternionManager.put(entity, quaternion.normalizeSelf()); //保存
+		quaternion = randomizeYaw(quaternion, snapAngle);
+		quaternionManager.put(entity, quaternion); //保存
 	}
 
 	//角度をプレイヤーの方向にセット
