@@ -138,6 +138,30 @@ export class BezierCurve3D {
 	}
 
 	/**
+	 * 旧NGTO Builderと同じ分割精度で曲線長を近似する。
+	 * 従来式補間のサンプル数を旧版へ合わせるために使用する。
+	 */
+	getClassicLength(): number {
+		let dx = this.p3[0] - this.p0[0];
+		let dy = this.p3[1] - this.p0[1];
+		let dz = this.p3[2] - this.p0[2];
+		const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		const split = Math.ceil(distance * 2);
+		if (split <= 0) return 0;
+		let length = 0;
+		let previousPoint = this.getPoint(split, 0);
+		for (let i = 1; i <= split; i++) {
+			const currentPoint = this.getPoint(split, i);
+			dx = currentPoint[0] - previousPoint[0];
+			dy = currentPoint[1] - previousPoint[1];
+			dz = currentPoint[2] - previousPoint[2];
+			length += Math.sqrt(dx * dx + dy * dy + dz * dz);
+			previousPoint = currentPoint;
+		}
+		return length;
+	}
+
+	/**
 	 * 始点アンカー長を取得する。
 	 * @returns p0 から p1 までの距離
 	 */

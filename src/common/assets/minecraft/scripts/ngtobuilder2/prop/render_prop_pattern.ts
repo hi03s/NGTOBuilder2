@@ -980,8 +980,7 @@ function renderForToolUser(
 			}
 			if (
 				ngto.xSize * ngto.ySize * ngto.zSize > 20000 ||
-				((interpolationMode === BlockDiffusionMode.XYZ ||
-					interpolationMode === BlockDiffusionMode.OVERWRITE_XYZ) &&
+				(interpolationMode === BlockDiffusionMode.XYZ &&
 					ngto.xSize * ngto.ySize * ngto.zSize * 8 > 20000)
 			) {
 				//巨大ブロックは代替表示

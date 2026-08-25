@@ -707,51 +707,86 @@ function renderForToolUser(
 			const slicedRBO = NGTOBuilderUtil.sliceByZ(ngto, isPlaceAirBlock);
 			const bezierList = bezierCollector.getAll(entity);
 			const margedRBO = new RotatableBlockObject();
+			const diffusion = BlockDiffusionMode.get(interpolationMode).withRate(
+				diffusionRate / 100,
+			);
+			const isClassic = diffusion.isClassic();
+			if (isClassic) {
+				// 旧版と同じく、各断面をX優先・次にYの順で処理する。
+				for (let i = 0; i < slicedRBO.length; i++) {
+					slicedRBO[i].blockSetList.sort((a, b) => {
+						const dx = a.local_x - b.local_x;
+						return dx !== 0 ? dx : a.local_y - b.local_y;
+					});
+				}
+			}
 			//ベジェ曲線ごとにRBOを作って合成する
 			const origin = bezierList[0].getPoint(1, 0);
+			let lastSliceIndex = 0;
 			for (let bezierIdx = 0; bezierIdx < bezierList.length; bezierIdx++) {
 				const bezier = bezierList[bezierIdx];
-				const split = Math.max(1, Math.floor(bezier.getLength() * 2));
-				for (let idx = 0; idx <= split; idx++) {
-					const sliceIndex = Math.floor(idx / 2) % slicedRBO.length;
+				const length = isClassic
+					? bezier.getClassicLength()
+					: bezier.getLength();
+				const split = Math.max(1, Math.floor(length * 2));
+				const endIndex = isClassic ? split - 1 : split;
+				const ngtoSplit = Math.floor(split / 2);
+				for (let idx = 0; idx <= endIndex; idx++) {
+					const ngtoIndex = Math.floor(idx / 2);
+					const sliceIndex = isClassic
+						? (lastSliceIndex + ngtoIndex) % slicedRBO.length
+						: ngtoIndex % slicedRBO.length;
+					if (isClassic && ngtoIndex === ngtoSplit - 1)
+						lastSliceIndex = sliceIndex;
 					const baseRbo = slicedRBO[sliceIndex];
 					if (!baseRbo) continue;
 					const rbo = baseRbo.copy();
 					const pos = bezier.getPoint(split, idx);
 					const yaw = bezier.getYaw(split, idx);
 					const pitch = bezier.getPitch(split, idx);
-					const centerX = Math.floor(ngto.xSize / 2) + 0.5;
+					const centerX = isClassic
+						? Math.floor((ngto.xSize - 1) / 2) + 0.5
+						: Math.floor(ngto.xSize / 2) + 0.5;
 					rbo.setPivot(centerX, 0.5, 0.5);
 					rbo.offsetExpanding(offsetNGTOH, 0, 0);
 					rbo.rotate(-yaw, -pitch, 0);
 					rbo.movePivotToBase();
-					rbo.offset(
-						Math.floor(pos[0]) - Math.floor(origin[0]),
-						Math.floor(pos[1]) - Math.floor(origin[1]) + offsetNGTOV,
-						Math.floor(pos[2]) - Math.floor(origin[2]),
-					);
+					if (isClassic)
+						rbo.offset(
+							pos[0] - 0.5,
+							pos[1] - 0.5 + offsetNGTOV,
+							pos[2] - 0.5,
+						);
+					else
+						rbo.offset(
+							Math.floor(pos[0]) - Math.floor(origin[0]),
+							Math.floor(pos[1]) - Math.floor(origin[1]) + offsetNGTOV,
+							Math.floor(pos[2]) - Math.floor(origin[2]),
+						);
 					margedRBO.merge(rbo);
 				}
 			}
 			RotatableBlockObjectMapper.applyDiffusionSelf(
 				margedRBO,
-				BlockDiffusionMode.get(interpolationMode).withRate(diffusionRate / 100),
+				diffusion,
+				!isClassic,
 			);
 			RotatableBlockObjectMapper.toBlockCoordSelf(margedRBO);
+			const placementOrigin = isClassic ? [0, 0, 0] : origin;
 			if (isMasking)
 				posList = RotatableBlockObjectMapper.getReplacePosList(
 					world,
 					margedRBO,
-					origin[0],
-					origin[1],
-					origin[2],
+					placementOrigin[0],
+					placementOrigin[1],
+					placementOrigin[2],
 				);
 			else
 				posList = RotatableBlockObjectMapper.getPosList(
 					margedRBO,
-					origin[0],
-					origin[1],
-					origin[2],
+					placementOrigin[0],
+					placementOrigin[1],
+					placementOrigin[2],
 				);
 			posListCache.put(hash, posList);
 		}
