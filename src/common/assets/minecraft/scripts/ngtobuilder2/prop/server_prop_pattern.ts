@@ -155,8 +155,11 @@ function onUpdate2(
 			blockObj.setPivot(centerX, 0.5, centerZ);
 			blockObj.rotateQ(q);
 			blockObj.movePivotToBaseXZ();
-			if (!q.isRightAngleRotation())
-				RotatableBlockObjectMapper.applyDiffusionSelf(blockObj, diffusion);
+			RotatableBlockObjectMapper.applyDiffusionSelf(
+				blockObj,
+				diffusion,
+				!q.isRightAngleRotation(),
+			);
 			RotatableBlockObjectMapper.toBlockCoordSelf(blockObj);
 			const placementBlocks = RotatableBlockObjectMapper.toBlockPlacements(
 				blockObj,

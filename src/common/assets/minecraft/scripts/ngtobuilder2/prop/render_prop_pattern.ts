@@ -976,7 +976,8 @@ function renderForToolUser(
 			}
 			if (
 				ngto.xSize * ngto.ySize * ngto.zSize > 20000 ||
-				(interpolationMode === 1 &&
+				((interpolationMode === BlockDiffusionMode.XYZ ||
+					interpolationMode === BlockDiffusionMode.OVERWRITE_XYZ) &&
 					ngto.xSize * ngto.ySize * ngto.zSize * 8 > 20000)
 			) {
 				//巨大ブロックは代替表示
@@ -1007,8 +1008,11 @@ function renderForToolUser(
 				blockObj.setPivot(centerX, 0.5, centerZ);
 				blockObj.rotateQ(q);
 				blockObj.movePivotToBaseXZ();
-				if (!q.isRightAngleRotation())
-					RotatableBlockObjectMapper.applyDiffusionSelf(blockObj, diffusion);
+				RotatableBlockObjectMapper.applyDiffusionSelf(
+					blockObj,
+					diffusion,
+					!q.isRightAngleRotation(),
+				);
 				RotatableBlockObjectMapper.toBlockCoordSelf(blockObj);
 				posList = RotatableBlockObjectMapper.getPosList(blockObj);
 			}

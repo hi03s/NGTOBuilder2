@@ -11,8 +11,17 @@ export class RotatableBlockObjectMapper {
 	static applyDiffusionSelf(
 		rbo: RotatableBlockObject,
 		mode: BlockDiffusionMode,
+		shouldGenerateDiffusedBlocks: boolean = true,
 	): void {
+		rbo.overwriteDuplicatesByLaterBlock = mode.overwriteByLaterBlock;
 		const baseList = rbo.blockSetList;
+		if (!shouldGenerateDiffusedBlocks) {
+			for (let i = 0; i < baseList.length; i++) {
+				const rbs = baseList[i];
+				if (rbs) rbs.isDiffused = false;
+			}
+			return;
+		}
 		const newList: RotatableBlockSet[] = [];
 		for (let i = 0; i < baseList.length; i++) {
 			const rbs = baseList[i];
@@ -63,6 +72,11 @@ export class RotatableBlockObjectMapper {
 			// すでにあるブロックが補間ブロックで追加分がベースなら置き換える
 			const existing = newList[existingIndex];
 			if (!existing) continue;
+			// 上塗りモードではベース/補間を区別せずリスト後方を優先する
+			if (rbo.overwriteDuplicatesByLaterBlock) {
+				newList[existingIndex] = rbs;
+				continue;
+			}
 			if (existing.isDiffused === true && rbs.isDiffused === false) {
 				newList[existingIndex] = rbs;
 				continue;
@@ -171,14 +185,30 @@ export class BlockDiffusionMode {
 	static readonly XZ = 0;
 	static readonly XYZ = 1;
 	static readonly NONE = 2;
+	static readonly OVERWRITE_XZ = 3;
+	static readonly OVERWRITE_XYZ = 4;
 
 	private static readonly modes: BlockDiffusionMode[] = [
 		new BlockDiffusionMode(BlockDiffusionMode.XZ, "xz", `XZ拡散 [Medium]`, 0.2),
+		new BlockDiffusionMode(
+			BlockDiffusionMode.OVERWRITE_XZ,
+			"overwrite_xz",
+			`上塗りXZ拡散 [Medium]`,
+			0.2,
+			true,
+		),
 		new BlockDiffusionMode(
 			BlockDiffusionMode.XYZ,
 			"xyz",
 			`XYZ拡散 [High]`,
 			0.2,
+		),
+		new BlockDiffusionMode(
+			BlockDiffusionMode.OVERWRITE_XYZ,
+			"overwrite_xyz",
+			`上塗りXYZ拡散 [High]`,
+			0.2,
+			true,
 		),
 		new BlockDiffusionMode(
 			BlockDiffusionMode.NONE,
@@ -193,6 +223,7 @@ export class BlockDiffusionMode {
 		public readonly key: string,
 		public readonly displayName: string,
 		public readonly rate: number,
+		public readonly overwriteByLaterBlock: boolean = false,
 	) {}
 
 	static get(id: number): BlockDiffusionMode {
@@ -222,6 +253,7 @@ export class BlockDiffusionMode {
 			this.key,
 			this.displayName,
 			rate === undefined ? this.rate : rate,
+			this.overwriteByLaterBlock,
 		);
 	}
 
@@ -232,7 +264,7 @@ export class BlockDiffusionMode {
 			return [];
 		}
 
-		if (this.key === "xz") {
+		if (this.key === "xz" || this.key === "overwrite_xz") {
 			return [
 				[-r, 0, -r],
 				[-r, 0, +r],
@@ -241,7 +273,7 @@ export class BlockDiffusionMode {
 			];
 		}
 
-		if (this.key === "xyz") {
+		if (this.key === "xyz" || this.key === "overwrite_xyz") {
 			return [
 				[-r, -r, -r],
 				[+r, -r, -r],

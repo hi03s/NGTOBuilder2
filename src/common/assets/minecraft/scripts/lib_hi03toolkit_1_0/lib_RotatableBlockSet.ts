@@ -41,6 +41,7 @@ export class RotatableBlockSet {
 		newBS.pivot_y = this.pivot_y;
 		newBS.pivot_z = this.pivot_z;
 		newBS.yaw = this.yaw;
+		newBS.isDiffused = this.isDiffused;
 		return newBS;
 	}
 

@@ -31,6 +31,7 @@ export class RotatableBlockObject {
 	public pivotX: number;
 	public pivotY: number;
 	public pivotZ: number;
+	public overwriteDuplicatesByLaterBlock: boolean;
 
 	explicitMinX: number | null = null;
 	explicitMinY: number | null = null;
@@ -50,6 +51,7 @@ export class RotatableBlockObject {
 		this.pivotX = 0.5;
 		this.pivotY = 0.5;
 		this.pivotZ = 0.5;
+		this.overwriteDuplicatesByLaterBlock = false;
 	}
 
 	static createFromPosList(
@@ -140,6 +142,8 @@ export class RotatableBlockObject {
 		newRBO.explicitMaxX = this.explicitMaxX;
 		newRBO.explicitMaxY = this.explicitMaxY;
 		newRBO.explicitMaxZ = this.explicitMaxZ;
+		newRBO.overwriteDuplicatesByLaterBlock =
+			this.overwriteDuplicatesByLaterBlock;
 		newRBO.calcSize();
 		return newRBO;
 	}

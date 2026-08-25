@@ -65,6 +65,7 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 	//dataMapのリセット
 	dataMap.setBoolean("buildComplete", false, 1);
 	dataMap.setBoolean("isInitializedBuild", false, 1);
+	dataMap.setInt("interpolationMode", BlockDiffusionMode.OVERWRITE_XZ, 1);
 }
 
 //############
