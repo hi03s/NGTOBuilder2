@@ -346,6 +346,10 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("rotationRollL"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("rotationRollR"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("resetRotation"));
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] チャット欄を開き、上へスクロールするとすべての操作説明を確認できます。`,
+		);
 	}
 
 	//ツールを終了

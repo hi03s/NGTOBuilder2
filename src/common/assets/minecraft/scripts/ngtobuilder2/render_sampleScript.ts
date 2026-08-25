@@ -91,6 +91,7 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("undo"));
 		NGTLog.sendChatMessage(sender, `[右クリック] 座標を選択`);
 		NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
+		NGTLog.sendChatMessage(sender, `[NGTO Builder2] チャット欄を開き、上へスクロールするとすべての操作説明を確認できます。`);
 	}
 
 	//ツールを終了

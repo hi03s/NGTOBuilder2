@@ -235,6 +235,10 @@ function keyInput(
 			sender,
 			keyManager.getDescription("beamDistanceDecrease"),
 		);
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] チャット欄を開き、上へスクロールするとすべての操作説明を確認できます。`,
+		);
 	}
 
 	//終了

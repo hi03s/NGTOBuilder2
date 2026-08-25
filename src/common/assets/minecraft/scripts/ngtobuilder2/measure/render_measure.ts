@@ -116,6 +116,10 @@ function keyInput(
 		);
 		NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelected"));
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] チャット欄を開き、上へスクロールするとすべての操作説明を確認できます。`,
+		);
 	}
 
 	//終了

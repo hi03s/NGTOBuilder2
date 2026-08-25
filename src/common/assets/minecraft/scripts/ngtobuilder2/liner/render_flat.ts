@@ -197,6 +197,10 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("surfaceYDown"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("minYUp"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("minYDown"));
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] チャット欄を開き、上へスクロールするとすべての操作説明を確認できます。`,
+		);
 	}
 
 	//終了

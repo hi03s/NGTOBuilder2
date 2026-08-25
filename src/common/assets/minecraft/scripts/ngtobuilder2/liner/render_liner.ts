@@ -221,6 +221,10 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("mirrorX"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("mirrorY"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("mirrorZ"));
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] チャット欄を開き、上へスクロールするとすべての操作説明を確認できます。`,
+		);
 	}
 
 	//終了

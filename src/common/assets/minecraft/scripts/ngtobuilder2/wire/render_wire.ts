@@ -159,6 +159,10 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("resetSelectY"));
 		//NGTLog.sendChatMessage(sender, keyManager.getDescription("adjustSelectY"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("reverseMarker"));
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] チャット欄を開き、上へスクロールするとすべての操作説明を確認できます。`,
+		);
 	}
 
 	//終了
