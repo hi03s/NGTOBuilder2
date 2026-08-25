@@ -34,7 +34,7 @@ NGTO BuilderやSuperRailBuilder3のような自動車モデル型のエディタ
 
 //バージョンチェック
 //クライアント側とバージョンチェックを行います ※一致していなくても利用自体はできます
-Version = "2.1";
+Version = "2.2";
 
 //#################
 //##  初期化処理  ##
@@ -121,6 +121,7 @@ function onUpdate2(
 			const q = new Quaternion(...receiveData.q);
 			const interpolationMode = dataMap.getInt("interpolationMode");
 			const isPlaceAirBlock = dataMap.getBoolean("isPlaceAirBlock");
+			const isPlaceOnlyInAir = dataMap.getBoolean("isPlaceOnlyInAir");
 			const diffusionRate = dataMap.getInt("diffusionRate");
 			const isMirrorX = dataMap.getBoolean("isMirrorX");
 			const isMirrorY = dataMap.getBoolean("isMirrorY");
@@ -163,7 +164,11 @@ function onUpdate2(
 				receiveData.pos[1],
 				receiveData.pos[2],
 			);
-			builder.addFromRotatableBlockObjectAt(entity, placementBlocks);
+			builder.addFromRotatableBlockObjectAt(
+				entity,
+				placementBlocks,
+				isPlaceOnlyInAir,
+			);
 			UndoManager.backupFromBlockBuilder(entity, builder);
 			dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
 			if (isHuge)

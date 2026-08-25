@@ -42,7 +42,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager = new InputManager();
 
 	//バージョン
-	Version = "2.1";
+	Version = "2.2";
 
 	//###################
 	//##  ユーザー設定  ##
@@ -70,6 +70,12 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		Keyboard.KEY_I,
 		false,
 		`空気ブロックの設置を切り替え`,
+	);
+	keyManager.register(
+		"isPlaceOnlyInAir",
+		Keyboard.KEY_Y,
+		false,
+		`空気ブロックにだけ設置するモードを切り替え`,
 	);
 	keyManager.register(
 		"isWorldAxis",
@@ -240,6 +246,10 @@ function keyInput(
 			sender,
 			keyManager.getDescription("isPlaceAirBlock"),
 		);
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("isPlaceOnlyInAir"),
+		);
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("isWorldAxis"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("changeSnapNext"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("changeSnapPrev"));
@@ -354,6 +364,17 @@ function keyInput(
 		NGTLog.sendChatMessage(
 			sender,
 			`[NGTO Builder2] 空気ブロック設置: ${isPlaceAirBlock}`,
+		);
+	}
+
+	//空気ブロックにだけ設置するモードを切り替え
+	if (keyManager.pressed("isPlaceOnlyInAir")) {
+		let isPlaceOnlyInAir = dataMap.getBoolean("isPlaceOnlyInAir");
+		isPlaceOnlyInAir = !isPlaceOnlyInAir;
+		dataMap.setBoolean("isPlaceOnlyInAir", isPlaceOnlyInAir, 1);
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] 空気ブロックにだけ設置: ${isPlaceOnlyInAir}`,
 		);
 	}
 

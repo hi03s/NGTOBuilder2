@@ -133,10 +133,26 @@ export class BlockBuilder {
 	addFromRotatableBlockObjectAt(
 		entity: Entity,
 		list: BlockSetPlacement[],
+		isPlaceOnlyInAir: boolean = false,
 	): void {
+		const world = isPlaceOnlyInAir ? RTMApiCompat.getWorld(entity) : null;
+		const airBlock = isPlaceOnlyInAir ? RTMApiCompat.getBlockAir() : null;
 		for (let i = 0; i < list.length; i++) {
 			const placeData = list[i];
 			if (!placeData) continue;
+			if (world && airBlock) {
+				const blockSet = placeData[0];
+				const x = Math.floor(placeData[1]);
+				const y = Math.floor(placeData[2]);
+				const z = Math.floor(placeData[3]);
+				if (RTMApiCompat.getBlock(world, x, y, z) !== airBlock) continue;
+				if (
+					blockSet.block instanceof BlockDoor &&
+					blockSet.metadata < 8 &&
+					RTMApiCompat.getBlock(world, x, y + 1, z) !== airBlock
+				)
+					continue;
+			}
 			this.add(
 				entity,
 				placeData[0],
