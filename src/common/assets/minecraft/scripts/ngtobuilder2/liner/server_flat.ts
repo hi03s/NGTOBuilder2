@@ -31,7 +31,7 @@ NGTO BuilderやSuperRailBuilder3のような自動車モデル型のエディタ
 
 //バージョンチェック
 //クライアント側とバージョンチェックを行います ※一致していなくても利用自体はできます
-Version = "2.1";
+Version = "2.2";
 
 //1tickに生成するブロック数
 blockLimit = 500; //blocks/tick (10000 blocks/sec)

@@ -21,7 +21,7 @@ import { Entity } from "net.minecraft.entity";
 
 //##  NGTO Builder2 ワイヤー式ビーム専用設置ツール  ##
 
-Version = "2.1";
+Version = "2.2";
 
 let blockLimit: number;
 

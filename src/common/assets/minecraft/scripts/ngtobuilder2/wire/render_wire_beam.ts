@@ -31,7 +31,7 @@ declare const renderer: VehiclePartsRenderer;
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager = new InputManager();
 
-	Version = "2.1";
+	Version = "2.2";
 
 	//ーー共通ーー
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
