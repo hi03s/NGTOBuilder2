@@ -10,9 +10,7 @@ import { RTMApiCompat } from "@target/assets/minecraft/scripts/lib_hi03toolkit_1
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 import {
 	generateMountainBlocks,
-	generateMountainDecorations,
 	MountainBlock,
-	MountainDecoration,
 	RidgeNode,
 } from "./mountain_generator";
 
@@ -34,8 +32,6 @@ export type ReceiveData_yama = {
 	a: RidgeNode;
 	b: RidgeNode;
 	baseY: number;
-	treeMode: number;
-	vegetationAmount: number;
 };
 
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
@@ -57,19 +53,6 @@ function getBlockSet(block: MountainBlock): BlockSet {
 	if (block[3] === "dirt")
 		return new BlockSet(RTMApiCompat.getBlockDirt(), 0);
 	return new BlockSet(RTMApiCompat.getBlockStone(), 0);
-}
-
-function getDecorationBlockSet(decoration: MountainDecoration): BlockSet {
-	const metadata = decoration[4];
-	if (decoration[3] === "log")
-		return new BlockSet(RTMApiCompat.getBlockLog(), metadata);
-	if (decoration[3] === "leaves")
-		return new BlockSet(RTMApiCompat.getBlockLeaves(), metadata);
-	if (decoration[3] === "tallgrass")
-		return new BlockSet(RTMApiCompat.getBlockTallGrass(), metadata);
-	if (decoration[3] === "yellowFlower")
-		return new BlockSet(RTMApiCompat.getBlockYellowFlower(), metadata);
-	return new BlockSet(RTMApiCompat.getBlockRedFlower(), metadata);
 }
 
 function onUpdate2(
@@ -118,21 +101,10 @@ function onUpdate2(
 					receiveData.baseY,
 					totalBlockLimit,
 				);
-				const decorations =
-					blocks.length > totalBlockLimit
-						? []
-						: generateMountainDecorations(
-								receiveData.a,
-								receiveData.b,
-								receiveData.baseY,
-								receiveData.treeMode,
-								receiveData.vegetationAmount,
-							);
-				const totalBlocks = blocks.length + decorations.length;
-				if (totalBlocks > totalBlockLimit) {
+				if (blocks.length > totalBlockLimit) {
 					RTMApiCompat.sendChatMessage(
 						hostPlayer,
-						`[NGTO Builder2] ブロック数が上限を超えています (${totalBlocks} / ${totalBlockLimit}[blocks])`,
+						`[NGTO Builder2] ブロック数が上限を超えています (${blocks.length} / ${totalBlockLimit}[blocks])`,
 					);
 				} else {
 					for (let i = 0; i < blocks.length; i++) {
@@ -143,16 +115,6 @@ function onUpdate2(
 							block[0],
 							block[1],
 							block[2],
-						);
-					}
-					for (let i = 0; i < decorations.length; i++) {
-						const decoration = decorations[i];
-						builder.add(
-							entity,
-							getDecorationBlockSet(decoration),
-							decoration[0],
-							decoration[1],
-							decoration[2],
 						);
 					}
 					UndoManager.backupFromBlockBuilder(entity, builder);

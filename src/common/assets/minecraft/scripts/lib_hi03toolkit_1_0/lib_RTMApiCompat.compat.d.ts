@@ -64,11 +64,6 @@ export class RTMApiCompat {
 	static getBlockStone(): Block;
 	static getBlockGrass(): Block;
 	static getBlockDirt(): Block;
-	static getBlockLog(): Block;
-	static getBlockLeaves(): Block;
-	static getBlockTallGrass(): Block;
-	static getBlockYellowFlower(): Block;
-	static getBlockRedFlower(): Block;
 	static setOffset(
 		tileEntity: TileEntityPlaceable,
 		x: number,

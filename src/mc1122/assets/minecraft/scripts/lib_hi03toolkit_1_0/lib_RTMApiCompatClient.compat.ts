@@ -138,6 +138,16 @@ export class RTMApiCompatClient {
 		};
 	}
 
+	static getLookingBlockDistance(partialTicks: number): number | null {
+		const lookingPos = RTMApiCompatClient.getLookingPos(partialTicks);
+		if (!lookingPos) return null;
+		const eye = MCWrapperClient.getPlayer().getPositionEyes(partialTicks);
+		const dx = lookingPos.posX - eye.x;
+		const dy = lookingPos.posY - eye.y;
+		const dz = lookingPos.posZ - eye.z;
+		return Math.sqrt(dx * dx + dy * dy + dz * dz);
+	}
+
 	static bindBlockTexture(renderer: PartsRenderer): void {
 		renderer.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 	}

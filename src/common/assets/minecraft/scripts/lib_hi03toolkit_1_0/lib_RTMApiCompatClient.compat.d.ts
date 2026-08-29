@@ -33,6 +33,7 @@ export class RTMApiCompatClient {
 		placeZ: number;
 		side: number;
 	};
+	static getLookingBlockDistance(partialTicks: number): number | null;
 	static bindBlockTexture(renderer: PartsRenderer): void;
 	static getGrassTextureUV(): [number, number, number, number];
 	static generateGLList(): DisplayList;

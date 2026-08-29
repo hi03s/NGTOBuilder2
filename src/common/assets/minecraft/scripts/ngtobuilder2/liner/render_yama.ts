@@ -56,7 +56,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"resetSelectY",
 		Keyboard.KEY_F,
 		false,
-		`カーソルの高さをリセットする`,
+		`カーソル高さをリセット/視線先ブロックへ距離調整`,
 	);
 	keyManager.register(
 		"adjustSelectY",
@@ -78,18 +78,6 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		Keyboard.KEY_DOWN,
 		true,
 		`尾根を低くする`,
-	);
-	keyManager.register(
-		"treeMode",
-		Keyboard.KEY_P,
-		false,
-		`木の種類を変更する`,
-	);
-	keyManager.register(
-		"vegetationAmount",
-		Keyboard.KEY_P,
-		true,
-		`木・草花の生成量を変更する`,
 	);
 	posCollector = new PositionCollector();
 	bezierCollector = new BezierCollector();
@@ -128,16 +116,6 @@ function getCursorDistance(entity: EntityVehicle): number {
 	return distance;
 }
 
-function getVegetationAmount(entity: EntityVehicle): number {
-	const dataMap = entity.getResourceState().getDataMap();
-	if (!dataMap.getBoolean("vegetationAmountInitialized")) {
-		dataMap.setBoolean("vegetationAmountInitialized", true, 1);
-		dataMap.setInt("vegetationAmount", 1, 1);
-		return 1;
-	}
-	return Math.max(0, Math.min(2, dataMap.getInt("vegetationAmount")));
-}
-
 function getLookingPos(entity: EntityVehicle, partialTicks: number) {
 	const dataMap = entity.getResourceState().getDataMap();
 	if (dataMap.getBoolean("airCursorMode")) {
@@ -147,14 +125,6 @@ function getLookingPos(entity: EntityVehicle, partialTicks: number) {
 		);
 	}
 	return NGTOBuilderUtilClient.getLookingPos(partialTicks);
-}
-
-function getTreeModeName(mode: number): string {
-	return ["オーク", "シラカバ", "マツ", "オーク+シラカバ"][mode] || "オーク";
-}
-
-function getVegetationAmountName(amount: number): string {
-	return ["少ない", "標準", "多い"][amount] || "標準";
 }
 
 function createReceiveData(entity: EntityVehicle): ReceiveData_yama | null {
@@ -176,19 +146,7 @@ function createReceiveData(entity: EntityVehicle): ReceiveData_yama | null {
 		height: ridgeHeight + posList[1][1] - baseY,
 		width: ridgeWidth,
 	};
-	return {
-		a: a,
-		b: b,
-		baseY: baseY,
-		treeMode: Math.max(
-			0,
-			Math.min(
-				3,
-				entity.getResourceState().getDataMap().getInt("treeMode"),
-			),
-		),
-		vegetationAmount: getVegetationAmount(entity),
-	};
+	return { a: a, b: b, baseY: baseY };
 }
 
 function keyInput(
@@ -207,13 +165,11 @@ function keyInput(
 	let ridgeWidth = settings[1];
 	const isBuilding = dataMap.getBoolean("isBuilding");
 	const isUndo = dataMap.getBoolean("isUndo");
-	getVegetationAmount(entity);
-
 	const isMiddleClick = Mouse.isButtonDown(2);
 	const prevMiddleClick = dataMap.getBoolean("prevMiddleClick");
 	if (isMiddleClick !== prevMiddleClick)
 		dataMap.setBoolean("prevMiddleClick", isMiddleClick, 0);
-	if (isMiddleClick && !prevMiddleClick) {
+	if (keyManager.downOptionKey() && isMiddleClick && !prevMiddleClick) {
 		const airCursorMode = !dataMap.getBoolean("airCursorMode");
 		dataMap.setBoolean("airCursorMode", airCursorMode, 1);
 		NGTLog.sendChatMessage(
@@ -224,11 +180,15 @@ function keyInput(
 		);
 	}
 	const mouseWheel = Mouse.getDWheel();
-	if (dataMap.getBoolean("airCursorMode") && mouseWheel !== 0) {
+	if (
+		keyManager.downOptionKey() &&
+		dataMap.getBoolean("airCursorMode") &&
+		mouseWheel !== 0
+	) {
 		const direction = mouseWheel > 0 ? 1 : -1;
 		const distance = Math.max(
 			1,
-			Math.min(256, getCursorDistance(entity) + direction),
+			Math.min(512, getCursorDistance(entity) + direction),
 		);
 		dataMap.setInt("cursorDistance", distance, 1);
 		NGTLog.sendChatMessage(
@@ -241,10 +201,13 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, `---NGTO Builder2 山脈生成 操作方法---`);
 		NGTLog.sendChatMessage(sender, `[右クリック] 尾根の始点・終点を選択`);
 		NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
-		NGTLog.sendChatMessage(sender, `[中クリック] カーソル選択方法を変更`);
 		NGTLog.sendChatMessage(
 			sender,
-			`[マウスホイール] 空中カーソル距離を変更`,
+			`[CTRL + 中クリック] カーソル選択方法を変更`,
+		);
+		NGTLog.sendChatMessage(
+			sender,
+			`[CTRL + マウスホイール] 空中カーソル距離を変更`,
 		);
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("build"));
 		NGTLog.sendChatMessage(
@@ -273,11 +236,6 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("widthDown"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("heightUp"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("heightDown"));
-		NGTLog.sendChatMessage(sender, keyManager.getDescription("treeMode"));
-		NGTLog.sendChatMessage(
-			sender,
-			keyManager.getDescription("vegetationAmount"),
-		);
 	}
 
 	if (keyManager.pressed("endEdit") && !isBuilding) {
@@ -335,7 +293,28 @@ function keyInput(
 		dataMap.setInt("offsetY", offsetY + 1, 1);
 	if (keyManager.pressed("selectYDown"))
 		dataMap.setInt("offsetY", offsetY - 1, 1);
-	if (keyManager.pressed("resetSelectY")) dataMap.setInt("offsetY", 0, 1);
+	if (keyManager.pressed("resetSelectY")) {
+		if (dataMap.getBoolean("airCursorMode")) {
+			const blockDistance =
+				RTMApiCompatClient.getLookingBlockDistance(partialTicks);
+			if (blockDistance !== null) {
+				const distance = Math.max(
+					1,
+					Math.min(512, Math.ceil(blockDistance)),
+				);
+				dataMap.setInt("cursorDistance", distance, 1);
+				NGTLog.sendChatMessage(
+					sender,
+					`[NGTO Builder2] 視線先ブロックまでの距離: ${distance}[m]`,
+				);
+			} else {
+				NGTLog.sendChatMessage(
+					sender,
+					`[NGTO Builder2] 視線先にブロックがありません`,
+				);
+			}
+		} else dataMap.setInt("offsetY", 0, 1);
+	}
 	if (
 		keyManager.pressed("adjustSelectY") &&
 		lookingPos &&
@@ -353,9 +332,6 @@ function keyInput(
 		dataMap.setInt("offsetY", 0, 1);
 		dataMap.setBoolean("airCursorMode", false, 1);
 		dataMap.setInt("cursorDistance", 30, 1);
-		dataMap.setInt("treeMode", 0, 1);
-		dataMap.setInt("vegetationAmount", 1, 1);
-		dataMap.setBoolean("vegetationAmountInitialized", true, 1);
 	}
 	if (keyManager.pressed("widthUp") || keyManager.held("widthUp", 300)) {
 		ridgeWidth = Math.min(128, ridgeWidth + 1);
@@ -376,22 +352,6 @@ function keyInput(
 	if (keyManager.pressed("heightDown") && ridgeHeight > 1) {
 		ridgeHeight--;
 		dataMap.setInt("ridgeHeight", ridgeHeight, 1);
-	}
-	if (keyManager.pressed("treeMode")) {
-		const treeMode = (dataMap.getInt("treeMode") + 1) % 4;
-		dataMap.setInt("treeMode", treeMode, 1);
-		NGTLog.sendChatMessage(
-			sender,
-			`[NGTO Builder2] 木の種類: ${getTreeModeName(treeMode)}`,
-		);
-	}
-	if (keyManager.pressed("vegetationAmount")) {
-		const amount = (getVegetationAmount(entity) + 1) % 3;
-		dataMap.setInt("vegetationAmount", amount, 1);
-		NGTLog.sendChatMessage(
-			sender,
-			`[NGTO Builder2] 木・草花の生成量: ${getVegetationAmountName(amount)}`,
-		);
 	}
 }
 
@@ -480,7 +440,7 @@ function renderForToolUser(
 	}
 
 	const sendData = createReceiveData(entity);
-	if (sendData && pass === 0) {
+	if (sendData) {
 		const hash = [
 			String(entity.getEntityId()),
 			String(sendData.a.x),
@@ -513,19 +473,25 @@ function renderMountainSurface(
 	posZ: number,
 ): void {
 	if (mesh.length === 0) return;
-	const blendEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
-	const cullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+	GL11.glPushAttrib(
+		GL11.GL_ENABLE_BIT |
+			GL11.GL_COLOR_BUFFER_BIT |
+			GL11.GL_DEPTH_BUFFER_BIT |
+			GL11.GL_CURRENT_BIT |
+			GL11.GL_TEXTURE_BIT,
+	);
 	const uv = RTMApiCompatClient.getGrassTextureUV();
 	RTMApiCompatClient.bindBlockTexture(renderer);
 	GL11.glPushMatrix();
 	GL11.glTranslatef(-posX, -posY, -posZ);
-	GL11.glEnable(GL11.GL_BLEND);
-	GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+	GL11.glEnable(GL11.GL_TEXTURE_2D);
+	GL11.glDisable(GL11.GL_LIGHTING);
+	GL11.glDisable(GL11.GL_BLEND);
 	GL11.glDisable(GL11.GL_CULL_FACE);
-	GL11.glDepthMask(false);
+	GL11.glDepthMask(true);
 	const tessellator = NGTTessellator.instance;
 	tessellator.startDrawing(GL11.GL_TRIANGLES);
-	tessellator.setColorRGBA_F(0.65, 0.9, 0.55, 0.5);
+	tessellator.setColorOpaque_F(0.65, 0.9, 0.55);
 	for (let i = 0; i < mesh.length; i++) {
 		const triangle = mesh[i];
 		tessellator.addVertexWithUV(
@@ -551,10 +517,8 @@ function renderMountainSurface(
 		);
 	}
 	tessellator.draw();
-	GL11.glDepthMask(true);
-	if (cullEnabled) GL11.glEnable(GL11.GL_CULL_FACE);
-	if (!blendEnabled) GL11.glDisable(GL11.GL_BLEND);
 	GL11.glPopMatrix();
+	GL11.glPopAttrib();
 }
 
 function renderForOtherUser(
