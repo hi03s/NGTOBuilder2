@@ -69,7 +69,13 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"resetSelected",
 		Keyboard.KEY_C,
 		false,
-		`選択と設定をリセットする`,
+		`選択とカーソル高さをリセットする`,
+	);
+	keyManager.register(
+		"resetAll",
+		Keyboard.KEY_C,
+		true,
+		`すべての状態をリセットする`,
 	);
 	keyManager.register("widthUp", Keyboard.KEY_RIGHT, true, `山幅を広げる`);
 	keyManager.register("widthDown", Keyboard.KEY_LEFT, true, `山幅を狭める`);
@@ -332,6 +338,7 @@ function keyInput(
 			sender,
 			keyManager.getDescription("resetSelected"),
 		);
+		NGTLog.sendChatMessage(sender, keyManager.getDescription("resetAll"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("widthUp"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("widthDown"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("heightUp"));
@@ -427,15 +434,18 @@ function keyInput(
 		if (lastPos)
 			dataMap.setInt("offsetY", lastPos[1] - lookingPos.blockY, 1);
 	}
-	if (keyManager.pressed("resetSelected")) {
+	if (keyManager.pressed("resetSelected") || keyManager.pressed("resetAll")) {
 		posCollector.clear(entity);
 		bezierCollector.clear(entity);
 		dataMap.setBoolean("hasAutoGroundPoint", false, 0);
+		dataMap.setInt("offsetY", 0, 1);
+	}
+	if (keyManager.pressed("resetAll")) {
 		dataMap.setInt("ridgeHeight", 12, 1);
 		dataMap.setInt("ridgeWidth", 10, 1);
-		dataMap.setInt("offsetY", 0, 1);
 		dataMap.setBoolean("airCursorMode", false, 1);
 		dataMap.setInt("cursorDistance", 30, 1);
+		dataMap.setBoolean("useSelectedPeak", false, 1);
 		dataMap.setInt("roundnessMode", 0, 1);
 		dataMap.setInt("sagMode", 1, 1);
 		dataMap.setBoolean("sagModeInitialized", true, 1);
