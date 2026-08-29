@@ -1,7 +1,5 @@
 # NGTO Builder 2
 
-Latest version / 最新バージョン: **v2.2**
-
 [![Static Badge](https://img.shields.io/badge/RTM-1.7.10.46%EF%BD%9E-00cd00)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.7.10)
 [![Static Badge](https://img.shields.io/badge/KaizPatchX-1.10.1%EF%BD%9E-57b57b)](https://github.com/Kai-Z-JP/KaizPatchX)
 [![Static Badge](https://img.shields.io/badge/RTM-2.4.24%EF%BD%9E-46bcff)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2)
@@ -99,3 +97,7 @@ Due to the "offset" not being implemented, some blocks are not placed exactly as
 
 RealTrainModを導入した状態でmodsフォルダにパックを導入します。<br>
 Install RealTrainMod first, then put this pack into your `mods` folder.<br>
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
