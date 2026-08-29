@@ -1,0 +1,65 @@
+{
+    "オーク": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/oak.ngtz"
+        ]
+    },
+    "シラカバ": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/birch.ngtz"
+        ]
+    },
+    "マツ": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/redwood.ngtz"
+        ]
+    },
+    "オーク&シラカバ": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/oak.ngtz",
+            "scripts/ngtobuilder2/brush/ngtz/birch.ngtz"
+        ]
+    },
+    "サクラ": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/sakura.ngtz"
+        ],
+        "modid": [
+            "BambooMod"
+        ]
+    },
+    "モミジ(小)": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/maple.ngtz"
+        ],
+        "modid": [
+            "BambooMod"
+        ]
+    },
+    "モミジ": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/maple.ngtz",
+            "scripts/ngtobuilder2/brush/ngtz/maple_big.ngtz"
+        ],
+        "modid": [
+            "BambooMod"
+        ]
+    },
+    "イチョウ(小)": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/ginkgo.ngtz"
+        ],
+        "modid": [
+            "BambooMod"
+        ]
+    },
+    "イチョウ": {
+        "ngtz": [
+            "scripts/ngtobuilder2/brush/ngtz/ginkgo.ngtz",
+            "scripts/ngtobuilder2/brush/ngtz/ginkgo_big.ngtz"
+        ],
+        "modid": [
+            "BambooMod"
+        ]
+    }
+}

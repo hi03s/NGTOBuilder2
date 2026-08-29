@@ -15,6 +15,7 @@ import { ItemStack } from "net.minecraft.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
 import { World } from "net.minecraft.world";
+import { Loader } from "cpw.mods.fml.common";
 
 declare const Packages: {
 	net: {
@@ -29,6 +30,10 @@ declare const Packages: {
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static isModLoaded(modid: string): boolean {
+		return Loader.isModLoaded(modid);
+	}
+
 	static getRider(entity: EntityVehicle): Entity | null {
 		return entity.riddenByEntity;
 	}

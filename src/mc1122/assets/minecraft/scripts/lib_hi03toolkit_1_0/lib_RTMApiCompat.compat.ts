@@ -49,6 +49,10 @@ type ResourceStateTileEntity = TileEntity & {
 };
 
 export class RTMApiCompat {
+	static isModLoaded(modid: string): boolean {
+		return Loader.isModLoaded(modid);
+	}
+
 	static isFixRTM = Loader.isModLoaded("fix-rtm");
 
 	static getRider(entity: EntityVehicle): Entity | null {

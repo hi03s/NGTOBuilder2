@@ -1,0 +1,27 @@
+{
+	"name": "NGTOBuilder2_Tree",
+	"model": {
+		"modelFile": "ngtobuilder2/model_brush.mqo",
+		"textures": [["mat1", "textures/ngtobuilder2/brush/tree.png", "AlphaBlend"]],
+		"rendererPath": "scripts/ngtobuilder2/brush/render_tree.js"
+	},
+	"buttonTexture": "textures/ngtobuilder2/brush/button_tree.png",
+	"serverScriptPath": "scripts/ngtobuilder2/brush/server_tree.js",
+	"playerPos": [[0, 0, 0]],
+	"vehicleType": "Car",
+	"size": [1, 1],
+	"vibration": [0.0, 0.0],
+	"friction": [0.0, 0.0],
+	"acceleration": [0.0, 0.0],
+	"maxSpeed": [0.0, 0.0],
+	"maxYaw": [0.0, 0.0],
+	"pitchCoefficient": [0.0, 0.0],
+	"yawCoefficient": [0.0, 0.0],
+	"useCustomColor": false,
+	"smoothing": true,
+	"doCulling": false,
+	"changeYawOnStopping": false,
+	"accuracy": "LOW",
+	"tags": "ngto builder 2 hi03 brush tree",
+	"customIconTexture": "textures/ngtobuilder2/brush/icon_tree.png"
+}

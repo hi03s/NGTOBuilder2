@@ -544,6 +544,28 @@ export class NGTOBuilderUtilClient {
 		}
 	}
 
+	/** 同寸法で内容が異なるNGTOも個別にキャッシュして描画する。 */
+	static renderNGTOUnique(
+		entity: Entity,
+		renderer: PartsRenderer,
+		ngto: NGTObject,
+		pass: number,
+	): void {
+		const key = `${entity.getEntityId()}_${NGTOBuilderUtil.getNGTOCacheKey(ngto)}`;
+		const cached = NGTOBuilderUtilClient.glCache.get(key);
+		if (!cached) {
+			const glList = RTMApiCompatClient.generateGLList();
+			GL11.glPushMatrix();
+			RTMApiCompatClient.startCompile(glList);
+			RTMApiCompatClient.renderNGTO(renderer, ngto, pass);
+			GLHelper.endCompile();
+			GL11.glPopMatrix();
+			NGTOBuilderUtilClient.glCache.put(key, glList);
+		} else {
+			RTMApiCompatClient.callList(cached);
+		}
+	}
+
 	static renderModel(
 		renderer: PartsRenderer,
 		pass: number,

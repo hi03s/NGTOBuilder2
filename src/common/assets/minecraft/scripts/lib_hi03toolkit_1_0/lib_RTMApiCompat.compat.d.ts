@@ -13,6 +13,7 @@ import { World } from "net.minecraft.world";
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static isModLoaded(modid: string): boolean;
 	static getRider(entity: unknown): Entity | null;
 	static getRidingEntity(entity: unknown): Entity | null;
 	static getWorld(entity: unknown): World;
