@@ -40,11 +40,13 @@ export function createHeightMap(width: number, depth: number): number[][] {
 	return heightMap;
 }
 
-/** Burns one straight ridge segment into a height map using a triangular profile. */
+/** Burns one ridge segment into a height map. */
 export function applyRidgeSegment(
 	heightMap: number[][],
 	a: RidgeNode,
 	b: RidgeNode,
+	roundnessMode: number = 0,
+	sagMode: number = 1,
 ): void {
 	if (heightMap.length === 0 || heightMap[0].length === 0) return;
 	const mapWidth = heightMap.length;
@@ -52,6 +54,9 @@ export function applyRidgeSegment(
 	const abx = b.x - a.x;
 	const abz = b.z - a.z;
 	const abLenSq = abx * abx + abz * abz;
+	const segmentLength = Math.sqrt(abLenSq);
+	const sagFactors = [0, 0.025, 0.05];
+	const sagFactor = sagFactors[Math.max(0, Math.min(2, sagMode))];
 
 	for (let x = 0; x < mapWidth; x++) {
 		for (let z = 0; z < mapDepth; z++) {
@@ -66,43 +71,71 @@ export function applyRidgeSegment(
 			const dx = x - qx;
 			const dz = z - qz;
 			const distance = Math.sqrt(dx * dx + dz * dz);
-			const ridgeHeight = lerp(a.height, b.height, rate);
+			const sag = segmentLength * sagFactor * 4 * rate * (1 - rate);
+			const ridgeHeight = Math.max(
+				0,
+				lerp(a.height, b.height, rate) - sag,
+			);
 			const ridgeWidth = lerp(a.width, b.width, rate);
 			if (ridgeWidth <= 0) continue;
 			const distanceRate = distance / ridgeWidth;
 			if (distanceRate >= 1) continue;
-			const candidateHeight = ridgeHeight * (1 - distanceRate);
+			let profile = 1 - distanceRate;
+			if (roundnessMode === 1)
+				profile = Math.cos((distanceRate * Math.PI) / 2);
+			else if (roundnessMode >= 2)
+				profile = Math.sqrt(
+					Math.max(0, 1 - distanceRate * distanceRate),
+				);
+			const candidateHeight = ridgeHeight * profile;
 			heightMap[x][z] = Math.max(heightMap[x][z], candidateHeight);
 		}
 	}
 }
 
-/** Creates the smallest map that contains the whole influence area of A-B. */
+/** Creates the smallest map that contains the influence area of all segments. */
 export function createRidgeHeightMap(
-	a: RidgeNode,
-	b: RidgeNode,
+	nodes: RidgeNode[],
+	roundnessMode: number = 0,
+	sagMode: number = 1,
 ): MountainHeightMap {
-	const margin = Math.ceil(Math.max(a.width, b.width));
-	const originX = Math.floor(Math.min(a.x, b.x)) - margin;
-	const originZ = Math.floor(Math.min(a.z, b.z)) - margin;
-	const maxX = Math.ceil(Math.max(a.x, b.x)) + margin;
-	const maxZ = Math.ceil(Math.max(a.z, b.z)) + margin;
+	if (nodes.length === 0)
+		return { originX: 0, originZ: 0, values: createHeightMap(1, 1) };
+	let minX = nodes[0].x;
+	let minZ = nodes[0].z;
+	let maxX = nodes[0].x;
+	let maxZ = nodes[0].z;
+	let maxWidth = nodes[0].width;
+	for (let i = 1; i < nodes.length; i++) {
+		minX = Math.min(minX, nodes[i].x);
+		minZ = Math.min(minZ, nodes[i].z);
+		maxX = Math.max(maxX, nodes[i].x);
+		maxZ = Math.max(maxZ, nodes[i].z);
+		maxWidth = Math.max(maxWidth, nodes[i].width);
+	}
+	const margin = Math.ceil(maxWidth);
+	const originX = Math.floor(minX) - margin;
+	const originZ = Math.floor(minZ) - margin;
+	maxX = Math.ceil(maxX) + margin;
+	maxZ = Math.ceil(maxZ) + margin;
 	const values = createHeightMap(maxX - originX + 1, maxZ - originZ + 1);
-	applyRidgeSegment(
-		values,
-		{
-			x: a.x - originX,
-			z: a.z - originZ,
-			height: a.height,
-			width: a.width,
-		},
-		{
-			x: b.x - originX,
-			z: b.z - originZ,
-			height: b.height,
-			width: b.width,
-		},
-	);
+	const localNodes: RidgeNode[] = [];
+	for (let i = 0; i < nodes.length; i++) {
+		localNodes.push({
+			x: nodes[i].x - originX,
+			z: nodes[i].z - originZ,
+			height: nodes[i].height,
+			width: nodes[i].width,
+		});
+	}
+	for (let i = 0; i + 1 < localNodes.length; i++)
+		applyRidgeSegment(
+			values,
+			localNodes[i],
+			localNodes[i + 1],
+			roundnessMode,
+			sagMode,
+		);
 	return { originX: originX, originZ: originZ, values: values };
 }
 
@@ -135,21 +168,27 @@ export function heightMapToBlocks(
 }
 
 export function generateMountainBlocks(
-	a: RidgeNode,
-	b: RidgeNode,
+	nodes: RidgeNode[],
 	baseY: number,
+	roundnessMode: number = 0,
+	sagMode: number = 1,
 	blockLimit: number = Number.POSITIVE_INFINITY,
 ): MountainBlock[] {
-	return heightMapToBlocks(createRidgeHeightMap(a, b), baseY, blockLimit);
+	return heightMapToBlocks(
+		createRidgeHeightMap(nodes, roundnessMode, sagMode),
+		baseY,
+		blockLimit,
+	);
 }
 
 /** Returns only the top of each column for a lightweight client preview. */
 export function generateMountainSurfacePositions(
-	a: RidgeNode,
-	b: RidgeNode,
+	nodes: RidgeNode[],
 	baseY: number,
+	roundnessMode: number = 0,
+	sagMode: number = 1,
 ): [number, number, number][] {
-	const heightMap = createRidgeHeightMap(a, b);
+	const heightMap = createRidgeHeightMap(nodes, roundnessMode, sagMode);
 	const positions: [number, number, number][] = [];
 	for (let x = 0; x < heightMap.values.length; x++) {
 		for (let z = 0; z < heightMap.values[x].length; z++) {
@@ -167,11 +206,12 @@ export function generateMountainSurfacePositions(
 
 /** Builds a capped-size triangle mesh from the height map for client preview. */
 export function generateMountainSurfaceTriangles(
-	a: RidgeNode,
-	b: RidgeNode,
+	nodes: RidgeNode[],
 	baseY: number,
+	roundnessMode: number = 0,
+	sagMode: number = 1,
 ): MountainSurfaceTriangle[] {
-	const heightMap = createRidgeHeightMap(a, b);
+	const heightMap = createRidgeHeightMap(nodes, roundnessMode, sagMode);
 	const values = heightMap.values;
 	const area = values.length * values[0].length;
 	const step = Math.max(1, Math.ceil(Math.sqrt(area / 20000)));

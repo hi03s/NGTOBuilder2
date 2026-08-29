@@ -14,24 +14,23 @@ import {
 	RidgeNode,
 } from "./mountain_generator";
 
-Version = "2.2";
+Version = "2.3";
 blockLimit = 500;
-ridgeLengthLimit = 256;
 ridgeWidthLimit = 128;
 ridgeHeightLimit = 128;
-totalBlockLimit = 300000;
+totalBlockLimit = 500000;
 
 let builder: BlockBuilder;
 var blockLimit: number;
-var ridgeLengthLimit: number;
 var ridgeWidthLimit: number;
 var ridgeHeightLimit: number;
 var totalBlockLimit: number;
 
 export type ReceiveData_yama = {
-	a: RidgeNode;
-	b: RidgeNode;
+	nodes: RidgeNode[];
 	baseY: number;
+	roundnessMode: number;
+	sagMode: number;
 };
 
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
@@ -71,18 +70,16 @@ function onUpdate2(
 	if (receiveData) {
 		const isInitializedBuild = dataMap.getBoolean("isInitializedBuild");
 		if (!isInitializedBuild) {
-			const dx = receiveData.b.x - receiveData.a.x;
-			const dz = receiveData.b.z - receiveData.a.z;
-			const ridgeLength = Math.sqrt(dx * dx + dz * dz);
-			const maxWidth = Math.max(receiveData.a.width, receiveData.b.width);
-			const maxHeight = Math.max(
-				receiveData.a.height,
-				receiveData.b.height,
-			);
-			if (ridgeLength > ridgeLengthLimit) {
+			let maxWidth = 0;
+			let maxHeight = 0;
+			for (let i = 0; i < receiveData.nodes.length; i++) {
+				maxWidth = Math.max(maxWidth, receiveData.nodes[i].width);
+				maxHeight = Math.max(maxHeight, receiveData.nodes[i].height);
+			}
+			if (receiveData.nodes.length < 2) {
 				RTMApiCompat.sendChatMessage(
 					hostPlayer,
-					`[NGTO Builder2] 尾根の長さが上限を超えています (${Math.floor(ridgeLength)} / ${ridgeLengthLimit}[m])`,
+					`[NGTO Builder2] 稜線の通過点が不足しています`,
 				);
 			} else if (maxWidth > ridgeWidthLimit) {
 				RTMApiCompat.sendChatMessage(
@@ -96,9 +93,10 @@ function onUpdate2(
 				);
 			} else {
 				const blocks = generateMountainBlocks(
-					receiveData.a,
-					receiveData.b,
+					receiveData.nodes,
 					receiveData.baseY,
+					receiveData.roundnessMode,
+					receiveData.sagMode,
 					totalBlockLimit,
 				);
 				if (blocks.length > totalBlockLimit) {

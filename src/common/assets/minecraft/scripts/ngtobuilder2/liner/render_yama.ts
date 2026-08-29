@@ -28,7 +28,7 @@ declare const renderer: VehiclePartsRenderer;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager = new InputManager();
-	Version = "2.2";
+	Version = "2.3";
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
 	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
@@ -79,6 +79,24 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		true,
 		`尾根を低くする`,
 	);
+	keyManager.register(
+		"useSelectedPeak",
+		Keyboard.KEY_P,
+		false,
+		`最高選択点を稜線の頂点にする`,
+	);
+	keyManager.register(
+		"roundnessMode",
+		Keyboard.KEY_O,
+		false,
+		`稜線の丸みを切り替える`,
+	);
+	keyManager.register(
+		"sagMode",
+		Keyboard.KEY_I,
+		false,
+		`峰のたわみを切り替える`,
+	);
 	posCollector = new PositionCollector();
 	bezierCollector = new BezierCollector();
 	meshCache = new HashMap();
@@ -116,6 +134,19 @@ function getCursorDistance(entity: EntityVehicle): number {
 	return distance;
 }
 
+function getSagMode(entity: EntityVehicle): number {
+	const dataMap = entity.getResourceState().getDataMap();
+	if (!dataMap.getBoolean("sagModeInitialized")) {
+		dataMap.setInt("sagMode", 1, 1);
+		dataMap.setBoolean("sagModeInitialized", true, 1);
+	}
+	return dataMap.getInt("sagMode");
+}
+
+function getModeName(mode: number): string {
+	return ["なし", "標準", "強い"][Math.max(0, Math.min(2, mode))];
+}
+
 function getLookingPos(entity: EntityVehicle, partialTicks: number) {
 	const dataMap = entity.getResourceState().getDataMap();
 	if (dataMap.getBoolean("airCursorMode")) {
@@ -129,24 +160,33 @@ function getLookingPos(entity: EntityVehicle, partialTicks: number) {
 
 function createReceiveData(entity: EntityVehicle): ReceiveData_yama | null {
 	const posList = posCollector.getAll(entity);
-	if (posList.length !== 2) return null;
+	if (posList.length < 2) return null;
 	const settings = getSettings(entity);
 	const ridgeHeight = settings[0];
 	const ridgeWidth = settings[1];
-	const baseY = Math.min(posList[0][1], posList[1][1]);
-	const a: RidgeNode = {
-		x: posList[0][0],
-		z: posList[0][2],
-		height: ridgeHeight + posList[0][1] - baseY,
-		width: ridgeWidth,
+	let baseY = posList[0][1];
+	for (let i = 1; i < posList.length; i++)
+		baseY = Math.min(baseY, posList[i][1]);
+	const useSelectedPeak = entity
+		.getResourceState()
+		.getDataMap()
+		.getBoolean("useSelectedPeak");
+	const nodes: RidgeNode[] = [];
+	for (let i = 0; i < posList.length; i++) {
+		nodes.push({
+			x: posList[i][0],
+			z: posList[i][2],
+			height: posList[i][1] - baseY + (useSelectedPeak ? 0 : ridgeHeight),
+			width: ridgeWidth,
+		});
+	}
+	const dataMap = entity.getResourceState().getDataMap();
+	return {
+		nodes: nodes,
+		baseY: baseY,
+		roundnessMode: dataMap.getInt("roundnessMode"),
+		sagMode: getSagMode(entity),
 	};
-	const b: RidgeNode = {
-		x: posList[1][0],
-		z: posList[1][2],
-		height: ridgeHeight + posList[1][1] - baseY,
-		width: ridgeWidth,
-	};
-	return { a: a, b: b, baseY: baseY };
 }
 
 function keyInput(
@@ -186,10 +226,7 @@ function keyInput(
 		mouseWheel !== 0
 	) {
 		const direction = mouseWheel > 0 ? 1 : -1;
-		const distance = Math.max(
-			1,
-			Math.min(512, getCursorDistance(entity) + direction),
-		);
+		const distance = Math.max(1, getCursorDistance(entity) + direction);
 		dataMap.setInt("cursorDistance", distance, 1);
 		NGTLog.sendChatMessage(
 			sender,
@@ -199,7 +236,7 @@ function keyInput(
 
 	if (keyManager.pressed("showHelp")) {
 		NGTLog.sendChatMessage(sender, `---NGTO Builder2 山脈生成 操作方法---`);
-		NGTLog.sendChatMessage(sender, `[右クリック] 尾根の始点・終点を選択`);
+		NGTLog.sendChatMessage(sender, `[右クリック] 稜線の通過点を追加`);
 		NGTLog.sendChatMessage(sender, `[左クリック] 最後の選択を解除`);
 		NGTLog.sendChatMessage(
 			sender,
@@ -236,6 +273,15 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("widthDown"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("heightUp"));
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("heightDown"));
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("useSelectedPeak"),
+		);
+		NGTLog.sendChatMessage(
+			sender,
+			keyManager.getDescription("roundnessMode"),
+		);
+		NGTLog.sendChatMessage(sender, keyManager.getDescription("sagMode"));
 	}
 
 	if (keyManager.pressed("endEdit") && !isBuilding) {
@@ -247,7 +293,7 @@ function keyInput(
 		if (!sendData) {
 			NGTLog.sendChatMessage(
 				sender,
-				`[NGTO Builder2] 始点と終点の2点を選択してください`,
+				`[NGTO Builder2] 稜線の通過点を2点以上選択してください`,
 			);
 		} else {
 			dataMap.setBoolean("isBuilding", true, 1);
@@ -267,41 +313,31 @@ function keyInput(
 	}
 
 	if (lookingPos && isRightClick) {
-		if (posCollector.size(entity) < 2) {
-			posCollector.add(
-				entity,
-				lookingPos.blockX,
-				lookingPos.blockY + offsetY,
-				lookingPos.blockZ,
-			);
-			bezierCollector.createFromPosList(
-				entity,
-				posCollector.getAll(entity),
-			);
-		} else {
-			NGTLog.sendChatMessage(
-				sender,
-				`[NGTO Builder2] 選択できる座標は2点です`,
-			);
-		}
+		posCollector.add(
+			entity,
+			lookingPos.blockX,
+			lookingPos.blockY + offsetY,
+			lookingPos.blockZ,
+		);
+		bezierCollector.createFromPosList(entity, posCollector.getAll(entity));
 	}
 	if (isLeftClick && posCollector.size(entity) > 0) {
 		posCollector.pop(entity);
 		bezierCollector.createFromPosList(entity, posCollector.getAll(entity));
 	}
-	if (keyManager.pressed("selectYUp"))
+	if (keyManager.pressed("selectYUp") || keyManager.held("selectYUp", 300))
 		dataMap.setInt("offsetY", offsetY + 1, 1);
-	if (keyManager.pressed("selectYDown"))
+	if (
+		keyManager.pressed("selectYDown") ||
+		keyManager.held("selectYDown", 300)
+	)
 		dataMap.setInt("offsetY", offsetY - 1, 1);
 	if (keyManager.pressed("resetSelectY")) {
 		if (dataMap.getBoolean("airCursorMode")) {
 			const blockDistance =
 				RTMApiCompatClient.getLookingBlockDistance(partialTicks);
 			if (blockDistance !== null) {
-				const distance = Math.max(
-					1,
-					Math.min(512, Math.ceil(blockDistance)),
-				);
+				const distance = Math.max(1, Math.ceil(blockDistance));
 				dataMap.setInt("cursorDistance", distance, 1);
 				NGTLog.sendChatMessage(
 					sender,
@@ -332,6 +368,10 @@ function keyInput(
 		dataMap.setInt("offsetY", 0, 1);
 		dataMap.setBoolean("airCursorMode", false, 1);
 		dataMap.setInt("cursorDistance", 30, 1);
+		dataMap.setBoolean("useSelectedPeak", false, 1);
+		dataMap.setInt("roundnessMode", 0, 1);
+		dataMap.setInt("sagMode", 1, 1);
+		dataMap.setBoolean("sagModeInitialized", true, 1);
 	}
 	if (keyManager.pressed("widthUp") || keyManager.held("widthUp", 300)) {
 		ridgeWidth = Math.min(128, ridgeWidth + 1);
@@ -345,13 +385,43 @@ function keyInput(
 		ridgeWidth--;
 		dataMap.setInt("ridgeWidth", ridgeWidth, 1);
 	}
-	if (keyManager.pressed("heightUp")) {
+	if (keyManager.pressed("heightUp") || keyManager.held("heightUp", 300)) {
 		ridgeHeight = Math.min(128, ridgeHeight + 1);
 		dataMap.setInt("ridgeHeight", ridgeHeight, 1);
 	}
-	if (keyManager.pressed("heightDown") && ridgeHeight > 1) {
+	if (
+		(keyManager.pressed("heightDown") ||
+			keyManager.held("heightDown", 300)) &&
+		ridgeHeight > 1
+	) {
 		ridgeHeight--;
 		dataMap.setInt("ridgeHeight", ridgeHeight, 1);
+	}
+	if (keyManager.pressed("useSelectedPeak")) {
+		const useSelectedPeak = !dataMap.getBoolean("useSelectedPeak");
+		dataMap.setBoolean("useSelectedPeak", useSelectedPeak, 1);
+		NGTLog.sendChatMessage(
+			sender,
+			useSelectedPeak
+				? `[NGTO Builder2] 最高選択点を稜線の頂点にする: ON`
+				: `[NGTO Builder2] 最高選択点を稜線の頂点にする: OFF`,
+		);
+	}
+	if (keyManager.pressed("roundnessMode")) {
+		const roundnessMode = (dataMap.getInt("roundnessMode") + 1) % 3;
+		dataMap.setInt("roundnessMode", roundnessMode, 1);
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] 稜線の丸み: ${getModeName(roundnessMode)}`,
+		);
+	}
+	if (keyManager.pressed("sagMode")) {
+		const sagMode = (getSagMode(entity) + 1) % 3;
+		dataMap.setInt("sagMode", sagMode, 1);
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] 峰のたわみ: ${getModeName(sagMode)}`,
+		);
 	}
 }
 
@@ -386,7 +456,7 @@ function renderForToolUser(
 	const offsetY = dataMap.getInt("offsetY");
 	body.render(renderer);
 
-	if (lookingPos && posCollector.size(entity) < 2) {
+	if (lookingPos) {
 		GL11.glPushMatrix();
 		GL11.glTranslatef(
 			lookingPos.blockX + 0.5 - posX,
@@ -441,24 +511,26 @@ function renderForToolUser(
 
 	const sendData = createReceiveData(entity);
 	if (sendData) {
-		const hash = [
+		const hashParts = [
 			String(entity.getEntityId()),
-			String(sendData.a.x),
-			String(sendData.a.height),
-			String(sendData.a.width),
-			String(sendData.a.z),
-			String(sendData.b.x),
-			String(sendData.b.height),
-			String(sendData.b.width),
-			String(sendData.b.z),
 			String(sendData.baseY),
-		].join("|");
+			String(sendData.roundnessMode),
+			String(sendData.sagMode),
+		];
+		for (let i = 0; i < sendData.nodes.length; i++) {
+			hashParts.push(String(sendData.nodes[i].x));
+			hashParts.push(String(sendData.nodes[i].height));
+			hashParts.push(String(sendData.nodes[i].width));
+			hashParts.push(String(sendData.nodes[i].z));
+		}
+		const hash = hashParts.join("|");
 		let mesh: MountainSurfaceTriangle[] = meshCache.get(hash);
 		if (!mesh) {
 			mesh = generateMountainSurfaceTriangles(
-				sendData.a,
-				sendData.b,
+				sendData.nodes,
 				sendData.baseY,
+				sendData.roundnessMode,
+				sendData.sagMode,
 			);
 			meshCache.put(hash, mesh);
 		}
