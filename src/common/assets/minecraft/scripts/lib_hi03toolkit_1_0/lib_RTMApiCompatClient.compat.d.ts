@@ -6,7 +6,7 @@ import { ModelObject, PartsRenderer } from "jp.ngt.rtm.render";
 import { ResourceLocation } from "net.minecraft.util";
 
 export class RTMApiCompatClient {
-	static getLookingPos(): {
+	static getLookingPos(partialTicks: number): {
 		posX: number;
 		posY: number;
 		posZ: number;

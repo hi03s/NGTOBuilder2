@@ -68,9 +68,23 @@ export class NGTOBuilderUtilClient {
 	 * side - 視線先のブロック面がある方向 0:下 1:上 2:北 3:南 4:西 5:東
 	 *
 	 */
-	static getLookingPos() {
+	static getLookingPos(partialTicks: number) {
 		//RTMApiCompatClientに移動
-		return RTMApiCompatClient.getLookingPos();
+		return RTMApiCompatClient.getLookingPos(partialTicks);
+	}
+
+	/**
+	 * エンティティの描画補間済み座標を取得する。
+	 *
+	 * VehiclePartsRendererの描画原点とワールド座標の描画物を同じ時刻に揃えるため、
+	 * render関数に渡されたpartialTicksを使用する。
+	 */
+	static getInterpolatedPos(entity: Entity, partialTicks: number): Pos {
+		return [
+			entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * partialTicks,
+			entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks,
+			entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * partialTicks,
+		];
 	}
 
 	/**

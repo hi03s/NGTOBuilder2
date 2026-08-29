@@ -1,5 +1,5 @@
 import { NGTLog } from "jp.ngt.ngtlib.io";
-import { MCWrapper, MCWrapperClient, NGTUtilClient } from "jp.ngt.ngtlib.util";
+import { MCWrapperClient, NGTUtilClient } from "jp.ngt.ngtlib.util";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import {
 	ModelSetConnector,
@@ -105,12 +105,13 @@ var connectionCache: HashMap<string, Connection>;
 function keyInput(
 	hostPlayer: EntityPlayer,
 	entity: EntityVehicle,
+	partialTicks: number,
 	isRightClick: boolean,
 	isLeftClick: boolean,
 ): void {
 	const sender = hostPlayer as unknown as ICommandSender;
 	const dataMap = entity.getResourceState().getDataMap();
-	const lookingPos = NGTOBuilderUtilClient.getLookingPos();
+	const lookingPos = NGTOBuilderUtilClient.getLookingPos(partialTicks);
 	const world = RTMApiCompat.getWorld(entity);
 	const offsetHeight = dataMap.getInt("offsetHeight");
 	let offsetX = 0;
@@ -334,10 +335,11 @@ function renderForToolUser(
 	par3: number,
 ): void {
 	const dataMap = entity.getResourceState().getDataMap();
-	const lookingPos = NGTOBuilderUtilClient.getLookingPos();
-	const posX = MCWrapper.getPosX(entity);
-	const posY = MCWrapper.getPosY(entity);
-	const posZ = MCWrapper.getPosZ(entity);
+	const lookingPos = NGTOBuilderUtilClient.getLookingPos(par3);
+	const [posX, posY, posZ] = NGTOBuilderUtilClient.getInterpolatedPos(
+		entity,
+		par3,
+	);
 	const player = MCWrapperClient.getPlayer();
 	const offsetHeight = dataMap.getInt("offsetHeight");
 	const isBuilding = dataMap.getBoolean("isBuilding");
@@ -522,6 +524,7 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 			keyInput(
 				hostPlayer,
 				entity,
+				par3,
 				!prevIsRightClick && isRightClick,
 				!prevIsLeftClick && isLeftClick,
 			);

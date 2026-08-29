@@ -1,5 +1,5 @@
 import { NGTLog } from "jp.ngt.ngtlib.io";
-import { MCWrapper, MCWrapperClient, NGTUtilClient } from "jp.ngt.ngtlib.util";
+import { MCWrapperClient, NGTUtilClient } from "jp.ngt.ngtlib.util";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { ModelSetVehicle } from "jp.ngt.rtm.modelpack.modelset";
 import { ModelObject, Parts, VehiclePartsRenderer } from "jp.ngt.rtm.render";
@@ -109,12 +109,13 @@ var beamCollectorCache: HashMap<Entity, InsulatorCollector>;
 function keyInput(
 	hostPlayer: EntityPlayer,
 	entity: EntityVehicle,
+	partialTicks: number,
 	isRightClick: boolean,
 	isLeftClick: boolean,
 ): void {
 	const sender = hostPlayer as unknown as ICommandSender;
 	const dataMap = entity.getResourceState().getDataMap();
-	const lookingPos = NGTOBuilderUtilClient.getLookingPos();
+	const lookingPos = NGTOBuilderUtilClient.getLookingPos(partialTicks);
 
 	let baseCollector = baseCollectorCache.get(entity);
 	if (!baseCollector) {
@@ -382,10 +383,11 @@ function renderForToolUser(
 	par3: number,
 ): void {
 	const dataMap = entity.getResourceState().getDataMap();
-	const lookingPos = NGTOBuilderUtilClient.getLookingPos();
-	const posX = MCWrapper.getPosX(entity);
-	const posY = MCWrapper.getPosY(entity);
-	const posZ = MCWrapper.getPosZ(entity);
+	const lookingPos = NGTOBuilderUtilClient.getLookingPos(par3);
+	const [posX, posY, posZ] = NGTOBuilderUtilClient.getInterpolatedPos(
+		entity,
+		par3,
+	);
 
 	//本体
 	body.render(renderer);
@@ -549,7 +551,7 @@ function render(entity: EntityVehicle, pass: number, par3: number): void {
 			dataMap.setBoolean("showHelpMessage", true, 0);
 			NGTLog.sendChatMessage(sender, keyManager.getDescription("showHelp"));
 		}
-		if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) keyInput(hostPlayer, entity, !prevIsRightClick && isRightClick, !prevIsLeftClick && isLeftClick);
+		if (!isOpenGUI && pass === 0 && renderer.currentMatId === 0) keyInput(hostPlayer, entity, par3, !prevIsRightClick && isRightClick, !prevIsLeftClick && isLeftClick);
 		renderForToolUser(entity, pass, par3);
 	}
 }

@@ -1,5 +1,5 @@
 import { HashMap } from "java.util";
-import { BlockUtil, NGTObject } from "jp.ngt.ngtlib.block";
+import { NGTObject } from "jp.ngt.ngtlib.block";
 import { GuiItemMiniature } from "jp.ngt.mcte.gui";
 import { DisplayList, GLHelper, NGTRenderer } from "jp.ngt.ngtlib.renderer";
 import { MCWrapperClient, NGTUtil } from "jp.ngt.ngtlib.util";
@@ -12,7 +12,7 @@ import {
 import { TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
 import { ModelObject, PartsRenderer, RTMRenderers } from "jp.ngt.rtm.render";
 import { TextureMap } from "net.minecraft.client.renderer.texture";
-import { ResourceLocation } from "net.minecraft.util";
+import { ResourceLocation, Vec3 } from "net.minecraft.util";
 
 type LookingPos = {
 	posX: number;
@@ -38,9 +38,23 @@ type ModelConfigWithName = {
 export class RTMApiCompatClient {
 	static ngtoWorld = new HashMap<NGTObject, NGTWorld>();
 
-	static getLookingPos(): LookingPos | null {
+	static getLookingPos(partialTicks: number): LookingPos | null {
 		const player = MCWrapperClient.getPlayer();
-		const mop = BlockUtil.getMOPFromPlayer(player, 512, true);
+		const start = Vec3.createVectorHelper(
+			player.prevPosX + (player.posX - player.prevPosX) * partialTicks,
+			player.prevPosY +
+				(player.posY - player.prevPosY) * partialTicks +
+				1.62 -
+				player.yOffset,
+			player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks,
+		);
+		const look = player.getLook(partialTicks);
+		const end = start.addVector(
+			look.xCoord * 512,
+			look.yCoord * 512,
+			look.zCoord * 512,
+		);
+		const mop = NGTUtil.getClientWorld().rayTraceBlocks(start, end, true);
 		if (!mop) return null;
 
 		const lookingVec = mop.hitVec;

@@ -1,5 +1,5 @@
 import { HashMap } from "java.util";
-import { BlockUtil, NGTObject } from "jp.ngt.ngtlib.block";
+import { NGTObject } from "jp.ngt.ngtlib.block";
 import { GuiItemMiniature } from "jp.ngt.mcte.gui";
 import {
 	DisplayList,
@@ -39,9 +39,18 @@ type ModelConfigWithName = {
 export class RTMApiCompatClient {
 	static ngtoWorld = new HashMap<NGTObject, NGTWorld>();
 
-	static getLookingPos(): LookingPos | null {
+	static getLookingPos(partialTicks: number): LookingPos | null {
 		const player = MCWrapperClient.getPlayer();
-		const mop = BlockUtil.getMOPFromPlayer(player, 512, true);
+		const start = player.getPositionEyes(partialTicks);
+		const look = player.getLook(partialTicks);
+		const end = start.add(look.x * 512, look.y * 512, look.z * 512);
+		const mop = NGTUtil.getClientWorld().rayTraceBlocks(
+			start,
+			end,
+			true,
+			false,
+			true,
+		);
 		if (!mop) return null;
 
 		const lookingVec = mop.hitVec;
