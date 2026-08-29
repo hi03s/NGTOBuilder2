@@ -62,18 +62,71 @@ RTMU v1.0.13 (旧記録・そのまま残す)
 ├7.ビーム設置		 : 動作しない
 └8.架線設置		 : 動作しない
 
-RTMU v1.0.18 (未確認 / 要再確認)
-├1.地面設置		 : 未確認
-├2.ライン設置		 : 未確認
-├3.計測			 : 未確認
-├4.プロップ設置		 : 未確認
-├5.プロップ配列設置	 : 未確認
-├6.ワイヤー設置		 : 未確認
-├7.ビーム設置		 : 未確認
-└8.架線設置		 : 未確認
+RTMU 最新版 (v1.0.18) でも状況は変わらず (報告ベース)
+├1.地面設置		 : 動作しない
+├2.ライン設置		 : 動作しない
+├3.計測			 : 問題なし
+├4.プロップ設置		 : 動作しない
+├5.プロップ配列設置	 : 動作しない
+├6.ワイヤー設置		 : 動作しない
+├7.ビーム設置		 : 動作しない
+└8.架線設置		 : 動作しない
 
-  ※上の v1.0.13 の記録以降、RTMU 側で NGTO Builder 2 の動作を直接止めていた不具合が
-    複数修正されている。全項目を v1.0.18 で取り直すこと。
+##  調査で分かったこと (ソース照合)  ##
+
+コンパイル済みのパックスクリプトを RTMU の PackScriptSource 相当の変換に通し、
+残った SRG 名とクラス参照を RTMU のソースと突き合わせた結果、
+未対応のシンボルは 1 件も無い。
+つまり「メソッドが無くて落ちる」型の不具合ではなく、意味論のズレが原因。
+
+●特定できた原因 (パック側・修正済み)
+
+  NGTO (ミニチュア) のキャッシュが NBT オブジェクトの同一性に依存していた。
+
+  1.7.10/1.12 の NBTTagCompound は equals/hashCode が内容ベースなので、
+  NBT をそのまま HashMap のキーにできた。
+  一方 RTMU の jp.ngt.mccompat.nbt.NBTTagCompound は
+    ItemStackCompat.func_77978_p() -> new NBTTagCompound(data.copyTag())
+  と呼ぶたびに新しいラッパーを返し、equals/hashCode を持たない。
+  そのため NGTOBuilderUtil.ngtoCache が必ずミスし、
+
+    - NGTObject を毎フレーム作り直す
+    - getNGTOCacheKey の識別値 (IdentityHashMap) が毎フレーム変わる
+    - その結果 render 側の posListCache まで毎フレーム作り直しになる
+      (プロップは最大 20000 ブロック分の位置計算がフレーム毎に走る)
+    - ngtoCache / ngtoIdentityMap / posListCache が際限なく太る
+
+  影響するのは NGTO を使う 2.ライン設置 / 4.プロップ設置 / 5.プロップ配列設置。
+  3.計測 が無事なのは NGTO を使わないため。
+  -> キャッシュキーを NBT の内容ハッシュ由来の文字列に変更して修正した。
+
+●未特定 (1.地面設置 / 6.ワイヤー / 7.ビーム / 8.架線)
+
+  これらは NGTO を使わないので上の原因では説明できない。
+  一方で以下は健全であることをソースで確認済み:
+    - DataMap のクライアント->サーバ同期 (CarScriptDataPayload。長さ上限も 262144 へ拡張済み)
+    - BlockBuilder の設置経路と UndoManager
+      (3.計測 もマーカーを設置して Undo まで通るため、経路自体は動いている)
+    - ワイヤーの API (WireItem.getModelName / getSubType /
+      InstalledObjectBlockEntity.setConnectionTo) は全て存在する
+    - RTMItem.itemWire は実 Item なので手持ち判定の === も成立する
+
+  次に切り分けるべきこと: 失敗時のログ (NGTLog.debug の出力) を採ること。
+  パック側は失敗を握りつぶす箇所があるため、下記のどれが出ているかで原因が絞れる。
+    "Skip TileEntity NBT: invalid y=..."      -> 高さ番兵 (RTMU 側で -64..320 へ置換済みのはず)
+    "###  setTileEntityData ERROR  ###"        -> TileEntity への NBT 適用で失敗
+    "###  addBackup ERROR  ###"                -> Undo 用のバックアップ取得で失敗
+    "[NGTO Builder] hasTileEntity Error: ..."  -> ブロックの TileEntity 判定で失敗
+    "[NGTO Builder] Skip wire connection: ..." -> ワイヤー接続先の座標が範囲外扱い
+    "[RTMU] スクリプトデータをサーバーへ送れませんでした" -> DataMap 送信の失敗
+
+●注意 (壊れやすい依存)
+
+  RTMU はパックのコンパイル結果の文字列リテラルに一致させて置換している。
+    "y < 0 || y >= 256"                      (lib_BlockBuilder.ts の高さ番兵)
+    "block.hasTileEntity(blockSet.metadata)" (mc1710 の hasTileEntity)
+  これらの行を整形し直すと、無音で 1.21.1 の動作が壊れる。
+  現状は一致していることをビルド成果物で確認済み。触るときは要注意。
 
 ##  1.21.1 で動く仕組み  ##
 

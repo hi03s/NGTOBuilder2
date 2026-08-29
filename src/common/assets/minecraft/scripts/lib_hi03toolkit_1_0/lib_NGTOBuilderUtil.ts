@@ -32,11 +32,43 @@ export type combineNGTOList =
  * 便利機能を提供するユーティリティクラス
  */
 export class NGTOBuilderUtil {
-	private static ngtoCache: HashMap<NBTTagCompound | string, NGTObject> =
-		new HashMap();
+	private static ngtoCache: HashMap<string, NGTObject> = new HashMap();
 	private static ngtoIdentityMap: IdentityHashMap<NGTObject, number> =
 		new IdentityHashMap();
 	private static nextNGTOIdentity = 1;
+
+	/** ngtoCacheの上限。超えたら捨てて作り直す(際限なく太らせない) */
+	private static readonly NGTO_CACHE_LIMIT = 256;
+
+	/**
+	 * NBTからキャッシュキーを作る。
+	 *
+	 * 1.7.10/1.12のNBTTagCompoundはequals/hashCodeが内容ベースなので、
+	 * NBTをそのままHashMapのキーにできた。
+	 * 一方RTMUnofficial(1.21.1)が返すのは呼ぶたびに作られるラッパーで、
+	 * equals/hashCodeを持たないため、NBTをキーにすると必ずミスする。
+	 * ミスするとNGTOを毎フレーム作り直し、さらにgetNGTOCacheKeyの識別値も
+	 * 毎フレーム変わるので、描画側の重い位置計算のキャッシュまで無効になる。
+	 * ラッパーは中身を.tagに持っているので、あればそちらのhashCodeを使う。
+	 */
+	private static toNGTOCacheKey(nbt: NBTTagCompound): string {
+		const wrapper = nbt as unknown as { tag?: { hashCode(): number } };
+		const inner = wrapper.tag;
+		const hash = inner
+			? inner.hashCode()
+			: (nbt as unknown as { hashCode(): number }).hashCode();
+		return `nbt:${hash}`;
+	}
+
+	/** ngtoCacheへの登録。上限を超えたら丸ごと捨てる */
+	private static putNGTOCache(key: string, ngto: NGTObject): void {
+		if (this.ngtoCache.size() >= NGTOBuilderUtil.NGTO_CACHE_LIMIT) {
+			//捨てたNGTOの識別値は使い道が無いので一緒に捨てる
+			this.ngtoCache.clear();
+			this.ngtoIdentityMap.clear();
+		}
+		this.ngtoCache.put(key, ngto);
+	}
 
 	/**
 	 * プレイヤーが手に持っているミニチュアブロックからNGTOを取得する
@@ -47,13 +79,16 @@ export class NGTOBuilderUtil {
 		const currrentItem = NGTOBuilderUtil.getHeldItem(player);
 		if (currrentItem) {
 			const nbt = currrentItem.getTagCompound();
-			const cachedNGTO = this.ngtoCache.get(nbt);
-			if (cachedNGTO) return cachedNGTO;
-			if (nbt && nbt.hasKey("BlocksData")) {
-				const ngto = RTMApiCompat.getNGTObjectFromItemNBT(nbt);
-				if (ngto) {
-					this.ngtoCache.put(nbt, ngto);
-					return ngto;
+			if (nbt) {
+				const cacheKey = NGTOBuilderUtil.toNGTOCacheKey(nbt);
+				const cachedNGTO = this.ngtoCache.get(cacheKey);
+				if (cachedNGTO) return cachedNGTO;
+				if (nbt.hasKey("BlocksData")) {
+					const ngto = RTMApiCompat.getNGTObjectFromItemNBT(nbt);
+					if (ngto) {
+						NGTOBuilderUtil.putNGTOCache(cacheKey, ngto);
+						return ngto;
+					}
 				}
 			}
 		}
@@ -73,14 +108,15 @@ export class NGTOBuilderUtil {
 			if (itemStack) {
 				const nbt = itemStack.getTagCompound();
 				if (nbt && nbt.hasKey("BlocksData")) {
-					const cachedNGTO = this.ngtoCache.get(nbt);
+					const cacheKey = NGTOBuilderUtil.toNGTOCacheKey(nbt);
+					const cachedNGTO = this.ngtoCache.get(cacheKey);
 					if (cachedNGTO) {
 						ngtoList.push(cachedNGTO);
 						continue;
-					} else if (nbt && nbt.hasKey("BlocksData")) {
+					} else {
 						const ngto = RTMApiCompat.getNGTObjectFromItemNBT(nbt);
 						if (ngto) {
-							this.ngtoCache.put(nbt, ngto);
+							NGTOBuilderUtil.putNGTOCache(cacheKey, ngto);
 							ngtoList.push(ngto);
 							continue;
 						}
@@ -280,7 +316,7 @@ export class NGTOBuilderUtil {
 	 * @param ngto
 	 */
 	static setNGTOCache(entity: Entity, key: string, ngto: NGTObject): void {
-		this.ngtoCache.put(`${entity.getEntityId()}_${key}`, ngto);
+		NGTOBuilderUtil.putNGTOCache(`${entity.getEntityId()}_${key}`, ngto);
 	}
 
 	/**
