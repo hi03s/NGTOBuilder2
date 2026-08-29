@@ -18,6 +18,23 @@ export class RTMApiCompatClient {
 		placeZ: number;
 		side: number;
 	} | null;
+	static getLookingPosAtDistance(
+		partialTicks: number,
+		distance: number,
+	): {
+		posX: number;
+		posY: number;
+		posZ: number;
+		blockX: number;
+		blockY: number;
+		blockZ: number;
+		placeX: number;
+		placeY: number;
+		placeZ: number;
+		side: number;
+	};
+	static bindBlockTexture(renderer: PartsRenderer): void;
+	static getGrassTextureUV(): [number, number, number, number];
 	static generateGLList(): DisplayList;
 	static startCompile(displayList: DisplayList): void;
 	static callList(displayList: DisplayList): void;

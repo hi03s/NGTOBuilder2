@@ -229,6 +229,34 @@ export class RTMApiCompat {
 		return Blocks.STONE;
 	}
 
+	static getBlockGrass(): Block {
+		return Blocks.GRASS;
+	}
+
+	static getBlockDirt(): Block {
+		return Blocks.DIRT;
+	}
+
+	static getBlockLog(): Block {
+		return Blocks.LOG;
+	}
+
+	static getBlockLeaves(): Block {
+		return Blocks.LEAVES as unknown as Block;
+	}
+
+	static getBlockTallGrass(): Block {
+		return Blocks.TALLGRASS as unknown as Block;
+	}
+
+	static getBlockYellowFlower(): Block {
+		return Blocks.YELLOW_FLOWER;
+	}
+
+	static getBlockRedFlower(): Block {
+		return Blocks.RED_FLOWER;
+	}
+
 	static setOffset(
 		tileEntity: TileEntityPlaceable,
 		x: number,

@@ -6,7 +6,11 @@ import {
 	GLHelper,
 	NGTObjectRenderer,
 } from "jp.ngt.ngtlib.renderer";
-import { MCWrapperClient, NGTUtil } from "jp.ngt.ngtlib.util";
+import {
+	MCWrapperClient,
+	NGTUtil,
+	NGTUtilClient,
+} from "jp.ngt.ngtlib.util";
 import { NGTWorld } from "jp.ngt.ngtlib.world";
 import { ModelPackManager } from "jp.ngt.rtm.modelpack";
 import {
@@ -85,6 +89,64 @@ export class RTMApiCompatClient {
 			placeZ: hitZ + dir.getZ(),
 			side: side,
 		};
+	}
+
+	static getLookingPosAtDistance(
+		partialTicks: number,
+		distance: number,
+	): LookingPos {
+		const player = MCWrapperClient.getPlayer();
+		const start = player.getPositionEyes(partialTicks);
+		const look = player.getLook(partialTicks);
+		const end = start.add(look.x * distance, look.y * distance, look.z * distance);
+		const mop = NGTUtil.getClientWorld().rayTraceBlocks(
+			start,
+			end,
+			true,
+			false,
+			true,
+		);
+		if (mop) {
+			const blockPos = mop.getBlockPos();
+			const facing = mop.sideHit;
+			const dir = facing.getDirectionVec();
+			const side = facing.getIndex();
+			return {
+				posX: mop.hitVec.x + dir.getX() * 1e-6,
+				posY: mop.hitVec.y + dir.getY() * 1e-6,
+				posZ: mop.hitVec.z + dir.getZ() * 1e-6,
+				blockX: blockPos.getX(),
+				blockY: blockPos.getY(),
+				blockZ: blockPos.getZ(),
+				placeX: blockPos.getX() + dir.getX(),
+				placeY: blockPos.getY() + dir.getY(),
+				placeZ: blockPos.getZ() + dir.getZ(),
+				side: side,
+			};
+		}
+		return {
+			posX: end.x,
+			posY: end.y,
+			posZ: end.z,
+			blockX: Math.floor(end.x),
+			blockY: Math.floor(end.y),
+			blockZ: Math.floor(end.z),
+			placeX: Math.floor(end.x),
+			placeY: Math.floor(end.y),
+			placeZ: Math.floor(end.z),
+			side: -1,
+		};
+	}
+
+	static bindBlockTexture(renderer: PartsRenderer): void {
+		renderer.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+	}
+
+	static getGrassTextureUV(): [number, number, number, number] {
+		const icon = NGTUtilClient.getMinecraft()
+			.getTextureMapBlocks()
+			.getAtlasSprite("minecraft:blocks/grass_top");
+		return [icon.getMinU(), icon.getMinV(), icon.getMaxU(), icon.getMaxV()];
 	}
 
 	static generateGLList(): DisplayList {

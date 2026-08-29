@@ -12,6 +12,7 @@ import {
 import { TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
 import { ModelObject, PartsRenderer, RTMRenderers } from "jp.ngt.rtm.render";
 import { TextureMap } from "net.minecraft.client.renderer.texture";
+import { Blocks } from "net.minecraft.init";
 import { ResourceLocation, Vec3 } from "net.minecraft.util";
 
 type LookingPos = {
@@ -86,6 +87,73 @@ export class RTMApiCompatClient {
 			placeZ: hitZ + dz,
 			side: side,
 		};
+	}
+
+	static getLookingPosAtDistance(
+		partialTicks: number,
+		distance: number,
+	): LookingPos {
+		const player = MCWrapperClient.getPlayer();
+		const start = Vec3.createVectorHelper(
+			player.prevPosX + (player.posX - player.prevPosX) * partialTicks,
+			player.prevPosY +
+				(player.posY - player.prevPosY) * partialTicks +
+				1.62 -
+				player.yOffset,
+			player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks,
+		);
+		const look = player.getLook(partialTicks);
+		const end = start.addVector(
+			look.xCoord * distance,
+			look.yCoord * distance,
+			look.zCoord * distance,
+		);
+		const mop = NGTUtil.getClientWorld().rayTraceBlocks(start, end, true);
+		if (mop) {
+			const side = mop.sideHit;
+			let dx = 0;
+			let dy = 0;
+			let dz = 0;
+			if (side === 0) dy = -1;
+			else if (side === 1) dy = 1;
+			else if (side === 2) dz = -1;
+			else if (side === 3) dz = 1;
+			else if (side === 4) dx = -1;
+			else if (side === 5) dx = 1;
+			return {
+				posX: mop.hitVec.xCoord + dx * 1e-6,
+				posY: mop.hitVec.yCoord + dy * 1e-6,
+				posZ: mop.hitVec.zCoord + dz * 1e-6,
+				blockX: mop.blockX,
+				blockY: mop.blockY,
+				blockZ: mop.blockZ,
+				placeX: mop.blockX + dx,
+				placeY: mop.blockY + dy,
+				placeZ: mop.blockZ + dz,
+				side: side,
+			};
+		}
+		return {
+			posX: end.xCoord,
+			posY: end.yCoord,
+			posZ: end.zCoord,
+			blockX: Math.floor(end.xCoord),
+			blockY: Math.floor(end.yCoord),
+			blockZ: Math.floor(end.zCoord),
+			placeX: Math.floor(end.xCoord),
+			placeY: Math.floor(end.yCoord),
+			placeZ: Math.floor(end.zCoord),
+			side: -1,
+		};
+	}
+
+	static bindBlockTexture(renderer: PartsRenderer): void {
+		renderer.bindTexture(TextureMap.locationBlocksTexture);
+	}
+
+	static getGrassTextureUV(): [number, number, number, number] {
+		const icon = Blocks.grass.getIcon(1, 0);
+		return [icon.getMinU(), icon.getMinV(), icon.getMaxU(), icon.getMaxV()];
 	}
 
 	static generateGLList(): DisplayList {
