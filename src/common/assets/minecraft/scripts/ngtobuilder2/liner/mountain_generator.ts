@@ -81,12 +81,16 @@ export function applyRidgeSegment(
 			const distanceRate = distance / ridgeWidth;
 			if (distanceRate >= 1) continue;
 			let profile = 1 - distanceRate;
-			if (roundnessMode === 1)
-				profile = Math.cos((distanceRate * Math.PI) / 2);
-			else if (roundnessMode >= 2)
-				profile = Math.sqrt(
-					Math.max(0, 1 - distanceRate * distanceRate),
-				);
+			const roundnessRadius =
+				roundnessMode === 1 ? 0.25 : roundnessMode >= 2 ? 0.5 : 0;
+			if (roundnessRadius > 0 && distanceRate < roundnessRadius) {
+				const rateSq = distanceRate * distanceRate;
+				profile =
+					1 -
+					(2 * rateSq) / roundnessRadius +
+					(rateSq * distanceRate) /
+						(roundnessRadius * roundnessRadius);
+			}
 			const candidateHeight = ridgeHeight * profile;
 			heightMap[x][z] = Math.max(heightMap[x][z], candidateHeight);
 		}

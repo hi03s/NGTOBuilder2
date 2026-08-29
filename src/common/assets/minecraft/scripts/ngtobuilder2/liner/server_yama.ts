@@ -14,7 +14,7 @@ import {
 	RidgeNode,
 } from "./mountain_generator";
 
-Version = "2.3";
+Version = "2.4";
 blockLimit = 500;
 ridgeWidthLimit = 128;
 ridgeHeightLimit = 128;

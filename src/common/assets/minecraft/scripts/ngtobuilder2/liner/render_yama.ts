@@ -14,6 +14,7 @@ import { GL11 } from "org.lwjgl.opengl";
 import { HashMap } from "java.util";
 import { Entity } from "net.minecraft.entity";
 import { BezierCollector } from "../../lib_hi03toolkit_1_0/lib_BezierCollector";
+import { BezierCurve3D } from "../../lib_hi03toolkit_1_0/lib_BezierCurve3D";
 import { InputManager } from "../../lib_hi03toolkit_1_0/lib_InputManager";
 import { NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { ReceiveData_yama } from "./server_yama";
@@ -28,7 +29,7 @@ declare const renderer: VehiclePartsRenderer;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager = new InputManager();
-	Version = "2.3";
+	Version = "2.4";
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
 	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);
@@ -83,7 +84,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		"useSelectedPeak",
 		Keyboard.KEY_P,
 		false,
-		`最高選択点を稜線の頂点にする`,
+		`最高選択点を稜線の頂点にする（地表点を自動追加）`,
 	);
 	keyManager.register(
 		"roundnessMode",
@@ -145,6 +146,68 @@ function getSagMode(entity: EntityVehicle): number {
 
 function getModeName(mode: number): string {
 	return ["なし", "標準", "強い"][Math.max(0, Math.min(2, mode))];
+}
+
+function rebuildSelectedLines(entity: EntityVehicle): void {
+	const posList = posCollector.getAll(entity);
+	bezierCollector.clear(entity);
+	for (let i = 0; i + 1 < posList.length; i++) {
+		const start: [number, number, number] = [
+			posList[i][0] + 0.5,
+			posList[i][1] + 0.5,
+			posList[i][2] + 0.5,
+		];
+		const end: [number, number, number] = [
+			posList[i + 1][0] + 0.5,
+			posList[i + 1][1] + 0.5,
+			posList[i + 1][2] + 0.5,
+		];
+		const center = BezierCurve3D.lerpPoint(start, end, 0.5);
+		bezierCollector.add(entity, new BezierCurve3D(start, center, end));
+	}
+}
+
+function findSurfaceBlockY(
+	entity: EntityVehicle,
+	x: number,
+	z: number,
+): number | null {
+	const world = RTMApiCompat.getWorld(entity);
+	const air = RTMApiCompat.getBlockAir();
+	for (let y = 255; y >= 0; y--) {
+		const block = RTMApiCompat.getBlock(world, x, y, z);
+		if (block && block !== air) return y;
+	}
+	return null;
+}
+
+function removeAutoGroundPoint(entity: EntityVehicle): void {
+	const dataMap = entity.getResourceState().getDataMap();
+	if (!dataMap.getBoolean("hasAutoGroundPoint")) return;
+	if (posCollector.size(entity) > 0) posCollector.pop(entity);
+	dataMap.setBoolean("hasAutoGroundPoint", false, 0);
+}
+
+function addAutoGroundPoint(entity: EntityVehicle): void {
+	const dataMap = entity.getResourceState().getDataMap();
+	if (!dataMap.getBoolean("useSelectedPeak")) return;
+	const lastPos = posCollector.getLastPos(entity);
+	if (!lastPos) return;
+	const surfaceY = findSurfaceBlockY(entity, lastPos[0], lastPos[2]);
+	if (surfaceY === null) return;
+	const previousSize = posCollector.size(entity);
+	posCollector.add(entity, lastPos[0], surfaceY, lastPos[2]);
+	dataMap.setBoolean(
+		"hasAutoGroundPoint",
+		posCollector.size(entity) > previousSize,
+		0,
+	);
+}
+
+function refreshAutoGroundPoint(entity: EntityVehicle): void {
+	removeAutoGroundPoint(entity);
+	addAutoGroundPoint(entity);
+	rebuildSelectedLines(entity);
 }
 
 function getLookingPos(entity: EntityVehicle, partialTicks: number) {
@@ -313,17 +376,21 @@ function keyInput(
 	}
 
 	if (lookingPos && isRightClick) {
+		removeAutoGroundPoint(entity);
 		posCollector.add(
 			entity,
 			lookingPos.blockX,
 			lookingPos.blockY + offsetY,
 			lookingPos.blockZ,
 		);
-		bezierCollector.createFromPosList(entity, posCollector.getAll(entity));
+		addAutoGroundPoint(entity);
+		rebuildSelectedLines(entity);
 	}
 	if (isLeftClick && posCollector.size(entity) > 0) {
+		removeAutoGroundPoint(entity);
 		posCollector.pop(entity);
-		bezierCollector.createFromPosList(entity, posCollector.getAll(entity));
+		addAutoGroundPoint(entity);
+		rebuildSelectedLines(entity);
 	}
 	if (keyManager.pressed("selectYUp") || keyManager.held("selectYUp", 300))
 		dataMap.setInt("offsetY", offsetY + 1, 1);
@@ -363,6 +430,7 @@ function keyInput(
 	if (keyManager.pressed("resetSelected")) {
 		posCollector.clear(entity);
 		bezierCollector.clear(entity);
+		dataMap.setBoolean("hasAutoGroundPoint", false, 0);
 		dataMap.setInt("ridgeHeight", 12, 1);
 		dataMap.setInt("ridgeWidth", 10, 1);
 		dataMap.setInt("offsetY", 0, 1);
@@ -400,6 +468,7 @@ function keyInput(
 	if (keyManager.pressed("useSelectedPeak")) {
 		const useSelectedPeak = !dataMap.getBoolean("useSelectedPeak");
 		dataMap.setBoolean("useSelectedPeak", useSelectedPeak, 1);
+		refreshAutoGroundPoint(entity);
 		NGTLog.sendChatMessage(
 			sender,
 			useSelectedPeak
@@ -534,7 +603,13 @@ function renderForToolUser(
 			);
 			meshCache.put(hash, mesh);
 		}
-		renderMountainSurface(mesh, posX, posY, posZ);
+		renderMountainSurface(
+			mesh,
+			posX,
+			posY,
+			posZ,
+			dataMap.getBoolean("isBuilding"),
+		);
 	}
 }
 
@@ -543,6 +618,7 @@ function renderMountainSurface(
 	posX: number,
 	posY: number,
 	posZ: number,
+	transparent: boolean,
 ): void {
 	if (mesh.length === 0) return;
 	GL11.glPushAttrib(
@@ -558,12 +634,16 @@ function renderMountainSurface(
 	GL11.glTranslatef(-posX, -posY, -posZ);
 	GL11.glEnable(GL11.GL_TEXTURE_2D);
 	GL11.glDisable(GL11.GL_LIGHTING);
-	GL11.glDisable(GL11.GL_BLEND);
+	if (transparent) {
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+	} else GL11.glDisable(GL11.GL_BLEND);
 	GL11.glDisable(GL11.GL_CULL_FACE);
 	GL11.glDepthMask(true);
 	const tessellator = NGTTessellator.instance;
 	tessellator.startDrawing(GL11.GL_TRIANGLES);
-	tessellator.setColorOpaque_F(0.65, 0.9, 0.55);
+	if (transparent) tessellator.setColorRGBA_F(0.65, 0.9, 0.55, 0.5);
+	else tessellator.setColorOpaque_F(0.65, 0.9, 0.55);
 	for (let i = 0; i < mesh.length; i++) {
 		const triangle = mesh[i];
 		tessellator.addVertexWithUV(
