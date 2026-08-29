@@ -2,6 +2,7 @@
 	"name": "NGTOBuilder2",
 	"version": "1.0.0",
 	"private": true,
+	"license": "MIT",
 	"scripts": {
 		"pregen": "node -e \"require('fs').rmSync('generated',{recursive:true,force:true})\"",
 		"gen": "rtmx generate",
