@@ -87,12 +87,6 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 		`選択点の高さを稜線頂点として使う（地表点を自動追加）`,
 	);
 	keyManager.register(
-		"autoBranchMode",
-		Keyboard.KEY_U,
-		false,
-		`節点から追加稜線を自動生成する`,
-	);
-	keyManager.register(
 		"roundnessMode",
 		Keyboard.KEY_O,
 		false,
@@ -250,15 +244,11 @@ function createReceiveData(entity: EntityVehicle): ReceiveData_yama | null {
 		});
 	}
 	const dataMap = entity.getResourceState().getDataMap();
-	const playerNodeCount =
-		posList.length - (dataMap.getBoolean("hasAutoGroundPoint") ? 1 : 0);
 	return {
 		nodes: nodes,
 		baseY: baseY,
 		roundnessMode: dataMap.getInt("roundnessMode"),
 		sagMode: getSagMode(entity),
-		autoBranchMode: dataMap.getBoolean("autoBranchMode"),
-		playerNodeCount: playerNodeCount,
 	};
 }
 
@@ -352,10 +342,6 @@ function keyInput(
 		);
 		NGTLog.sendChatMessage(
 			sender,
-			keyManager.getDescription("autoBranchMode"),
-		);
-		NGTLog.sendChatMessage(
-			sender,
 			keyManager.getDescription("roundnessMode"),
 		);
 		NGTLog.sendChatMessage(sender, keyManager.getDescription("sagMode"));
@@ -391,18 +377,12 @@ function keyInput(
 
 	if (lookingPos && isRightClick) {
 		removeAutoGroundPoint(entity);
-		if (posCollector.size(entity) >= 33) {
-			NGTLog.sendChatMessage(
-				sender,
-				`[NGTO Builder2] 選択稜線は最大32本です`,
-			);
-		} else
-			posCollector.add(
-				entity,
-				lookingPos.blockX,
-				lookingPos.blockY + offsetY,
-				lookingPos.blockZ,
-			);
+		posCollector.add(
+			entity,
+			lookingPos.blockX,
+			lookingPos.blockY + offsetY,
+			lookingPos.blockZ,
+		);
 		addAutoGroundPoint(entity);
 		rebuildSelectedLines(entity);
 	}
@@ -456,7 +436,6 @@ function keyInput(
 		dataMap.setInt("offsetY", 0, 1);
 		dataMap.setBoolean("airCursorMode", false, 1);
 		dataMap.setInt("cursorDistance", 30, 1);
-		dataMap.setBoolean("autoBranchMode", false, 1);
 		dataMap.setInt("roundnessMode", 0, 1);
 		dataMap.setInt("sagMode", 1, 1);
 		dataMap.setBoolean("sagModeInitialized", true, 1);
@@ -494,16 +473,6 @@ function keyInput(
 			useSelectedPeak
 				? `[NGTO Builder2] 選択点の高さを稜線頂点として使う: ON`
 				: `[NGTO Builder2] 選択点の高さを稜線頂点として使う: OFF`,
-		);
-	}
-	if (keyManager.pressed("autoBranchMode")) {
-		const autoBranchMode = !dataMap.getBoolean("autoBranchMode");
-		dataMap.setBoolean("autoBranchMode", autoBranchMode, 1);
-		NGTLog.sendChatMessage(
-			sender,
-			autoBranchMode
-				? `[NGTO Builder2] 追加稜線の自動生成: ON`
-				: `[NGTO Builder2] 追加稜線の自動生成: OFF`,
 		);
 	}
 	if (keyManager.pressed("roundnessMode")) {
@@ -615,8 +584,6 @@ function renderForToolUser(
 			String(sendData.baseY),
 			String(sendData.roundnessMode),
 			String(sendData.sagMode),
-			String(sendData.autoBranchMode),
-			String(sendData.playerNodeCount),
 		];
 		for (let i = 0; i < sendData.nodes.length; i++) {
 			hashParts.push(String(sendData.nodes[i].x));
@@ -632,8 +599,6 @@ function renderForToolUser(
 				sendData.baseY,
 				sendData.roundnessMode,
 				sendData.sagMode,
-				sendData.autoBranchMode,
-				sendData.playerNodeCount,
 			);
 			meshCache.put(hash, mesh);
 		}
