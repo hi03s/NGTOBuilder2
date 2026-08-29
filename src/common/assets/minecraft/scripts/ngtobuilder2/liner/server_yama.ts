@@ -31,6 +31,8 @@ export type ReceiveData_yama = {
 	baseY: number;
 	roundnessMode: number;
 	sagMode: number;
+	autoBranchMode: boolean;
+	playerNodeCount: number;
 };
 
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
@@ -97,6 +99,8 @@ function onUpdate2(
 					receiveData.baseY,
 					receiveData.roundnessMode,
 					receiveData.sagMode,
+					receiveData.autoBranchMode,
+					receiveData.playerNodeCount,
 					totalBlockLimit,
 				);
 				if (blocks.length > totalBlockLimit) {
