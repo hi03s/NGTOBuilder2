@@ -5,7 +5,7 @@
 [![Static Badge](https://img.shields.io/badge/RTM-2.4.24%EF%BD%9E-46bcff)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2)
 [![Static Badge](https://img.shields.io/badge/fixRTM-2.0.28%EF%BD%9E-1082c3)](https://github.com/fixrtm/fixRTM)
 [![Static Badge](https://img.shields.io/badge/AppleExtended-2.4.4%EF%BD%9E-f4a542)](https://github.com/ringo-1234/AppleExtended)
-[![Static Badge](https://img.shields.io/badge/RTMUnofficial-1.0.15%EF%BD%9E-ffb6ca)](https://github.com/325-Sunnygo/RealTrainModUnofficial)
+[![Static Badge](https://img.shields.io/badge/RTMUnofficial-1.0.17%EF%BD%9E-ffb6ca)](https://github.com/325-Sunnygo/RealTrainModUnofficial)
 
 ## 概要 / About
 
@@ -88,7 +88,15 @@ Places overhead wires using the wire item you are holding and the insulators in 
 
 ### MC1.21.1
 
-- [RTMUnofficial-1.0.15～](https://github.com/325-Sunnygo/RealTrainModUnofficial)  
+- [RTMUnofficial-1.0.17～](https://github.com/325-Sunnygo/RealTrainModUnofficial) ※2
+
+※2:1.21.1向けの専用ビルドはありません。RTMUがKaizPatchXを名乗るため、KaizPatchX向けのビルドがそのまま動きます。
+1.7.10のAPI名から1.21.1の実クラスへの読み替えはRTMU側が行うため、**RTMUのバージョンによって動く範囲が変わります**。
+ツールパック対応はRTMU-1.0.15、架線・設置まわりの無音失敗の修正はRTMU-1.0.17で入りました。
+1.21.1で不具合が出たときは、まずRTMUを最新版にしてから報告してください。  
+There is no dedicated 1.21.1 build. RTMU identifies itself as KaizPatchX, so the KaizPatchX build runs as-is,
+and RTMU performs the 1.7.10 to 1.21.1 API remapping. **Which tools work therefore depends on your RTMU version.**
+Please update RTMU to the latest version before reporting a 1.21.1 issue.  
   
 ※1:offsetが未実装のため、一部のブロックがプレビューどおりに設置されません。  
 Due to the "offset" not being implemented, some blocks are not placed exactly as shown in the preview.

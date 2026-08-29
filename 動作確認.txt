@@ -52,7 +52,7 @@ AppleExtended v2.5.0-Alpha
 └8.架線設置		 : 問題なし
 
 ----1.21.1----
-RTMU v1.0.13
+RTMU v1.0.13 (旧記録・そのまま残す)
 ├1.地面設置		 : 動作しない
 ├2.ライン設置		 : 動作しない
 ├3.計測			 : 問題なし
@@ -61,6 +61,64 @@ RTMU v1.0.13
 ├6.ワイヤー設置		 : 動作しない
 ├7.ビーム設置		 : 動作しない
 └8.架線設置		 : 動作しない
+
+RTMU v1.0.18 (未確認 / 要再確認)
+├1.地面設置		 : 未確認
+├2.ライン設置		 : 未確認
+├3.計測			 : 未確認
+├4.プロップ設置		 : 未確認
+├5.プロップ配列設置	 : 未確認
+├6.ワイヤー設置		 : 未確認
+├7.ビーム設置		 : 未確認
+└8.架線設置		 : 未確認
+
+  ※上の v1.0.13 の記録以降、RTMU 側で NGTO Builder 2 の動作を直接止めていた不具合が
+    複数修正されている。全項目を v1.0.18 で取り直すこと。
+
+##  1.21.1 で動く仕組み  ##
+
+1.21.1 用の専用ターゲットは存在しない。RTMU の
+  jp.ngt.rtm.RTMCore.VERSION = "1.7.10.41 KaizPatchX/remaster-1.21.1"
+が rtmx.json の runtimeDispatch の先頭条件
+  Packages.jp.ngt.rtm.RTMCore.VERSION.indexOf('KaizPatch') !== -1
+に一致するため、1.21.1 では kaizpatch ターゲットのビルド
+(compatFallbackTarget の mc1710 と合成されたもの) がそのまま走る。
+
+1.7.10 の API 名から 1.21.1 の実クラスへの読み替えは、パック側ではなく RTMU 側が
+持っている:
+  - com.portofino.realtrainmodunofficial.script.PackScriptSource
+    …Packages.<1.7.10 FQN> の置換、SRG メソッドの静的ヘルパーへの振り替え、プリリュード
+  - jp.ngt.mccompat.*
+    …Keyboard / Mouse / Blocks / NBTTagCompound / MathHelper 等の 1.7.10 互換シム
+  - jp.ngt.ngtlib.renderer.GL11Facade / BufferUtilsCompat / OpenGlHelperCompat
+    …LWJGL2 の固定機能 GL 呼び出しの受け皿
+
+つまり 1.21.1 での不具合は、パック側ではなく RTMU 側の対応漏れであることが多い。
+切り分けるときは先に RTMU のバージョンを上げて試すこと。
+
+##  v1.0.13 以降の RTMU 側修正 (NGTO Builder 2 に直接効くもの)  ##
+
+RTMU v1.0.15 「1.7.10 スクリプト互換の本家準拠化とツールパック対応」
+  - BufferUtils / OpenGlHelper をプリリュードで束縛
+    (未定義のままだと、行列バッファとブレンド指定を使う描画でスクリプトが止まる)
+  - Block.hasTileEntity (func_149716_u) の受け皿を追加
+  - TileEntityPlaceable をインタフェース化して実タイルに実装
+    (それまで設置物の向きが適用されていなかった)
+  - setBlock のメタを設置物の取付面へ反映 (架線柱の向き)
+  - 1 回の失敗でスクリプトエンジンを永久無効化する独自処理を撤去
+
+RTMU v1.0.17 「架線を本家の接続式へ」
+  - y < 0 || y >= 256 の高さ番兵を 1.21 の -64〜320 へ広げた
+    (Y<0 に架線を張ると "Skip TileEntity NBT: invalid y=..." だけ出て無音で失敗していた)
+  - NBT の SRG 呼び出し (nbt.func_74737_b() = copy 等) を静的ヘルパーへ振り替え
+    (レシーバが実バニラの CompoundTag のとき is not a function で無音失敗していた)
+  - 碍子の定義を書き換える方式をやめ、本家どおり接続 (Connection) 側が
+    ワイヤーモデルを持つ形へ
+    (続きのビームを置くと既設碍子が別ブロック扱いになり接続が消えていた)
+  - WorldCompat.func_72805_g が設置物では取付面を返すように
+    (BlockBuilder のスキップ判定用)
+
+現行の RTMU は v1.0.18。
 
 ##  チェック内容  ##
 ●1.地面設置
