@@ -216,11 +216,15 @@ export class RotatableBlockObject {
 						? blockDir
 						: option2 | option1 | blockDir;
 				if (block instanceof BlockLog) {
-					//原木は3/4bit入れ替えで向きを変える
+					//原木は樹種(下位2bit)を維持し、横倒し時のX/Z軸だけを交換する。
+					//縦向き(0)と全面樹皮(12)はYaw回転しても変化しない。
+					const logType = metadata & 3;
+					let logAxis = metadata & 12;
 					if (rotateIndex === 1 || rotateIndex === 3) {
-						newMetadata = metadata ^ 4;
-						newMetadata = metadata ^ 8;
+						if (logAxis === 4) logAxis = 8;
+						else if (logAxis === 8) logAxis = 4;
 					}
+					newMetadata = logType | logAxis;
 				}
 				const prevNBT = rbs.blockSet.nbt;
 				rbs.blockSet = prevNBT
