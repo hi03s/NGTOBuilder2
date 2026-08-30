@@ -210,6 +210,14 @@ builderHashMap = new WeakHashMap();
 function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 	entity.rotationYaw = 0;
 	const dataMap = entity.getResourceState().getDataMap();
+
+	//RTM 1.7.10ではクライアントからフラグ3で送った値が正常に保存されないため、
+	//サーバー側から定期的に再設定して保存し、再入場したクライアントにも同期する
+	const selectedPosListJson = dataMap.getString("selectedPosList");
+	if (selectedPosListJson !== "" && scriptExecuter.count % 20 === 0) {
+		dataMap.setString("selectedPosList", selectedPosListJson, 3);
+	}
+
 	const hostPlayer = hostPlayerList.get(entity);
 	const rider = RTMApiCompat.getRider(entity) as unknown as EntityPlayer;
 	const ridingEntity = RTMApiCompat.getRidingEntity(entity);
