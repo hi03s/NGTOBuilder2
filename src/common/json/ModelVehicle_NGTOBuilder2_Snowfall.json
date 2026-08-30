@@ -1,0 +1,29 @@
+{
+	"name": "NGTOBuilder2_Snowfall",
+	"model": {
+		"modelFile": "ngtobuilder2/model_brush.mqo",
+		"textures": [
+			["mat1", "textures/ngtobuilder2/brush/snowfall.png", "AlphaBlend"]
+		],
+		"rendererPath": "scripts/ngtobuilder2/brush/render_snowfall.js"
+	},
+	"buttonTexture": "textures/ngtobuilder2/brush/button_snowfall.png",
+	"serverScriptPath": "scripts/ngtobuilder2/brush/server_snowfall.js",
+	"playerPos": [[0, 0, 0]],
+	"vehicleType": "Car",
+	"size": [1, 1],
+	"vibration": [0.0, 0.0],
+	"friction": [0.0, 0.0],
+	"acceleration": [0.0, 0.0],
+	"maxSpeed": [0.0, 0.0],
+	"maxYaw": [0.0, 0.0],
+	"pitchCoefficient": [0.0, 0.0],
+	"yawCoefficient": [0.0, 0.0],
+	"useCustomColor": false,
+	"smoothing": true,
+	"doCulling": false,
+	"changeYawOnStopping": false,
+	"accuracy": "LOW",
+	"tags": "ngto builder 2 hi03 brush snowfall snow",
+	"customIconTexture": "textures/ngtobuilder2/brush/icon_snowfall.png"
+}

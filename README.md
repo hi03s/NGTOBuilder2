@@ -67,6 +67,11 @@ Generates miniature blocks in the world according to their arrangement in your i
 手持ちのワイヤーアイテムとスロットバーにある碍子からワイヤーを設置します<br>
 Places wires using the wire item you are holding and the insulators in your hotbar.
 
+### ● 積雪ブラシ
+
+範囲内に雪を積もらせたり、雪を溶かしたりします<br>
+Accumulates or melts snow within the selected brush range.
+
 ### ● ビーム設置
 
 手持ちのワイヤーアイテムとスロットバーにある碍子から架線ビームを設置します<br>

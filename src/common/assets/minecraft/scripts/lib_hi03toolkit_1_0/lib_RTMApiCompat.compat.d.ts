@@ -73,6 +73,15 @@ export class RTMApiCompat {
 	static getBlockStone(): Block;
 	static getBlockGrass(): Block;
 	static getBlockDirt(): Block;
+	static getBlockSnowLayer(): Block;
+	static getBlockSnow(): Block;
+	static isLeaves(world: World, x: number, y: number, z: number): boolean;
+	static canPlaceSnow(world: World, x: number, y: number, z: number): boolean;
+	static getBiomeId(world: World, x: number, z: number): number;
+	static setBiomeId(world: World, x: number, z: number, biomeId: number): void;
+	static getSnowyBiomeId(): number;
+	static getPlainsBiomeId(): number;
+	static syncBiomeChunk(world: World, chunkX: number, chunkZ: number): void;
 	static setOffset(
 		tileEntity: TileEntityPlaceable,
 		x: number,

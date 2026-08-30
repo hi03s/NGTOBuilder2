@@ -9,12 +9,15 @@ import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { Block } from "net.minecraft.block";
 import { ICommandSender } from "net.minecraft.command";
 import { Entity } from "net.minecraft.entity";
-import { InventoryPlayer } from "net.minecraft.entity.player";
+import { EntityPlayerMP, InventoryPlayer } from "net.minecraft.entity.player";
 import { Blocks } from "net.minecraft.init";
 import { ItemStack } from "net.minecraft.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
+import { Packet } from "net.minecraft.network";
+import { S21PacketChunkData } from "net.minecraft.network.play.server";
 import { TileEntity } from "net.minecraft.tileentity";
 import { World } from "net.minecraft.world";
+import { BiomeGenBase } from "net.minecraft.world.biome";
 import { Loader } from "cpw.mods.fml.common";
 
 declare const Packages: {
@@ -227,6 +230,63 @@ export class RTMApiCompat {
 
 	static getBlockDirt(): Block {
 		return Blocks.dirt;
+	}
+
+	static getBlockSnowLayer(): Block {
+		return Blocks.snow_layer;
+	}
+
+	static getBlockSnow(): Block {
+		return Blocks.snow;
+	}
+
+	static isLeaves(world: World, x: number, y: number, z: number): boolean {
+		x = Math.floor(x);
+		y = Math.floor(y);
+		z = Math.floor(z);
+		const block = world.getBlock(x, y, z);
+		return block.isLeaves(world, x, y, z);
+	}
+
+	static canPlaceSnow(world: World, x: number, y: number, z: number): boolean {
+		return Blocks.snow_layer.canPlaceBlockAt(
+			world,
+			Math.floor(x),
+			Math.floor(y),
+			Math.floor(z),
+		);
+	}
+
+	static getBiomeId(world: World, x: number, z: number): number {
+		const chunk = world.getChunkFromChunkCoords(Math.floor(x) >> 4, Math.floor(z) >> 4);
+		return chunk.getBiomeArray()[((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)] & 255;
+	}
+
+	static setBiomeId(world: World, x: number, z: number, biomeId: number): void {
+		const chunk = world.getChunkFromChunkCoords(Math.floor(x) >> 4, Math.floor(z) >> 4);
+		chunk.getBiomeArray()[((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)] = biomeId;
+		chunk.setChunkModified();
+	}
+
+	static getSnowyBiomeId(): number {
+		return BiomeGenBase.icePlains.biomeID;
+	}
+
+	static getPlainsBiomeId(): number {
+		return BiomeGenBase.plains.biomeID;
+	}
+
+	static syncBiomeChunk(world: World, chunkX: number, chunkZ: number): void {
+		const packet: Packet = new S21PacketChunkData(
+			world.getChunkFromChunkCoords(chunkX, chunkZ),
+			true,
+			65535,
+		);
+		for (let i = 0; i < world.playerEntities.size(); i++) {
+			const player = world.playerEntities.get(i);
+			if (player instanceof EntityPlayerMP)
+				player.playerNetServerHandler.sendPacket(packet);
+		}
 	}
 
 	static setOffset(
