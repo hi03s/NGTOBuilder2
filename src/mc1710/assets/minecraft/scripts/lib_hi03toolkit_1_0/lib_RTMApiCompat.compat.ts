@@ -76,7 +76,8 @@ export class RTMApiCompat {
 		x = Math.floor(x);
 		y = Math.floor(y);
 		z = Math.floor(z);
-		world.setBlock(x, y, z, block, metadata, notifyNeighbors ? 3 : 2);
+		const flags: number = notifyNeighbors ? 3 : 2;
+		world.setBlock(x, y, z, block, metadata, flags);
 	}
 
 	static getBlock(world: World, x: number, y: number, z: number): Block | null {
