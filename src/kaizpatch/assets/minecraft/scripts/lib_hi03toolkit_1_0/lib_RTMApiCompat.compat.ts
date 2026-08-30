@@ -2,9 +2,21 @@ import { ItemMiniature } from "jp.ngt.mcte.item";
 import { NGTObject, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
 import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { NBTTagCompound } from "net.minecraft.nbt";
+import { ResourceLocation } from "net.minecraft.util";
 
 export class RTMApiCompat {
-	static getRailPitch(railMap: RailMap, split: number, index: number): number {
+	static createResourceLocation(
+		domain: string,
+		path: string,
+	): ResourceLocation {
+		return new ResourceLocation(domain, path);
+	}
+
+	static getRailPitch(
+		railMap: RailMap,
+		split: number,
+		index: number,
+	): number {
 		return railMap.getRailPitch(split, index);
 	}
 

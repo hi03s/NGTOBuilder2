@@ -16,6 +16,7 @@ import { NBTTagCompound } from "net.minecraft.nbt";
 import { Packet } from "net.minecraft.network";
 import { S21PacketChunkData } from "net.minecraft.network.play.server";
 import { TileEntity } from "net.minecraft.tileentity";
+import { ResourceLocation } from "net.minecraft.util";
 import { World } from "net.minecraft.world";
 import { BiomeGenBase } from "net.minecraft.world.biome";
 import { Loader } from "cpw.mods.fml.common";
@@ -33,6 +34,13 @@ declare const Packages: {
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static createResourceLocation(
+		domain: string,
+		path: string,
+	): ResourceLocation {
+		return new ResourceLocation(domain, path);
+	}
+
 	static isModLoaded(modid: string): boolean {
 		return Loader.isModLoaded(modid);
 	}
@@ -80,7 +88,12 @@ export class RTMApiCompat {
 		world.setBlock(x, y, z, block, metadata, flags);
 	}
 
-	static getBlock(world: World, x: number, y: number, z: number): Block | null {
+	static getBlock(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+	): Block | null {
 		x = Math.floor(x);
 		y = Math.floor(y);
 		z = Math.floor(z);
@@ -132,7 +145,12 @@ export class RTMApiCompat {
 		void modelName;
 	}
 
-	static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void {
+	static setPos(
+		tileEntity: TileEntity,
+		x: number,
+		y: number,
+		z: number,
+	): void {
 		tileEntity.xCoord = x;
 		tileEntity.yCoord = y;
 		tileEntity.zCoord = z;
@@ -166,7 +184,11 @@ export class RTMApiCompat {
 		return ItemMiniature.getNGTObject(nbt);
 	}
 
-	static getRailPitch(railMap: RailMap, split: number, index: number): number {
+	static getRailPitch(
+		railMap: RailMap,
+		split: number,
+		index: number,
+	): number {
 		void split;
 		void index;
 		return railMap.getRailPitch();
@@ -236,7 +258,12 @@ export class RTMApiCompat {
 		return block.isLeaves(world, x, y, z);
 	}
 
-	static canPlaceSnow(world: World, x: number, y: number, z: number): boolean {
+	static canPlaceSnow(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+	): boolean {
 		return Blocks.snow_layer.canPlaceBlockAt(
 			world,
 			Math.floor(x),
@@ -246,13 +273,30 @@ export class RTMApiCompat {
 	}
 
 	static getBiomeId(world: World, x: number, z: number): number {
-		const chunk = world.getChunkFromChunkCoords(Math.floor(x) >> 4, Math.floor(z) >> 4);
-		return chunk.getBiomeArray()[((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)] & 255;
+		const chunk = world.getChunkFromChunkCoords(
+			Math.floor(x) >> 4,
+			Math.floor(z) >> 4,
+		);
+		return (
+			chunk.getBiomeArray()[
+				((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)
+			] & 255
+		);
 	}
 
-	static setBiomeId(world: World, x: number, z: number, biomeId: number): void {
-		const chunk = world.getChunkFromChunkCoords(Math.floor(x) >> 4, Math.floor(z) >> 4);
-		chunk.getBiomeArray()[((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)] = biomeId;
+	static setBiomeId(
+		world: World,
+		x: number,
+		z: number,
+		biomeId: number,
+	): void {
+		const chunk = world.getChunkFromChunkCoords(
+			Math.floor(x) >> 4,
+			Math.floor(z) >> 4,
+		);
+		chunk.getBiomeArray()[
+			((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)
+		] = biomeId;
 		chunk.setChunkModified();
 	}
 
@@ -305,7 +349,12 @@ export class RTMApiCompat {
 		const z = Math.floor(targetPos[2]);
 		if (x === sx && y === sy && z === sz) {
 			NGTLog.debug(
-				"[NGTO Builder] Skip self wire connection: " + x + "," + y + "," + z,
+				"[NGTO Builder] Skip self wire connection: " +
+					x +
+					"," +
+					y +
+					"," +
+					z,
 			);
 			return;
 		}

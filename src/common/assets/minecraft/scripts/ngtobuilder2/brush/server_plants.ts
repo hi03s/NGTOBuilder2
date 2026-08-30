@@ -9,6 +9,7 @@ import {
 	BlockBuilder,
 	BlockSetPlacement,
 } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
+import { ErrorLogger } from "../../lib_hi03toolkit_1_0/lib_ErrorLogger";
 import { NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 import { RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
@@ -35,6 +36,7 @@ export type BrushPlantsRequest = {
 	density: number;
 	seed: number;
 	presetId: string;
+	presetSignature: string;
 };
 
 let builder: BlockBuilder;
@@ -66,17 +68,19 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 		builder.clear(entity);
 	}
 	dataMap.setInt("lastBrushRequestId", -1, 0);
+	dataMap.setInt("lastProcessedBrushRequestId", -1, 1);
 	dataMap.setBoolean("isBuilding", false, 1);
 	dataMap.setString("plantsPresetSignature", getPlantsPresetSignature(), 1);
 }
 
-function appendAction(entity: EntityVehicle, action: BlockBuilder): void {
+function appendAction(entity: EntityVehicle, action: BlockBuilder): number {
 	const placements = action.get(entity);
-	if (placements.length === 0) return;
+	if (placements.length === 0) return 0;
 	UndoManager.backupFromBlockBuilder(entity, action);
 	const queued = builder.get(entity);
 	for (let i = 0; i < placements.length; i++) queued.push(placements[i]);
 	builder.set(entity, queued);
+	return placements.length;
 }
 
 function placementKey(placement: BlockSetPlacement): string {
@@ -86,9 +90,12 @@ function placementKey(placement: BlockSetPlacement): string {
 function generatePlants(
 	entity: EntityVehicle,
 	request: BrushPlantsRequest,
-): void {
+): string | null {
 	const preset = getPlantsPresetById(request.presetId);
-	if (!preset) return;
+	if (!preset) return "サーバー側に選択中の草木プリセットがありません";
+	if (preset.ngtoList.length === 0)
+		return "サーバー側で読み込み可能な草木データがありません";
+	if (request.density <= 0) return "密度が0です";
 	const world = RTMApiCompat.getWorld(entity);
 	const action = new BlockBuilder();
 	const reservedPositions: { [key: string]: boolean } = {};
@@ -101,6 +108,8 @@ function generatePlants(
 		preset.ngtoList.length,
 		preset.randomHeight,
 	);
+	if (candidates.length === 0)
+		return "現在の半径と密度では生成候補が選ばれませんでした。密度を上げるか、配置を再抽選してください";
 	for (let i = 0; i < candidates.length; i++) {
 		const candidate = candidates[i];
 		const ngto = preset.ngtoList[candidate.ngtoIndex];
@@ -134,12 +143,19 @@ function generatePlants(
 		for (let j = previousCount; j < queued.length; j++)
 			reservedPositions[placementKey(queued[j])] = true;
 	}
-	appendAction(entity, action);
+	if (appendAction(entity, action) === 0)
+		return "範囲内に配置可能な地点がありません（地面が草・土でないか、設置先が空いていません）";
+	return null;
 }
 
-function erasePlants(entity: EntityVehicle, request: BrushPlantsRequest): void {
+function erasePlants(
+	entity: EntityVehicle,
+	request: BrushPlantsRequest,
+): string | null {
 	const preset = getPlantsPresetById(request.presetId);
-	if (!preset) return;
+	if (!preset) return "サーバー側に選択中の草木プリセットがありません";
+	if (preset.ngtoList.length === 0)
+		return "サーバー側で読み込み可能な草木データがありません";
 	const world = RTMApiCompat.getWorld(entity);
 	const targetKeys = getPresetBlockKeys(preset);
 	const action = new BlockBuilder();
@@ -168,10 +184,12 @@ function erasePlants(entity: EntityVehicle, request: BrushPlantsRequest): void {
 			}
 		}
 	}
-	appendAction(entity, action);
+	if (appendAction(entity, action) === 0)
+		return "範囲内に選択中のプリセットと一致する草木がありません";
+	return null;
 }
 
-function processRequest(entity: EntityVehicle): void {
+function processRequest(entity: EntityVehicle, hostPlayer: EntityPlayer): void {
 	const dataMap = entity.getResourceState().getDataMap();
 	const request = NGTOBuilderUtil.getJsonData<BrushPlantsRequest>(
 		dataMap,
@@ -179,12 +197,48 @@ function processRequest(entity: EntityVehicle): void {
 	);
 	if (!request || request.id === dataMap.getInt("lastBrushRequestId")) return;
 	dataMap.setInt("lastBrushRequestId", request.id, 0);
+	let failure: string | null = null;
 	request.radius = Math.max(1, Math.min(64, Math.floor(request.radius)));
 	request.density = Math.max(0, Math.min(100, Math.floor(request.density)));
 	request.centerX = Math.floor(request.centerX);
 	request.centerZ = Math.floor(request.centerZ);
-	if (request.action === "generate") generatePlants(entity, request);
-	else if (request.action === "erase") erasePlants(entity, request);
+	try {
+		if (request.presetSignature !== getPlantsPresetSignature()) {
+			failure = `クライアントとサーバーの草木プリセットが一致しません (Client: ${request.presetSignature || "未取得"}, Server: ${getPlantsPresetSignature()})`;
+		} else if (request.action === "generate") {
+			failure = generatePlants(entity, request);
+		} else if (request.action === "erase") {
+			failure = erasePlants(entity, request);
+		} else {
+			failure = "不明な操作が要求されました";
+		}
+	} catch (error) {
+		ErrorLogger.log("plantsBrush", "processRequest", error, {
+			side: "SERVER",
+			entity: entity,
+			entityId: ErrorLogger.capture(() => entity.getEntityId()),
+			player: hostPlayer,
+			playerId: ErrorLogger.capture(() => hostPlayer.getEntityId()),
+			requestId: request.id,
+			action: request.action,
+			center: `[${request.centerX}, ${request.centerZ}]`,
+			radius: request.radius,
+			density: request.density,
+			presetId: request.presetId,
+			clientPresetSignature: request.presetSignature,
+			serverPresetSignature: ErrorLogger.capture(() =>
+				getPlantsPresetSignature(),
+			),
+		});
+		failure =
+			"サーバー側の処理中にエラーが発生しました。詳細はサーバーログを確認してください";
+	}
+	if (failure)
+		RTMApiCompat.sendChatMessage(
+			hostPlayer,
+			`§e[NGTO Builder2] 草木ブラシを実行できません: ${failure}`,
+		);
+	dataMap.setInt("lastProcessedBrushRequestId", request.id, 1);
 	dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
 }
 
@@ -199,7 +253,7 @@ function onUpdate2(
 		entity.setDead();
 		return;
 	}
-	processRequest(entity);
+	processRequest(entity, hostPlayerList.get(entity));
 	if (!builder.isFinished(entity)) {
 		dataMap.setBoolean("isBuilding", true, 1);
 		builder.doBuild(entity, BUILD_LIMIT);

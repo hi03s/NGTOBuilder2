@@ -8,11 +8,16 @@ import { InventoryPlayer } from "net.minecraft.entity.player";
 import { ItemStack } from "net.minecraft.item";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
+import { ResourceLocation } from "net.minecraft.util";
 import { World } from "net.minecraft.world";
 
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static createResourceLocation(
+		domain: string,
+		path: string,
+	): ResourceLocation;
 	static isModLoaded(modid: string): boolean;
 	static getRider(entity: unknown): Entity | null;
 	static getRidingEntity(entity: unknown): Entity | null;
@@ -29,7 +34,12 @@ export class RTMApiCompat {
 		metadata: number,
 		notifyNeighbors?: boolean,
 	): void;
-	static getBlock(world: World, x: number, y: number, z: number): Block | null;
+	static getBlock(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+	): Block | null;
 	static getMetadata(
 		world: World,
 		x: number,
@@ -44,7 +54,12 @@ export class RTMApiCompat {
 	): TileEntity | null;
 	static hasTileEntity(blockSet: BlockSet | null): boolean;
 	static setResourceName(tileEntity: TileEntity, modelName: string): void;
-	static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void;
+	static setPos(
+		tileEntity: TileEntity,
+		x: number,
+		y: number,
+		z: number,
+	): void;
 	static getItemStackAt(
 		inventory: InventoryPlayer,
 		index: number,
@@ -71,7 +86,12 @@ export class RTMApiCompat {
 	static isLeaves(world: World, x: number, y: number, z: number): boolean;
 	static canPlaceSnow(world: World, x: number, y: number, z: number): boolean;
 	static getBiomeId(world: World, x: number, z: number): number;
-	static setBiomeId(world: World, x: number, z: number, biomeId: number): void;
+	static setBiomeId(
+		world: World,
+		x: number,
+		z: number,
+		biomeId: number,
+	): void;
 	static getSnowyBiomeId(): number;
 	static getPlainsBiomeId(): number;
 	static syncBiomeChunk(world: World, chunkX: number, chunkZ: number): void;

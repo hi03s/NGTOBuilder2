@@ -4,7 +4,7 @@ import {
 	NGTObject,
 	TileEntityPlaceable,
 } from "jp.ngt.ngtlib.block";
-import { NGTLog } from "jp.ngt.ngtlib.io";
+import { NGTLog, ResourceLocationCustom } from "jp.ngt.ngtlib.io";
 import { ItemMiniature } from "jp.ngt.mcte.item";
 import { RTMItem } from "jp.ngt.rtm";
 import { Connection, TileEntityInsulator } from "jp.ngt.rtm.electric";
@@ -21,6 +21,7 @@ import { NBTTagCompound } from "net.minecraft.nbt";
 import { Packet } from "net.minecraft.network";
 import { SPacketChunkData } from "net.minecraft.network.play.server";
 import { TileEntity } from "net.minecraft.tileentity";
+import { ResourceLocation } from "net.minecraft.util";
 import { BlockPos } from "net.minecraft.util.math";
 import { World } from "net.minecraft.world";
 import { Biome } from "net.minecraft.world.biome";
@@ -52,6 +53,14 @@ type ResourceStateTileEntity = TileEntity & {
 };
 
 export class RTMApiCompat {
+	/** 大文字を含むRTMモデルパック内パスを維持する。 */
+	static createResourceLocation(
+		domain: string,
+		path: string,
+	): ResourceLocation {
+		return new ResourceLocationCustom(domain, path);
+	}
+
 	static isModLoaded(modid: string): boolean {
 		return Loader.isModLoaded(modid);
 	}
@@ -98,10 +107,23 @@ export class RTMApiCompat {
 		x = Math.floor(x);
 		y = Math.floor(y);
 		z = Math.floor(z);
-		BlockUtil.setBlock(world, x, y, z, block, metadata, notifyNeighbors ? 3 : 2);
+		BlockUtil.setBlock(
+			world,
+			x,
+			y,
+			z,
+			block,
+			metadata,
+			notifyNeighbors ? 3 : 2,
+		);
 	}
 
-	static getBlock(world: World, x: number, y: number, z: number): Block | null {
+	static getBlock(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+	): Block | null {
 		x = Math.floor(x);
 		y = Math.floor(y);
 		z = Math.floor(z);
@@ -138,7 +160,9 @@ export class RTMApiCompat {
 			const tileEntityProvider =
 				Packages.net.minecraft.block.ITileEntityProvider;
 			if (block instanceof tileEntityProvider) return true;
-			return block.hasTileEntity(block.getStateFromMeta(blockSet.metadata));
+			return block.hasTileEntity(
+				block.getStateFromMeta(blockSet.metadata),
+			);
 		} catch (err) {
 			NGTLog.debug(
 				"[NGTO Builder] hasTileEntity Error: " + block + " -> " + err,
@@ -148,14 +172,21 @@ export class RTMApiCompat {
 	}
 
 	static setResourceName(tileEntity: TileEntity, modelName: string): void {
-		const resourceState = (tileEntity as ResourceStateTileEntity).getResourceState();
+		const resourceState = (
+			tileEntity as ResourceStateTileEntity
+		).getResourceState();
 		resourceState.setResourceName(modelName);
 		// 1.12ではState.Colorがないと0（黒）として読み込まれる。
 		// スクリプトから設置するモデル付き設置物は白で統一する。
 		resourceState.color = 0xffffff;
 	}
 
-	static setPos(tileEntity: TileEntity, x: number, y: number, z: number): void {
+	static setPos(
+		tileEntity: TileEntity,
+		x: number,
+		y: number,
+		z: number,
+	): void {
 		tileEntity.setPos(new BlockPos(x, y, z));
 	}
 
@@ -196,7 +227,11 @@ export class RTMApiCompat {
 		return ItemMiniature.getNGTObject(nbt);
 	}
 
-	static getRailPitch(railMap: RailMap, split: number, index: number): number {
+	static getRailPitch(
+		railMap: RailMap,
+		split: number,
+		index: number,
+	): number {
 		return railMap.getRailPitch(split, index);
 	}
 
@@ -221,8 +256,8 @@ export class RTMApiCompat {
 	}
 
 	static getSubType(itemStack: ItemStack): string {
-		return (itemStack.getItem() as ItemWithModel).getModelState(itemStack).type
-			.subType;
+		return (itemStack.getItem() as ItemWithModel).getModelState(itemStack)
+			.type.subType;
 	}
 
 	static getItemDamage(itemStack: ItemStack): number {
@@ -259,7 +294,12 @@ export class RTMApiCompat {
 		return state.getBlock().isLeaves(state, world, pos);
 	}
 
-	static canPlaceSnow(world: World, x: number, y: number, z: number): boolean {
+	static canPlaceSnow(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+	): boolean {
 		return Blocks.SNOW_LAYER.canPlaceBlockAt(
 			world,
 			new BlockPos(Math.floor(x), Math.floor(y), Math.floor(z)),
@@ -268,12 +308,23 @@ export class RTMApiCompat {
 
 	static getBiomeId(world: World, x: number, z: number): number {
 		const chunk = world.getChunk(Math.floor(x) >> 4, Math.floor(z) >> 4);
-		return chunk.getBiomeArray()[((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)] & 255;
+		return (
+			chunk.getBiomeArray()[
+				((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)
+			] & 255
+		);
 	}
 
-	static setBiomeId(world: World, x: number, z: number, biomeId: number): void {
+	static setBiomeId(
+		world: World,
+		x: number,
+		z: number,
+		biomeId: number,
+	): void {
 		const chunk = world.getChunk(Math.floor(x) >> 4, Math.floor(z) >> 4);
-		chunk.getBiomeArray()[((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)] = biomeId;
+		chunk.getBiomeArray()[
+			((Math.floor(z) & 15) << 4) | (Math.floor(x) & 15)
+		] = biomeId;
 		chunk.markDirty();
 	}
 
@@ -322,7 +373,12 @@ export class RTMApiCompat {
 		const z = Math.floor(targetPos[2]);
 		if (x === sx && y === sy && z === sz) {
 			NGTLog.debug(
-				"[NGTO Builder] Skip self wire connection: " + x + "," + y + "," + z,
+				"[NGTO Builder] Skip self wire connection: " +
+					x +
+					"," +
+					y +
+					"," +
+					z,
 			);
 			return;
 		}
@@ -339,9 +395,9 @@ export class RTMApiCompat {
 			);
 			return;
 		}
-		const resourceState = (wireStack.getItem() as ItemWithModel).getModelState(
-			wireStack,
-		);
+		const resourceState = (
+			wireStack.getItem() as ItemWithModel
+		).getModelState(wireStack);
 		tileEntity.setConnectionTo(
 			x,
 			y,

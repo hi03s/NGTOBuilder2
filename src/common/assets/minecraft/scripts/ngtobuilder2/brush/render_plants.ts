@@ -39,6 +39,7 @@ const DENSITY_STEP = 1;
 const BRUSH_SETTINGS_VERSION = 1;
 const KEY_REPEAT_DELAY = 300;
 const KEY_REPEAT_INTERVAL = 100;
+const REQUEST_TIMEOUT = 5000;
 
 type LookingPos = {
 	posX: number;
@@ -63,6 +64,8 @@ let randomSeed: HashMap<Entity, number>;
 let lastGeneratedCenter: HashMap<Entity, Pos>;
 let previousEraseTarget: HashMap<Entity, Pos>;
 let requestIds: HashMap<Entity, number>;
+let pendingRequestIds: HashMap<Entity, number>;
+let pendingRequestTimes: HashMap<Entity, number>;
 let repeatTimes: HashMap<string, number>;
 let tallPlantsCache: HashMap<string, NGTObject>;
 let missingBlockWarnings: HashMap<string, boolean>;
@@ -113,6 +116,8 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	lastGeneratedCenter = new HashMap();
 	previousEraseTarget = new HashMap();
 	requestIds = new HashMap();
+	pendingRequestIds = new HashMap();
+	pendingRequestTimes = new HashMap();
 	repeatTimes = new HashMap();
 	tallPlantsCache = new HashMap();
 	missingBlockWarnings = new HashMap();
@@ -179,7 +184,7 @@ function sendRequest(
 	action: "generate" | "erase",
 	looking: LookingPos,
 	seed: number,
-): void {
+): boolean {
 	const dataMap = entity.getResourceState().getDataMap();
 	let previousId = requestIds.get(entity);
 	if (!previousId) previousId = Math.floor(Math.random() * 1000000000) + 1;
@@ -187,7 +192,27 @@ function sendRequest(
 	requestIds.put(entity, id);
 	const presets = getPlantsPresets();
 	const preset = presets[dataMap.getInt("plantsPresetIndex")];
-	if (!preset) return;
+	if (!preset) {
+		NGTLog.sendChatMessage(
+			sender,
+			"§c[NGTO Builder2] 草木プリセットがないため実行できません",
+		);
+		return false;
+	}
+	if (action === "generate" && preset.ngtoList.length === 0) {
+		NGTLog.sendChatMessage(
+			sender,
+			`§c[NGTO Builder2] ${preset.name}: 読み込み可能な草木データがないため生成できません`,
+		);
+		return false;
+	}
+	if (action === "generate" && dataMap.getInt("brushDensity") <= 0) {
+		NGTLog.sendChatMessage(
+			sender,
+			"§e[NGTO Builder2] 密度が0のため草木は生成されません",
+		);
+		return false;
+	}
 	if (action === "generate" && preset.missingBlocks.length > 0) {
 		const warningKey = `${entity.getEntityId()}:${preset.id}`;
 		if (!missingBlockWarnings.get(warningKey)) {
@@ -207,8 +232,34 @@ function sendRequest(
 		density: dataMap.getInt("brushDensity"),
 		seed: seed,
 		presetId: preset.id,
+		presetSignature: getPlantsPresetSignature(),
 	};
 	NGTOBuilderUtil.sendJsonData(dataMap, "brushRequest", request);
+	pendingRequestIds.put(entity, id);
+	pendingRequestTimes.put(entity, System.currentTimeMillis());
+	return true;
+}
+
+function checkRequestResponse(
+	sender: ICommandSender,
+	entity: EntityVehicle,
+): void {
+	const pendingId = pendingRequestIds.get(entity);
+	if (!pendingId) return;
+	const dataMap = entity.getResourceState().getDataMap();
+	if (dataMap.getInt("lastProcessedBrushRequestId") === pendingId) {
+		pendingRequestIds.remove(entity);
+		pendingRequestTimes.remove(entity);
+		return;
+	}
+	const sentAt = pendingRequestTimes.get(entity) || 0;
+	if (System.currentTimeMillis() - sentAt < REQUEST_TIMEOUT) return;
+	pendingRequestIds.remove(entity);
+	pendingRequestTimes.remove(entity);
+	NGTLog.sendChatMessage(
+		sender,
+		"§c[NGTO Builder2] サーバーから草木ブラシの応答がありません。通信状態とサーバー側の導入状況を確認してください",
+	);
 }
 
 function showHelp(sender: ICommandSender): void {
@@ -249,17 +300,7 @@ function keyInput(
 	let radius = dataMap.getInt("brushRadius");
 	let density = dataMap.getInt("brushDensity");
 	const presets = getPlantsPresets();
-	const serverPresetSignature = dataMap.getString("plantsPresetSignature");
-	const presetMismatch =
-		serverPresetSignature !== "" &&
-		serverPresetSignature !== getPlantsPresetSignature();
-	if (presetMismatch && !dataMap.getBoolean("plantsPresetMismatchWarned")) {
-		dataMap.setBoolean("plantsPresetMismatchWarned", true, 0);
-		NGTLog.sendChatMessage(
-			sender,
-			"§c[NGTO Builder2] クライアントとサーバーの草木プリセットが一致しないため生成を無効化しました",
-		);
-	}
+	checkRequestResponse(sender, entity);
 
 	if (keyManager.pressed("showHelp")) showHelp(sender);
 	if (keyManager.pressed("endEdit")) dataMap.setBoolean("isEndEdit", true, 1);
@@ -308,15 +349,27 @@ function keyInput(
 	}
 
 	const isUndo = dataMap.getBoolean("isUndo");
+	const actionAttempted =
+		keyManager.pressed("generateOnce") ||
+		(isRightClick && !prevRightClick) ||
+		(isLeftClick && !prevLeftClick);
+	if (actionAttempted && !looking) {
+		NGTLog.sendChatMessage(
+			sender,
+			"§e[NGTO Builder2] 対象ブロックを指していないため実行できません",
+		);
+	} else if (actionAttempted && isUndo) {
+		NGTLog.sendChatMessage(
+			sender,
+			"§e[NGTO Builder2] Undo処理中のため実行できません",
+		);
+	}
 	const generateOnce =
-		!!looking &&
-		!isUndo &&
-		!presetMismatch &&
-		keyManager.pressed("generateOnce");
+		!!looking && !isUndo && keyManager.pressed("generateOnce");
 	if (generateOnce && looking)
 		sendRequest(sender, entity, "generate", looking, seed);
 
-	if (!generateOnce && looking && !isUndo && !presetMismatch && isLeftClick) {
+	if (!generateOnce && looking && !isUndo && isLeftClick) {
 		const current: Pos = [looking.blockX, looking.blockY, looking.blockZ];
 		const previous = previousEraseTarget.get(entity);
 		if (!prevLeftClick || !samePos(previous, current)) {
@@ -327,14 +380,7 @@ function keyInput(
 		previousEraseTarget.remove(entity);
 	}
 
-	if (
-		!generateOnce &&
-		looking &&
-		!isUndo &&
-		!presetMismatch &&
-		isRightClick &&
-		!isLeftClick
-	) {
+	if (!generateOnce && looking && !isUndo && isRightClick && !isLeftClick) {
 		const current: Pos = [looking.blockX, looking.blockY, looking.blockZ];
 		const previous = lastGeneratedCenter.get(entity);
 		const dx = previous ? current[0] - previous[0] : 0;
@@ -443,12 +489,7 @@ function renderPlantsPreview(
 			Quaternion.fromEuler(candidate.yaw, 0, 0),
 		);
 		GL11.glTranslatef(-centerX, -0.5, -centerZ);
-		NGTOBuilderUtilClient.renderNGTO(
-			entity,
-			renderer,
-			plants,
-			pass,
-		);
+		NGTOBuilderUtilClient.renderNGTO(entity, renderer, plants, pass);
 		GL11.glPopMatrix();
 	}
 	NGTOBuilderUtilClient.disableAlpha();

@@ -1,10 +1,8 @@
 import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { NGTFileLoader, NGTLog } from "jp.ngt.ngtlib.io";
-import { ModelPackManager } from "jp.ngt.rtm.modelpack";
 import { ArrayList } from "java.util";
 import { ZipInputStream } from "java.util.zip";
 import { Block } from "net.minecraft.block";
-import { ResourceLocation } from "net.minecraft.util";
 import { World } from "net.minecraft.world";
 import { RTMApiCompat } from "@target/assets/minecraft/scripts/lib_hi03toolkit_1_0/lib_RTMApiCompat";
 import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
@@ -89,10 +87,6 @@ declare const Packages: {
 	};
 };
 
-function resource(path: string): ResourceLocation {
-	return ModelPackManager.INSTANCE.getResource("minecraft", path);
-}
-
 // RTM 1.12のinclude展開では置換用特殊文字が誤解釈されるため、ここでは正規表現を使わない。
 function hasExtension(path: string, extension: string): boolean {
 	const lowerPath = String(path).toLowerCase();
@@ -172,7 +166,9 @@ function readJsonInput<T>(input: InputLike): T {
 
 function loadBuiltInBlock(path: string): NGTObject[] {
 	return loadBlockInput(
-		NGTFileLoader.getInputStream(resource(path)) as unknown as InputLike,
+		NGTFileLoader.getInputStream(
+			RTMApiCompat.createResourceLocation("minecraft", path),
+		) as unknown as InputLike,
 		path,
 	);
 }
@@ -296,7 +292,7 @@ export function getPlantsPresets(): PlantsPreset[] {
 	const presets: PlantsPreset[] = [];
 	const ids: { [id: string]: boolean } = {};
 	const builtInInput = NGTFileLoader.getInputStream(
-		resource(PLANTS_TYPE_PATH),
+		RTMApiCompat.createResourceLocation("minecraft", PLANTS_TYPE_PATH),
 	) as unknown as InputLike;
 	const builtIn = readJsonInput<{ [name: string]: PlantsPresetJson }>(
 		builtInInput,
