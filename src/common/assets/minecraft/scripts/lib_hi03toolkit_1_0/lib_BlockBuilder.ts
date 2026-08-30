@@ -139,6 +139,14 @@ export class BlockBuilder {
 	): void {
 		const world = isPlaceOnlyInAir ? RTMApiCompat.getWorld(entity) : null;
 		const airBlock = isPlaceOnlyInAir ? RTMApiCompat.getBlockAir() : null;
+		const doublePlantPlacements: { [key: string]: BlockSetPlacement } = {};
+		for (let i = 0; i < list.length; i++) {
+			const placement = list[i];
+			if (!placement || !(placement[0].block instanceof BlockDoublePlant))
+				continue;
+			const key = `${Math.floor(placement[1])},${Math.floor(placement[2])},${Math.floor(placement[3])}`;
+			doublePlantPlacements[key] = placement;
+		}
 		for (let i = 0; i < list.length; i++) {
 			const placeData = list[i];
 			if (!placeData) continue;
@@ -147,6 +155,24 @@ export class BlockBuilder {
 				const x = Math.floor(placeData[1]);
 				const y = Math.floor(placeData[2]);
 				const z = Math.floor(placeData[3]);
+				if (blockSet.block instanceof BlockDoublePlant) {
+					const doublePlantBlock = blockSet.block as unknown as Block;
+					const lowerY = (blockSet.metadata & 8) !== 0 ? y - 1 : y;
+					const upperY = lowerY + 1;
+					const lowerData = doublePlantPlacements[`${x},${lowerY},${z}`];
+					const upperData = doublePlantPlacements[`${x},${upperY},${z}`];
+					if (
+						!lowerData ||
+						!upperData ||
+						lowerData[0].block !== doublePlantBlock ||
+						upperData[0].block !== doublePlantBlock ||
+						(lowerData[0].metadata & 8) !== 0 ||
+						(upperData[0].metadata & 8) === 0 ||
+						RTMApiCompat.getBlock(world, x, lowerY, z) !== airBlock ||
+						RTMApiCompat.getBlock(world, x, upperY, z) !== airBlock
+					)
+						continue;
+				}
 				if (RTMApiCompat.getBlock(world, x, y, z) !== airBlock) continue;
 				if (
 					blockSet.block instanceof BlockDoor &&
@@ -250,6 +276,8 @@ export class BlockBuilder {
 					);
 					continue;
 				}
+				// 不完全な2段植物は上側または下側だけを残すため、単独では設置しない。
+				continue;
 			}
 			// ブロックを設置
 			RTMApiCompat.setBlock(world, x, y, z, block, metadata);
