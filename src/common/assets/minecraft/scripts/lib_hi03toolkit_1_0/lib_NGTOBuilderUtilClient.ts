@@ -566,6 +566,30 @@ export class NGTOBuilderUtilClient {
 		}
 	}
 
+	/** 1.12のブロック描画層ごとに表示リストを分離してNGTOを描画する。 */
+	static renderNGTOUniqueByPass(
+		entity: Entity,
+		renderer: PartsRenderer,
+		ngto: NGTObject,
+		pass: number,
+	): void {
+		const key =
+			`${entity.getEntityId()}_` +
+			`${NGTOBuilderUtil.getNGTOCacheKey(ngto)}_pass_${pass}`;
+		const cached = NGTOBuilderUtilClient.glCache.get(key);
+		if (!cached) {
+			const glList = RTMApiCompatClient.generateGLList();
+			GL11.glPushMatrix();
+			RTMApiCompatClient.startCompile(glList);
+			RTMApiCompatClient.renderNGTO(renderer, ngto, pass);
+			GLHelper.endCompile();
+			GL11.glPopMatrix();
+			NGTOBuilderUtilClient.glCache.put(key, glList);
+		} else {
+			RTMApiCompatClient.callList(cached);
+		}
+	}
+
 	static renderModel(
 		renderer: PartsRenderer,
 		pass: number,

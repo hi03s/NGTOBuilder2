@@ -67,7 +67,7 @@ let tallTreeCache: HashMap<string, NGTObject>;
 let missingBlockWarnings: HashMap<string, boolean>;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
-	Version = "2.4";
+	Version = "2.5";
 	keyManager = new InputManager();
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
@@ -376,7 +376,7 @@ function renderTreePreview(entity: EntityVehicle, pass: number, partialTicks: nu
 		GL11.glTranslatef(candidate.x + 0.5 - pos[0], y + 0.5 - pos[1], candidate.z + 0.5 - pos[2]);
 		NGTOBuilderUtilClient.glApplyQuaternionMatrix(Quaternion.fromEuler(candidate.yaw, 0, 0));
 		GL11.glTranslatef(-centerX, -0.5, -centerZ);
-		NGTOBuilderUtilClient.renderNGTOUnique(entity, renderer, tree, pass);
+		NGTOBuilderUtilClient.renderNGTOUniqueByPass(entity, renderer, tree, pass);
 		GL11.glPopMatrix();
 	}
 	NGTOBuilderUtilClient.disableAlpha();
@@ -384,8 +384,8 @@ function renderTreePreview(entity: EntityVehicle, pass: number, partialTicks: nu
 
 function renderForToolUser(entity: EntityVehicle, pass: number, partialTicks: number): void {
 	body.render(renderer);
-	renderTreePreview(entity, pass, partialTicks);
 	renderRange(entity, partialTicks, Mouse.isButtonDown(0));
+	renderTreePreview(entity, pass, partialTicks);
 }
 
 function render(entity: EntityVehicle, pass: number, partialTicks: number): void {

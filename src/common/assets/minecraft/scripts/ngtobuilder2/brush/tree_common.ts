@@ -1,5 +1,6 @@
 import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
-import { NGTFileLoader, NGTLog, NGTText } from "jp.ngt.ngtlib.io";
+import { NGTFileLoader, NGTLog } from "jp.ngt.ngtlib.io";
+import { ModelPackManager } from "jp.ngt.rtm.modelpack";
 import { ArrayList } from "java.util";
 import { ZipInputStream } from "java.util.zip";
 import { Block } from "net.minecraft.block";
@@ -48,6 +49,10 @@ let presetSignatureCache: string | null = null;
 const presetBlockKeyCache: { [name: string]: { [key: string]: boolean } } = {};
 
 type InputLike = { close(): void };
+type ReaderLike = {
+	readLine(): string | null;
+	close(): void;
+};
 type ExternalFile = {
 	getName(): string;
 	getParentFile(): ExternalFile;
@@ -74,12 +79,14 @@ declare const Packages: {
 	java: {
 		io: {
 			File: new (parent: ExternalFile, child: string) => ExternalFile;
+			BufferedReader: new (reader: unknown) => ReaderLike;
+			InputStreamReader: new (input: unknown, charset: string) => unknown;
 		};
 	};
 };
 
 function resource(path: string): ResourceLocation {
-	return new ResourceLocation("minecraft", path);
+	return ModelPackManager.INSTANCE.getResource("minecraft", path);
 }
 
 // RTM 1.12のinclude展開では置換用特殊文字が誤解釈されるため、ここでは正規表現を使わない。
@@ -137,6 +144,24 @@ function loadBlockInput(input: InputLike, path: string): NGTObject[] {
 	throw new Error(`Unsupported tree block file: ${path}`);
 }
 
+function readJsonInput<T>(input: InputLike): T {
+	const reader = new Packages.java.io.BufferedReader(
+		new Packages.java.io.InputStreamReader(input as any, "UTF-8"),
+	);
+	try {
+		let text = "";
+		let line = reader.readLine();
+		while (line !== null) {
+			text += String(line);
+			line = reader.readLine();
+		}
+		if (text.length > 0 && text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+		return JSON.parse(text) as T;
+	} finally {
+		reader.close();
+	}
+}
+
 function loadBuiltInBlock(path: string): NGTObject[] {
 	return loadBlockInput(
 		NGTFileLoader.getInputStream(resource(path)) as unknown as InputLike,
@@ -166,12 +191,7 @@ function readExternalManifest(file: ExternalFile): ExternalTreeManifest {
 	const input = NGTFileLoader.getInputStreamFromFile(
 		file as any,
 	) as unknown as InputLike;
-	try {
-		const lines = NGTText.readTextL(input as any, "UTF-8");
-		return JSON.parse(NGTText.append(lines, true)) as ExternalTreeManifest;
-	} finally {
-		input.close();
-	}
+	return readJsonInput<ExternalTreeManifest>(input);
 }
 
 function getExternalManifestFiles(): ExternalFile[] {
@@ -256,9 +276,10 @@ export function getTreePresets(): TreePreset[] {
 	if (presetCache) return presetCache;
 	const presets: TreePreset[] = [];
 	const ids: { [id: string]: boolean } = {};
-	const builtIn = JSON.parse(NGTText.getText(resource(TREE_TYPE_PATH), true)) as {
-		[name: string]: TreePresetJson;
-	};
+	const builtInInput = NGTFileLoader.getInputStream(
+		resource(TREE_TYPE_PATH),
+	) as unknown as InputLike;
+	const builtIn = readJsonInput<{ [name: string]: TreePresetJson }>(builtInInput);
 	Object.keys(builtIn).forEach((name) => {
 		try {
 			addPreset(presets, ids, builtIn[name], name, loadBuiltInBlock);

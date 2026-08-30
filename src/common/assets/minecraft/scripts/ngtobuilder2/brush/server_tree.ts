@@ -21,7 +21,7 @@ import {
 	isValidTreeGround,
 } from "./tree_common";
 
-Version = "2.4";
+Version = "2.5";
 
 export type BrushTreeRequest = {
 	id: number;
