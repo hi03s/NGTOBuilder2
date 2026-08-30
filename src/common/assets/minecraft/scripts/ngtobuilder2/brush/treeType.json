@@ -1,27 +1,37 @@
 {
     "オーク": {
-        "ngtz": [
+        "id": "ngtobuilder2:oak",
+        "order": 0,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/oak.ngtz"
         ]
     },
     "シラカバ": {
-        "ngtz": [
+        "id": "ngtobuilder2:birch",
+        "order": 1,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/birch.ngtz"
         ]
     },
     "マツ": {
-        "ngtz": [
+        "id": "ngtobuilder2:redwood",
+        "order": 2,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/redwood.ngtz"
         ]
     },
     "オーク&シラカバ": {
-        "ngtz": [
+        "id": "ngtobuilder2:oak_birch",
+        "order": 3,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/oak.ngtz",
             "scripts/ngtobuilder2/brush/ngtz/birch.ngtz"
         ]
     },
     "サクラ": {
-        "ngtz": [
+        "id": "ngtobuilder2:sakura",
+        "order": 4,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/sakura.ngtz"
         ],
         "modid": [
@@ -29,7 +39,9 @@
         ]
     },
     "モミジ(小)": {
-        "ngtz": [
+        "id": "ngtobuilder2:maple_small",
+        "order": 5,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/maple.ngtz"
         ],
         "modid": [
@@ -37,7 +49,9 @@
         ]
     },
     "モミジ": {
-        "ngtz": [
+        "id": "ngtobuilder2:maple",
+        "order": 6,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/maple.ngtz",
             "scripts/ngtobuilder2/brush/ngtz/maple_big.ngtz"
         ],
@@ -46,7 +60,9 @@
         ]
     },
     "イチョウ(小)": {
-        "ngtz": [
+        "id": "ngtobuilder2:ginkgo_small",
+        "order": 7,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/ginkgo.ngtz"
         ],
         "modid": [
@@ -54,7 +70,9 @@
         ]
     },
     "イチョウ": {
-        "ngtz": [
+        "id": "ngtobuilder2:ginkgo",
+        "order": 8,
+        "blocks": [
             "scripts/ngtobuilder2/brush/ngtz/ginkgo.ngtz",
             "scripts/ngtobuilder2/brush/ngtz/ginkgo_big.ngtz"
         ],

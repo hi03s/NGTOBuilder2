@@ -24,6 +24,7 @@ import {
 	createTallTreeNGTO,
 	createTreeCandidates,
 	getSurfaceY,
+	getTreePresetSignature,
 	getTreePresets,
 	isValidTreeGround,
 } from "./tree_common";
@@ -145,6 +146,9 @@ function sendRequest(
 		previousId = Math.floor(Math.random() * 1000000000) + 1;
 	const id = previousId >= 2000000000 ? 1 : previousId + 1;
 	requestIds.put(entity, id);
+	const presets = getTreePresets();
+	const preset = presets[dataMap.getInt("treePresetIndex")];
+	if (!preset) return;
 	const request: BrushTreeRequest = {
 		id: id,
 		action: action,
@@ -153,7 +157,7 @@ function sendRequest(
 		radius: dataMap.getInt("brushRadius"),
 		density: dataMap.getInt("brushDensity"),
 		seed: seed,
-		presetIndex: dataMap.getInt("treePresetIndex"),
+		presetId: preset.id,
 	};
 	NGTOBuilderUtil.sendJsonData(dataMap, "brushRequest", request);
 }
@@ -199,6 +203,17 @@ function keyInput(
 	let radius = dataMap.getInt("brushRadius");
 	let density = dataMap.getInt("brushDensity");
 	const presets = getTreePresets();
+	const serverPresetSignature = dataMap.getString("treePresetSignature");
+	const presetMismatch =
+		serverPresetSignature !== "" &&
+		serverPresetSignature !== getTreePresetSignature();
+	if (presetMismatch && !dataMap.getBoolean("treePresetMismatchWarned")) {
+		dataMap.setBoolean("treePresetMismatchWarned", true, 0);
+		NGTLog.sendChatMessage(
+			sender,
+			"§c[NGTO Builder2] クライアントとサーバーの樹木プリセットが一致しないため生成を無効化しました",
+		);
+	}
 
 	if (keyManager.pressed("showHelp")) showHelp(sender);
 	if (keyManager.pressed("endEdit")) dataMap.setBoolean("isEndEdit", true, 1);
@@ -236,10 +251,14 @@ function keyInput(
 	}
 
 	const isUndo = dataMap.getBoolean("isUndo");
-	const generateOnce = !!looking && !isUndo && keyManager.pressed("generateOnce");
+	const generateOnce =
+		!!looking &&
+		!isUndo &&
+		!presetMismatch &&
+		keyManager.pressed("generateOnce");
 	if (generateOnce && looking) sendRequest(entity, "generate", looking, seed);
 
-	if (!generateOnce && looking && !isUndo && isLeftClick) {
+	if (!generateOnce && looking && !isUndo && !presetMismatch && isLeftClick) {
 		const current: Pos = [looking.blockX, looking.blockY, looking.blockZ];
 		const previous = previousEraseTarget.get(entity);
 		if (!prevLeftClick || !samePos(previous, current)) {
@@ -250,7 +269,14 @@ function keyInput(
 		previousEraseTarget.remove(entity);
 	}
 
-	if (!generateOnce && looking && !isUndo && isRightClick && !isLeftClick) {
+	if (
+		!generateOnce &&
+		looking &&
+		!isUndo &&
+		!presetMismatch &&
+		isRightClick &&
+		!isLeftClick
+	) {
 		const current: Pos = [looking.blockX, looking.blockY, looking.blockZ];
 		const previous = lastGeneratedCenter.get(entity);
 		const dx = previous ? current[0] - previous[0] : 0;

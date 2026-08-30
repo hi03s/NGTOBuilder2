@@ -16,7 +16,8 @@ import {
 	getEraseGroundY,
 	getPresetBlockKeys,
 	getSurfaceY,
-	getTreePresets,
+	getTreePresetById,
+	getTreePresetSignature,
 	isValidTreeGround,
 } from "./tree_common";
 
@@ -30,7 +31,7 @@ export type BrushTreeRequest = {
 	radius: number;
 	density: number;
 	seed: number;
-	presetIndex: number;
+	presetId: string;
 };
 
 let builder: BlockBuilder;
@@ -49,6 +50,7 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 	}
 	dataMap.setInt("lastBrushRequestId", -1, 0);
 	dataMap.setBoolean("isBuilding", false, 1);
+	dataMap.setString("treePresetSignature", getTreePresetSignature(), 1);
 }
 
 function appendAction(entity: EntityVehicle, action: BlockBuilder): void {
@@ -61,8 +63,7 @@ function appendAction(entity: EntityVehicle, action: BlockBuilder): void {
 }
 
 function generateTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
-	const presets = getTreePresets();
-	const preset = presets[request.presetIndex];
+	const preset = getTreePresetById(request.presetId);
 	if (!preset) return;
 	const world = RTMApiCompat.getWorld(entity);
 	const action = new BlockBuilder();
@@ -99,8 +100,7 @@ function generateTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
 }
 
 function eraseTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
-	const presets = getTreePresets();
-	const preset = presets[request.presetIndex];
+	const preset = getTreePresetById(request.presetId);
 	if (!preset) return;
 	const world = RTMApiCompat.getWorld(entity);
 	const targetKeys = getPresetBlockKeys(preset);

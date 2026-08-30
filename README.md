@@ -31,6 +31,10 @@ The author is not responsible for any damage or loss caused by using this pack.
 
 - 準備中
 
+## 樹木ブラシの外部プリセット
+
+[外部プリセットの作成・導入方法](docs/tree-brush-presets.md)
+
 ## ツール内容 / Tools
 
 ### ● 地面設置

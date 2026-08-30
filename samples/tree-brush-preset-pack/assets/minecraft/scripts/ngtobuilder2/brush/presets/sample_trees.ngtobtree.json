@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "id": "sample:trees",
+  "name": "サンプル樹木",
+  "blocks": [
+    "treeA.ngtz",
+    "treeB.ngto"
+  ],
+  "order": 1000
+}
