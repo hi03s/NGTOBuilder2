@@ -47,8 +47,6 @@
         "order": 5,
 		"randomHeight": false,
         "blocks": [
-            "scripts/ngtobuilder2/brush/blocks/weed1.ngto",
-            "scripts/ngtobuilder2/brush/blocks/weed2.ngto",
             "scripts/ngtobuilder2/brush/blocks/weed_tall1.ngto",
             "scripts/ngtobuilder2/brush/blocks/weed_tall2.ngto"
         ]
