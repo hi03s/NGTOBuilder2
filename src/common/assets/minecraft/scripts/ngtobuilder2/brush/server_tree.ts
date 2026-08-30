@@ -21,7 +21,7 @@ import {
 	isValidTreeGround,
 } from "./tree_common";
 
-Version = "2.2";
+Version = "2.3";
 
 export type BrushTreeRequest = {
 	id: number;
@@ -74,6 +74,7 @@ function generateTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
 		request.density,
 		request.seed,
 		preset.ngtoList.length,
+		preset.randomHeight,
 	);
 	for (let i = 0; i < candidates.length; i++) {
 		const candidate = candidates[i];

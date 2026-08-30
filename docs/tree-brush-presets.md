@@ -1,9 +1,9 @@
-# 樹木ブラシの外部プリセット
+# 樹木・草花ブラシの外部プリセット
 
-別のRTMモデルパックから、NGTO Builder 2の樹木ブラシへプリセットを追加できます。  
-通常のモデルパックと同様にmodsフォルダに入れることで有効化できます。  
+別のRTMモデルパックから、NGTO Builder 2の樹木ブラシへ樹木や草花のプリセットを追加できます。
+通常のモデルパックと同様にmodsフォルダに入れることで有効化できます。
 
-[サンプルパック](../samples/tree-brush-preset-pack/README.md)では、NGTZとNGTOを同じプリセットから読み込む構成を確認できます。
+[サンプルパック](../samples/tree-brush-preset-pack/)では、NGTZとNGTOを同じプリセットから読み込む構成を確認できます。
 
 ## ファイル構成
 
@@ -29,6 +29,7 @@ ExternalTreePack.zip
     "single_tree.ngto"
   ],
   "modid": ["ExampleMod"],
+  "randomHeight": true,
   "order": 1000
 }
 ```
@@ -50,14 +51,29 @@ ExternalTreePack.zip
 - `name`: Pキー切替時に表示する名前（必須）
 - `blocks`: 同じフォルダを基準とする`.ngtz`／`.ngto`の相対パス（必須）
 - `modid`: NGTO/NGTZにModブロックを含む場合、必要なModのModIDを記載する。1つでも未導入なら選択肢から除外（任意）
+- `randomHeight`: 最下層の追加複製による高さのランダム化。`true`で有効、`false`で無効。省略時は`true`（任意）
 - `order`: Pキーで表示する順序。省略時は`1000`（任意）
 
 `id`には`example:forest`のような名前空間付きIDを指定してください。使用できる文字は小文字英数字、`_`、`.`、`-`、`/`です。既存プリセットとIDが重複した場合、外部プリセットは読み込まれません。
 
-## 樹木データ作成時の注意点
+## 樹木・草花データ作成時の注意点
 
-- 樹木の高さをランダム化するため、NGTOの最下層（Y=0）のブロック層は生成時に0～2回追加で複製されます。幹以外のブロックを最下層へ含めると、それらも縦方向に複製されます。
-- 樹木は生成時に0度、90度、180度、270度のいずれかへランダムに回転します。向きに依存するブロックや左右非対称の形状でも問題がないことを確認してください。
+- `randomHeight`が`true`の場合、NGTOの最下層（Y=0）のブロック層は生成時に0～2回追加で複製されます。幹以外のブロックを最下層へ含めると、それらも縦方向に複製されます。
+- 草花など高さを変えたくないプリセットでは`randomHeight`を`false`にしてください。
+- 樹木や草花は生成時に0度、90度、180度、270度のいずれかへランダムに回転します。向きに依存するブロックや左右非対称の形状でも問題がないことを確認してください。
+
+### 草花プリセットの例
+
+```json
+{
+  "format": 1,
+  "id": "example:wildflowers",
+  "name": "野の花",
+  "blocks": ["wildflowers.ngtz", "grass.ngto"],
+  "randomHeight": false,
+  "order": 1100
+}
+```
 
 ## 複数プリセットを1ファイルへ格納する場合
 
@@ -71,12 +87,14 @@ ExternalTreePack.zip
       "id": "example:oak",
       "name": "追加オーク",
       "blocks": ["oak.ngtz"],
+      "randomHeight": true,
       "order": 1000
     },
     {
       "id": "example:birch",
       "name": "追加シラカバ",
       "blocks": ["birch.ngto"],
+      "randomHeight": true,
       "order": 1001
     }
   ]

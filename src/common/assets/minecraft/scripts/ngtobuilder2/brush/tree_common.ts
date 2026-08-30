@@ -15,6 +15,7 @@ export type TreePresetJson = {
 	blocks: string[];
 	modid?: string[];
 	order?: number;
+	randomHeight?: boolean;
 };
 
 export type TreePreset = {
@@ -23,6 +24,7 @@ export type TreePreset = {
 	blocks: string[];
 	ngtoList: NGTObject[];
 	order: number;
+	randomHeight: boolean;
 };
 
 type ExternalTreeManifest = TreePresetJson & {
@@ -79,13 +81,37 @@ function resource(path: string): ResourceLocation {
 	return new ResourceLocation("minecraft", path);
 }
 
+// RTM 1.12のinclude展開では置換用特殊文字が誤解釈されるため、ここでは正規表現を使わない。
+function hasExtension(path: string, extension: string): boolean {
+	const lowerPath = String(path).toLowerCase();
+	return lowerPath.slice(-extension.length) === extension;
+}
+
+function containsOnly(value: string, allowed: string): boolean {
+	if (value.length === 0) return false;
+	for (let i = 0; i < value.length; i++)
+		if (allowed.indexOf(value.charAt(i)) < 0) return false;
+	return true;
+}
+
+function isValidPresetId(id: string): boolean {
+	const separator = id.indexOf(":");
+	if (separator <= 0 || separator !== id.lastIndexOf(":")) return false;
+	const namespace = id.slice(0, separator);
+	const path = id.slice(separator + 1);
+	return (
+		containsOnly(namespace, "abcdefghijklmnopqrstuvwxyz0123456789_.-") &&
+		containsOnly(path, "abcdefghijklmnopqrstuvwxyz0123456789_./-")
+	);
+}
+
 function loadNGTZFromInput(input: InputLike): NGTObject[] {
 	const result: NGTObject[] = [];
 	const zip = new ZipInputStream(input as any);
 	try {
 		let entry = zip.getNextEntry();
 		while (entry) {
-			if (!entry.isDirectory() && /\.ngto$/i.test(entry.getName())) {
+			if (!entry.isDirectory() && hasExtension(entry.getName(), ".ngto")) {
 				result.push(NGTObject.load(zip));
 			}
 			zip.closeEntry();
@@ -98,8 +124,8 @@ function loadNGTZFromInput(input: InputLike): NGTObject[] {
 }
 
 function loadBlockInput(input: InputLike, path: string): NGTObject[] {
-	if (/\.ngtz$/i.test(path)) return loadNGTZFromInput(input);
-	if (/\.ngto$/i.test(path)) {
+	if (hasExtension(path, ".ngtz")) return loadNGTZFromInput(input);
+	if (hasExtension(path, ".ngto")) {
 		try {
 			return [NGTObject.load(input as any)];
 		} finally {
@@ -118,11 +144,16 @@ function loadBuiltInBlock(path: string): NGTObject[] {
 }
 
 function loadExternalBlock(manifestFile: ExternalFile, path: string): NGTObject[] {
-	if (path.indexOf("..") !== -1 || /^[/\\]/.test(path))
+	const firstChar = path.length > 0 ? path.charAt(0) : "";
+	if (
+		path.indexOf("..") !== -1 ||
+		firstChar === "/" ||
+		firstChar.charCodeAt(0) === 92
+	)
 		throw new Error(`Invalid relative block path: ${path}`);
 	const file = new Packages.java.io.File(
 		manifestFile.getParentFile(),
-		path.replace(/\\/g, "/"),
+		path.split(String.fromCharCode(92)).join("/"),
 	);
 	return loadBlockInput(
 		NGTFileLoader.getInputStreamFromFile(file as any) as unknown as InputLike,
@@ -172,7 +203,7 @@ function addPreset(
 ): void {
 	const id = config && config.id ? String(config.id).toLowerCase() : "";
 	const name = config && config.name ? String(config.name) : fallbackName;
-	if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(id))
+	if (!isValidPresetId(id))
 		throw new Error(`Invalid or missing tree preset id: ${id || name}`);
 	if (ids[id]) throw new Error(`Duplicate tree preset id: ${id}`);
 	if (!config.blocks || config.blocks.length === 0)
@@ -180,6 +211,13 @@ function addPreset(
 	if (!modsAvailable(config)) return;
 	const order = config.order === undefined ? 1000 : Number(config.order);
 	if (!isFinite(order)) throw new Error(`Invalid tree preset order: ${id}`);
+	if (
+		config.randomHeight !== undefined &&
+		typeof config.randomHeight !== "boolean"
+	)
+		throw new Error(`Invalid randomHeight value: ${id}`);
+	const randomHeight =
+		config.randomHeight === undefined ? true : config.randomHeight;
 	const ngtoList: NGTObject[] = [];
 	config.blocks.forEach((path) => {
 		loadBlock(String(path)).forEach((ngto) => ngtoList.push(ngto));
@@ -192,6 +230,7 @@ function addPreset(
 		blocks: config.blocks,
 		ngtoList: ngtoList,
 		order: order,
+		randomHeight: randomHeight,
 	});
 }
 
@@ -276,6 +315,7 @@ export function getTreePresetSignature(): string {
 	};
 	getTreePresets().forEach((preset) => {
 		addString(preset.id);
+		addNumber(preset.randomHeight ? 1 : 0);
 		preset.ngtoList.forEach((ngto) => {
 			addNumber(ngto.xSize);
 			addNumber(ngto.ySize);
@@ -324,6 +364,7 @@ export function createTreeCandidates(
 	density: number,
 	seed: number,
 	ngtoCount: number,
+	randomHeight: boolean,
 ): TreeCandidate[] {
 	const result: TreeCandidate[] = [];
 	if (ngtoCount <= 0 || density <= 0) return result;
@@ -340,7 +381,9 @@ export function createTreeCandidates(
 				z: z,
 				ngtoIndex: Math.floor(randomAt(seed, x, z, 1) * ngtoCount),
 				yaw: Math.floor(randomAt(seed, x, z, 2) * 4) * 90,
-				extraHeight: Math.floor(randomAt(seed, x, z, 3) * 3),
+				extraHeight: randomHeight
+					? Math.floor(randomAt(seed, x, z, 3) * 3)
+					: 0,
 			});
 		}
 	}

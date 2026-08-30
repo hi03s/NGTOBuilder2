@@ -6,5 +6,6 @@
     "treeA.ngtz",
     "treeB.ngto"
   ],
+  "randomHeight": true,
   "order": 1000
 }

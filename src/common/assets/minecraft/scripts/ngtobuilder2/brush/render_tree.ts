@@ -66,14 +66,14 @@ let repeatTimes: HashMap<string, number>;
 let tallTreeCache: HashMap<string, NGTObject>;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
-	Version = "2.2";
+	Version = "2.3";
 	keyManager = new InputManager();
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
 	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
 	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
-	keyManager.register("presetNext", Keyboard.KEY_P, false, "樹木を切り替え(next)");
-	keyManager.register("presetPrev", Keyboard.KEY_P, true, "樹木を切り替え(prev)");
+	keyManager.register("presetNext", Keyboard.KEY_P, false, "プリセットを切り替え(next)");
+	keyManager.register("presetPrev", Keyboard.KEY_P, true, "プリセットを切り替え(prev)");
 	keyManager.register("reroll", Keyboard.KEY_R, false, "配置を再抽選");
 	keyManager.register("generateOnce", Keyboard.KEY_RETURN, false, "1回生成");
 	keyManager.register("radiusUp", Keyboard.KEY_RIGHT, false, "生成半径を1m拡大");
@@ -227,7 +227,7 @@ function keyInput(
 		let index = dataMap.getInt("treePresetIndex") + presetDelta;
 		index = (index + presets.length) % presets.length;
 		dataMap.setInt("treePresetIndex", index, 1);
-		NGTLog.sendChatMessage(sender, `[NGTO Builder2] 樹木: ${presets[index].name}`);
+		NGTLog.sendChatMessage(sender, `[NGTO Builder2] プリセット: ${presets[index].name}`);
 	}
 	if (keyManager.pressed("reroll") && looking) {
 		seed = Math.floor(Math.random() * 2147483647) + 1;
@@ -344,6 +344,7 @@ function renderTreePreview(entity: EntityVehicle, pass: number, partialTicks: nu
 		dataMap.getInt("brushDensity"),
 		seed,
 		preset.ngtoList.length,
+		preset.randomHeight,
 	);
 	const world = RTMApiCompat.getWorld(entity);
 	const pos = NGTOBuilderUtilClient.getInterpolatedPos(entity, partialTicks);
