@@ -2,37 +2,74 @@
     "オーク": {
         "id": "ngtobuilder2:oak",
         "order": 0,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/oak.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/oak.ngtz"
         ]
     },
     "シラカバ": {
         "id": "ngtobuilder2:birch",
         "order": 1,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/birch.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/birch.ngtz"
         ]
     },
     "マツ": {
         "id": "ngtobuilder2:redwood",
         "order": 2,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/redwood.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/redwood.ngtz"
         ]
     },
     "オーク&シラカバ": {
         "id": "ngtobuilder2:oak_birch",
         "order": 3,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/oak.ngtz",
-            "scripts/ngtobuilder2/brush/ngtz/birch.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/oak.ngtz",
+            "scripts/ngtobuilder2/brush/blocks/birch.ngtz"
         ]
     },
+
+    "低い雑草": {
+        "id": "ngtobuilder2:weed",
+        "order": 4,
+		"randomHeight": false,
+        "blocks": [
+            "scripts/ngtobuilder2/brush/blocks/weed1.ngto",
+            "scripts/ngtobuilder2/brush/blocks/weed2.ngto"
+        ]
+    },
+    "低い雑草+高い雑草": {
+        "id": "ngtobuilder2:weed_tall",
+        "order": 5,
+		"randomHeight": false,
+        "blocks": [
+            "scripts/ngtobuilder2/brush/blocks/weed1.ngto",
+            "scripts/ngtobuilder2/brush/blocks/weed2.ngto",
+            "scripts/ngtobuilder2/brush/blocks/weed_tall1.ngto",
+            "scripts/ngtobuilder2/brush/blocks/weed_tall2.ngto"
+        ]
+    },
+    "低い雑草+花": {
+        "id": "ngtobuilder2:flower",
+        "order": 6,
+		"randomHeight": false,
+        "blocks": [
+            "scripts/ngtobuilder2/brush/blocks/weed1.ngto",
+            "scripts/ngtobuilder2/brush/blocks/weed2.ngto",
+            "scripts/ngtobuilder2/brush/blocks/flower.ngtz"
+        ]
+    },
+
     "サクラ": {
         "id": "ngtobuilder2:sakura",
-        "order": 4,
+        "order": 7,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/sakura.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/sakura.ngtz"
         ],
         "modid": [
             "BambooMod"
@@ -40,9 +77,10 @@
     },
     "モミジ(小)": {
         "id": "ngtobuilder2:maple_small",
-        "order": 5,
+        "order": 8,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/maple.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/maple.ngtz"
         ],
         "modid": [
             "BambooMod"
@@ -50,10 +88,11 @@
     },
     "モミジ": {
         "id": "ngtobuilder2:maple",
-        "order": 6,
+        "order": 9,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/maple.ngtz",
-            "scripts/ngtobuilder2/brush/ngtz/maple_big.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/maple.ngtz",
+            "scripts/ngtobuilder2/brush/blocks/maple_big.ngtz"
         ],
         "modid": [
             "BambooMod"
@@ -61,9 +100,10 @@
     },
     "イチョウ(小)": {
         "id": "ngtobuilder2:ginkgo_small",
-        "order": 7,
+        "order": 10,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/ginkgo.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/ginkgo.ngtz"
         ],
         "modid": [
             "BambooMod"
@@ -71,10 +111,11 @@
     },
     "イチョウ": {
         "id": "ngtobuilder2:ginkgo",
-        "order": 8,
+        "order": 11,
+		"randomHeight": true,
         "blocks": [
-            "scripts/ngtobuilder2/brush/ngtz/ginkgo.ngtz",
-            "scripts/ngtobuilder2/brush/ngtz/ginkgo_big.ngtz"
+            "scripts/ngtobuilder2/brush/blocks/ginkgo.ngtz",
+            "scripts/ngtobuilder2/brush/blocks/ginkgo_big.ngtz"
         ],
         "modid": [
             "BambooMod"
