@@ -5,7 +5,7 @@ import {
 	TileEntityPlaceable,
 } from "jp.ngt.ngtlib.block";
 import { TileEntityLargeRailBase } from "jp.ngt.rtm.rail";
-import { Block, BlockDoor } from "net.minecraft.block";
+import { Block, BlockDoor, BlockDoublePlant } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { TileEntity } from "net.minecraft.tileentity";
@@ -191,6 +191,14 @@ export class BlockBuilder {
 			return;
 		}
 		const end = Math.min(processed + buildLimit, posList.length);
+		const doublePlantPlacements: { [key: string]: BlockSetPlacement } = {};
+		for (let i = 0; i < posList.length; i++) {
+			const placement = posList[i];
+			if (!placement || !(placement[0].block instanceof BlockDoublePlant))
+				continue;
+			const key = `${Math.floor(placement[1])},${Math.floor(placement[2])},${Math.floor(placement[3])}`;
+			doublePlantPlacements[key] = placement;
+		}
 		for (let i = processed; i < end; i++) {
 			const data = posList[i];
 			if (!data) continue;
@@ -207,6 +215,42 @@ export class BlockBuilder {
 			if (replaceBlock === block && replaceBlockMeta === metadata) continue;
 			const tile = RTMApiCompat.getTileEntity(world, x, y, z);
 			if (tile instanceof TileEntityLargeRailBase) continue;
+			if (block instanceof BlockDoublePlant) {
+				// RTM向け型定義ではBlockDoublePlantのBlock継承情報が欠けている。
+				const doublePlantBlock = block as unknown as Block;
+				const isUpper = (metadata & 8) !== 0;
+				const lowerY = isUpper ? y - 1 : y;
+				const upperY = lowerY + 1;
+				const lowerData = doublePlantPlacements[`${x},${lowerY},${z}`];
+				const upperData = doublePlantPlacements[`${x},${upperY},${z}`];
+				if (
+					lowerData &&
+					upperData &&
+					lowerData[0].block === doublePlantBlock &&
+					upperData[0].block === doublePlantBlock &&
+					(lowerData[0].metadata & 8) === 0 &&
+					(upperData[0].metadata & 8) !== 0
+				) {
+					// 1.12では下段だけを通常更新付きで置くと、上段不足として即座に破壊される。
+					RTMApiCompat.setBlockWithoutNeighborUpdate(
+						world,
+						x,
+						lowerY,
+						z,
+						doublePlantBlock,
+						lowerData[0].metadata,
+					);
+					RTMApiCompat.setBlock(
+						world,
+						x,
+						upperY,
+						z,
+						doublePlantBlock,
+						upperData[0].metadata,
+					);
+					continue;
+				}
+			}
 			// ブロックを設置
 			RTMApiCompat.setBlock(world, x, y, z, block, metadata);
 			if (block instanceof BlockDoor) {

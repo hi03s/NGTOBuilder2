@@ -5,7 +5,10 @@ import { WeakHashMap } from "java.util";
 import { Entity } from "net.minecraft.entity";
 import { EntityPlayer } from "net.minecraft.entity.player";
 import { RTMApiCompat } from "@target/assets/minecraft/scripts/lib_hi03toolkit_1_0/lib_RTMApiCompat";
-import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
+import {
+	BlockBuilder,
+	BlockSetPlacement,
+} from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 import { RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
@@ -76,6 +79,10 @@ function appendAction(entity: EntityVehicle, action: BlockBuilder): void {
 	builder.set(entity, queued);
 }
 
+function placementKey(placement: BlockSetPlacement): string {
+	return `${Math.floor(placement[1])},${Math.floor(placement[2])},${Math.floor(placement[3])}`;
+}
+
 function generatePlants(
 	entity: EntityVehicle,
 	request: BrushPlantsRequest,
@@ -84,6 +91,7 @@ function generatePlants(
 	if (!preset) return;
 	const world = RTMApiCompat.getWorld(entity);
 	const action = new BlockBuilder();
+	const reservedPositions: { [key: string]: boolean } = {};
 	const candidates = createPlantsCandidates(
 		request.centerX,
 		request.centerZ,
@@ -112,7 +120,19 @@ function generatePlants(
 			y,
 			candidate.z,
 		);
-		action.addFromRotatableBlockObjectAt(entity, placements, true);
+		const nonOverlapping: BlockSetPlacement[] = [];
+		for (let j = 0; j < placements.length; j++) {
+			const placement = placements[j];
+			if (!placement || reservedPositions[placementKey(placement)])
+				continue;
+			nonOverlapping.push(placement);
+		}
+		const previousCount = action.get(entity).length;
+		action.addFromRotatableBlockObjectAt(entity, nonOverlapping, true);
+		const queued = action.get(entity);
+		// ワールドの空気判定を通り、実際に追加された座標だけを後続NGTOから保護する。
+		for (let j = previousCount; j < queued.length; j++)
+			reservedPositions[placementKey(queued[j])] = true;
 	}
 	appendAction(entity, action);
 }

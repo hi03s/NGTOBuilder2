@@ -75,6 +75,20 @@ export class RTMApiCompat {
 		world.setBlock(x, y, z, block, metadata, 3);
 	}
 
+	static setBlockWithoutNeighborUpdate(
+		world: World,
+		x: number,
+		y: number,
+		z: number,
+		block: Block,
+		metadata: number,
+	): void {
+		x = Math.floor(x);
+		y = Math.floor(y);
+		z = Math.floor(z);
+		world.setBlock(x, y, z, block, metadata, 2);
+	}
+
 	static getBlock(world: World, x: number, y: number, z: number): Block | null {
 		x = Math.floor(x);
 		y = Math.floor(y);
