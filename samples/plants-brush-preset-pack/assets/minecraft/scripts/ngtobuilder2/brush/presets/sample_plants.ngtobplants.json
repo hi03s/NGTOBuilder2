@@ -1,0 +1,8 @@
+{
+	"format": 1,
+	"id": "sample:plants",
+	"name": "サンプル草木",
+	"blocks": ["treeA.ngtz", "treeB.ngto"],
+	"randomHeight": true,
+	"order": 1000
+}

@@ -10,7 +10,7 @@ import { RTMApiCompat } from "@target/assets/minecraft/scripts/lib_hi03toolkit_1
 import { RotatableBlockObject } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObject";
 import { RotatableBlockSet } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockSet";
 
-export type TreePresetJson = {
+export type PlantsPresetJson = {
 	id?: string;
 	name?: string;
 	blocks: string[];
@@ -19,7 +19,7 @@ export type TreePresetJson = {
 	randomHeight?: boolean;
 };
 
-export type TreePreset = {
+export type PlantsPreset = {
 	id: string;
 	name: string;
 	blocks: string[];
@@ -29,12 +29,12 @@ export type TreePreset = {
 	randomHeight: boolean;
 };
 
-type ExternalTreeManifest = TreePresetJson & {
+type ExternalPlantsManifest = PlantsPresetJson & {
 	format?: number;
-	presets?: TreePresetJson[];
+	presets?: PlantsPresetJson[];
 };
 
-export type TreeCandidate = {
+export type PlantsCandidate = {
 	x: number;
 	z: number;
 	ngtoIndex: number;
@@ -42,9 +42,13 @@ export type TreeCandidate = {
 	extraHeight: number;
 };
 
-const TREE_TYPE_PATH = "scripts/ngtobuilder2/brush/treeType.json";
-const EXTERNAL_MANIFEST_SUFFIX = ".ngtobtree.json";
-let presetCache: TreePreset[] | null = null;
+const PLANTS_TYPE_PATH = "scripts/ngtobuilder2/brush/plantsType.json";
+const EXTERNAL_MANIFEST_SUFFIXES = [
+	".ngtobplants.json",
+	// 旧「樹木ブラシ」用マニフェストとの後方互換。
+	".ngtobtree.json",
+];
+let presetCache: PlantsPreset[] | null = null;
 let presetSignatureCache: string | null = null;
 const presetBlockKeyCache: { [name: string]: { [key: string]: boolean } } = {};
 
@@ -119,7 +123,10 @@ function loadNGTZFromInput(input: InputLike): NGTObject[] {
 	try {
 		let entry = zip.getNextEntry();
 		while (entry) {
-			if (!entry.isDirectory() && hasExtension(entry.getName(), ".ngto")) {
+			if (
+				!entry.isDirectory() &&
+				hasExtension(entry.getName(), ".ngto")
+			) {
 				result.push(NGTObject.load(zip));
 			}
 			zip.closeEntry();
@@ -141,7 +148,7 @@ function loadBlockInput(input: InputLike, path: string): NGTObject[] {
 		}
 	}
 	input.close();
-	throw new Error(`Unsupported tree block file: ${path}`);
+	throw new Error(`Unsupported plants block file: ${path}`);
 }
 
 function readJsonInput<T>(input: InputLike): T {
@@ -155,7 +162,8 @@ function readJsonInput<T>(input: InputLike): T {
 			text += String(line);
 			line = reader.readLine();
 		}
-		if (text.length > 0 && text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+		if (text.length > 0 && text.charCodeAt(0) === 0xfeff)
+			text = text.slice(1);
 		return JSON.parse(text) as T;
 	} finally {
 		reader.close();
@@ -169,7 +177,10 @@ function loadBuiltInBlock(path: string): NGTObject[] {
 	);
 }
 
-function loadExternalBlock(manifestFile: ExternalFile, path: string): NGTObject[] {
+function loadExternalBlock(
+	manifestFile: ExternalFile,
+	path: string,
+): NGTObject[] {
 	const firstChar = path.length > 0 ? path.charAt(0) : "";
 	if (
 		path.indexOf("..") !== -1 ||
@@ -182,16 +193,18 @@ function loadExternalBlock(manifestFile: ExternalFile, path: string): NGTObject[
 		path.split(String.fromCharCode(92)).join("/"),
 	);
 	return loadBlockInput(
-		NGTFileLoader.getInputStreamFromFile(file as any) as unknown as InputLike,
+		NGTFileLoader.getInputStreamFromFile(
+			file as any,
+		) as unknown as InputLike,
 		path,
 	);
 }
 
-function readExternalManifest(file: ExternalFile): ExternalTreeManifest {
+function readExternalManifest(file: ExternalFile): ExternalPlantsManifest {
 	const input = NGTFileLoader.getInputStreamFromFile(
 		file as any,
 	) as unknown as InputLike;
-	return readJsonInput<ExternalTreeManifest>(input);
+	return readJsonInput<ExternalPlantsManifest>(input);
 }
 
 function getExternalManifestFiles(): ExternalFile[] {
@@ -199,7 +212,11 @@ function getExternalManifestFiles(): ExternalFile[] {
 	const matcher = new Matcher({
 		match: (file: ExternalFile): boolean => {
 			const name = String(file.getName()).toLowerCase();
-			return name.slice(-EXTERNAL_MANIFEST_SUFFIX.length) === EXTERNAL_MANIFEST_SUFFIX;
+			for (let i = 0; i < EXTERNAL_MANIFEST_SUFFIXES.length; i++) {
+				const suffix = EXTERNAL_MANIFEST_SUFFIXES[i];
+				if (name.slice(-suffix.length) === suffix) return true;
+			}
+			return false;
 		},
 	});
 	const files = (NGTFileLoader.findFile as any)(matcher) as ExternalFileList;
@@ -208,7 +225,7 @@ function getExternalManifestFiles(): ExternalFile[] {
 	return result;
 }
 
-function modsAvailable(config: TreePresetJson): boolean {
+function modsAvailable(config: PlantsPresetJson): boolean {
 	const requiredMods = config.modid || [];
 	for (let i = 0; i < requiredMods.length; i++)
 		if (!RTMApiCompat.isModLoaded(requiredMods[i])) return false;
@@ -216,22 +233,22 @@ function modsAvailable(config: TreePresetJson): boolean {
 }
 
 function addPreset(
-	presets: TreePreset[],
+	presets: PlantsPreset[],
 	ids: { [id: string]: boolean },
-	config: TreePresetJson,
+	config: PlantsPresetJson,
 	fallbackName: string,
 	loadBlock: (path: string) => NGTObject[],
 ): void {
 	const id = config && config.id ? String(config.id).toLowerCase() : "";
 	const name = config && config.name ? String(config.name) : fallbackName;
 	if (!isValidPresetId(id))
-		throw new Error(`Invalid or missing tree preset id: ${id || name}`);
-	if (ids[id]) throw new Error(`Duplicate tree preset id: ${id}`);
+		throw new Error(`Invalid or missing plants preset id: ${id || name}`);
+	if (ids[id]) throw new Error(`Duplicate plants preset id: ${id}`);
 	if (!config.blocks || config.blocks.length === 0)
-		throw new Error(`Tree preset has no blocks: ${id}`);
+		throw new Error(`Plants preset has no blocks: ${id}`);
 	if (!modsAvailable(config)) return;
 	const order = config.order === undefined ? 1000 : Number(config.order);
-	if (!isFinite(order)) throw new Error(`Invalid tree preset order: ${id}`);
+	if (!isFinite(order)) throw new Error(`Invalid plants preset order: ${id}`);
 	if (
 		config.randomHeight !== undefined &&
 		typeof config.randomHeight !== "boolean"
@@ -244,19 +261,21 @@ function addPreset(
 	config.blocks.forEach((pathValue) => {
 		const path = String(pathValue);
 		if (!hasExtension(path, ".ngtz") && !hasExtension(path, ".ngto"))
-			throw new Error(`Unsupported tree block file: ${path}`);
+			throw new Error(`Unsupported plants block file: ${path}`);
 		try {
 			const loaded = loadBlock(path);
 			if (loaded.length === 0) {
 				missingBlocks.push(path);
-				NGTLog.debug(`[NGTO Builder2] Tree block contains no NGTO: ${id}: ${path}`);
+				NGTLog.debug(
+					`[NGTO Builder2] Plants block contains no NGTO: ${id}: ${path}`,
+				);
 			} else {
 				loaded.forEach((ngto) => ngtoList.push(ngto));
 			}
 		} catch (error) {
 			missingBlocks.push(path);
 			NGTLog.debug(
-				`[NGTO Builder2] Tree block load error: ${id}: ${path}: ${error}`,
+				`[NGTO Builder2] Plants block load error: ${id}: ${path}: ${error}`,
 			);
 		}
 	});
@@ -272,50 +291,57 @@ function addPreset(
 	});
 }
 
-export function getTreePresets(): TreePreset[] {
+export function getPlantsPresets(): PlantsPreset[] {
 	if (presetCache) return presetCache;
-	const presets: TreePreset[] = [];
+	const presets: PlantsPreset[] = [];
 	const ids: { [id: string]: boolean } = {};
 	const builtInInput = NGTFileLoader.getInputStream(
-		resource(TREE_TYPE_PATH),
+		resource(PLANTS_TYPE_PATH),
 	) as unknown as InputLike;
-	const builtIn = readJsonInput<{ [name: string]: TreePresetJson }>(builtInInput);
+	const builtIn = readJsonInput<{ [name: string]: PlantsPresetJson }>(
+		builtInInput,
+	);
 	Object.keys(builtIn).forEach((name) => {
 		try {
 			addPreset(presets, ids, builtIn[name], name, loadBuiltInBlock);
 		} catch (error) {
-			NGTLog.debug(`[NGTO Builder2] Built-in tree preset error: ${name}: ${error}`);
+			NGTLog.debug(
+				`[NGTO Builder2] Built-in plants preset error: ${name}: ${error}`,
+			);
 		}
 	});
 	let manifestFiles: ExternalFile[] = [];
 	try {
 		manifestFiles = getExternalManifestFiles();
 	} catch (error) {
-		NGTLog.debug(`[NGTO Builder2] Tree manifest scan error: ${error}`);
+		NGTLog.debug(`[NGTO Builder2] Plants manifest scan error: ${error}`);
 	}
 	manifestFiles.forEach((file) => {
-		let manifest: ExternalTreeManifest;
+		let manifest: ExternalPlantsManifest;
 		try {
 			manifest = readExternalManifest(file);
 			if (manifest.format !== undefined && Number(manifest.format) !== 1)
-				throw new Error(`Unsupported manifest format: ${manifest.format}`);
+				throw new Error(
+					`Unsupported manifest format: ${manifest.format}`,
+				);
 		} catch (error) {
 			NGTLog.debug(
-				`[NGTO Builder2] External tree manifest error: ${file}: ${error}`,
+				`[NGTO Builder2] External plants manifest error: ${file}: ${error}`,
 			);
 			return;
 		}
-		const configs: TreePresetJson[] =
+		const configs: PlantsPresetJson[] =
 			manifest.presets === undefined ? [manifest] : manifest.presets;
 		if (!Array.isArray(configs)) {
 			NGTLog.debug(
-				`[NGTO Builder2] External tree presets must be an array: ${file}`,
+				`[NGTO Builder2] External plants presets must be an array: ${file}`,
 			);
 			return;
 		}
 		configs.forEach((config) => {
 			try {
-				if (!config.name) throw new Error("External tree preset name is required");
+				if (!config.name)
+					throw new Error("External plants preset name is required");
 				addPreset(
 					presets,
 					ids,
@@ -325,7 +351,7 @@ export function getTreePresets(): TreePreset[] {
 				);
 			} catch (error) {
 				NGTLog.debug(
-					`[NGTO Builder2] External tree preset error: ${file}: ${error}`,
+					`[NGTO Builder2] External plants preset error: ${file}: ${error}`,
 				);
 			}
 		});
@@ -335,14 +361,14 @@ export function getTreePresets(): TreePreset[] {
 	return presets;
 }
 
-export function getTreePresetById(id: string): TreePreset | null {
-	const presets = getTreePresets();
+export function getPlantsPresetById(id: string): PlantsPreset | null {
+	const presets = getPlantsPresets();
 	for (let i = 0; i < presets.length; i++)
 		if (presets[i].id === id) return presets[i];
 	return null;
 }
 
-export function getTreePresetSignature(): string {
+export function getPlantsPresetSignature(): string {
 	if (presetSignatureCache) return presetSignatureCache;
 	let hash = 0x811c9dc5;
 	const addNumber = (value: number): void => {
@@ -352,7 +378,7 @@ export function getTreePresetSignature(): string {
 	const addString = (value: string): void => {
 		for (let i = 0; i < value.length; i++) addNumber(value.charCodeAt(i));
 	};
-	getTreePresets().forEach((preset) => {
+	getPlantsPresets().forEach((preset) => {
 		addString(preset.id);
 		addNumber(preset.randomHeight ? 1 : 0);
 		preset.missingBlocks.forEach((path) => addString(path));
@@ -397,7 +423,7 @@ function randomAt(seed: number, x: number, z: number, salt: number): number {
 	return mix32(mixed) / 4294967296;
 }
 
-export function createTreeCandidates(
+export function createPlantsCandidates(
 	centerX: number,
 	centerZ: number,
 	radius: number,
@@ -405,8 +431,8 @@ export function createTreeCandidates(
 	seed: number,
 	ngtoCount: number,
 	randomHeight: boolean,
-): TreeCandidate[] {
-	const result: TreeCandidate[] = [];
+): PlantsCandidate[] {
+	const result: PlantsCandidate[] = [];
 	if (ngtoCount <= 0 || density <= 0) return result;
 	const radiusSq = radius * radius;
 	for (let x = centerX - radius; x <= centerX + radius; x++) {
@@ -430,7 +456,7 @@ export function createTreeCandidates(
 	return result;
 }
 
-export function createTallTreeObject(
+export function createTallPlantsObject(
 	ngto: NGTObject,
 	extraHeight: number,
 ): RotatableBlockObject {
@@ -442,9 +468,13 @@ export function createTallTreeObject(
 				if (Block.getIdFromBlock(blockSet.block) === 0) continue;
 				if (y === 0) {
 					for (let repeat = 0; repeat <= extraHeight; repeat++)
-						result.add(new RotatableBlockSet(blockSet, x, repeat, z));
+						result.add(
+							new RotatableBlockSet(blockSet, x, repeat, z),
+						);
 				} else {
-					result.add(new RotatableBlockSet(blockSet, x, y + extraHeight, z));
+					result.add(
+						new RotatableBlockSet(blockSet, x, y + extraHeight, z),
+					);
 				}
 			}
 		}
@@ -453,7 +483,7 @@ export function createTallTreeObject(
 	return result;
 }
 
-export function createTallTreeNGTO(
+export function createTallPlantsNGTO(
 	ngto: NGTObject,
 	extraHeight: number,
 ): NGTObject {
@@ -488,7 +518,7 @@ export function blockSetKey(blockSet: BlockSet): string {
 	return `${Block.getIdFromBlock(blockSet.block)}:${blockSet.metadata}`;
 }
 
-export function getPresetBlockKeys(preset: TreePreset): {
+export function getPresetBlockKeys(preset: PlantsPreset): {
 	[key: string]: boolean;
 } {
 	const cached = presetBlockKeyCache[preset.id];
@@ -496,12 +526,12 @@ export function getPresetBlockKeys(preset: TreePreset): {
 	const keys: { [key: string]: boolean } = {};
 	preset.ngtoList.forEach((ngto) => {
 		for (let rotation = 0; rotation < 4; rotation++) {
-			const tree = createTallTreeObject(ngto, 0);
+			const plants = createTallPlantsObject(ngto, 0);
 			const centerX = Math.floor(ngto.xSize / 2) + 0.5;
 			const centerZ = Math.floor(ngto.zSize / 2) + 0.5;
-			tree.setPivot(centerX, 0.5, centerZ).rotate(rotation * 90, 0, 0);
-			for (let i = 0; i < tree.blockSetList.length; i++) {
-				const blockSet = tree.blockSetList[i].blockSet;
+			plants.setPivot(centerX, 0.5, centerZ).rotate(rotation * 90, 0, 0);
+			for (let i = 0; i < plants.blockSetList.length; i++) {
+				const blockSet = plants.blockSetList[i].blockSet;
 				if (Block.getIdFromBlock(blockSet.block) !== 0)
 					keys[blockSetKey(blockSet)] = true;
 			}
@@ -520,7 +550,7 @@ export function getSurfaceY(world: World, x: number, z: number): number {
 	return 0;
 }
 
-export function isValidTreeGround(
+export function isValidPlantsGround(
 	world: World,
 	x: number,
 	surfaceY: number,

@@ -11,19 +11,19 @@ import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 import { RotatableBlockObjectMapper } from "../../lib_hi03toolkit_1_0/lib_RotatableBlockObjectMapper";
 import {
 	blockSetKey,
-	createTallTreeObject,
-	createTreeCandidates,
+	createTallPlantsObject,
+	createPlantsCandidates,
 	getEraseGroundY,
 	getPresetBlockKeys,
 	getSurfaceY,
-	getTreePresetById,
-	getTreePresetSignature,
-	isValidTreeGround,
-} from "./tree_common";
+	getPlantsPresetById,
+	getPlantsPresetSignature,
+	isValidPlantsGround,
+} from "./plants_common";
 
 Version = "2.5";
 
-export type BrushTreeRequest = {
+export type BrushPlantsRequest = {
 	id: number;
 	action: "generate" | "erase";
 	centerX: number;
@@ -50,7 +50,7 @@ function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 	}
 	dataMap.setInt("lastBrushRequestId", -1, 0);
 	dataMap.setBoolean("isBuilding", false, 1);
-	dataMap.setString("treePresetSignature", getTreePresetSignature(), 1);
+	dataMap.setString("plantsPresetSignature", getPlantsPresetSignature(), 1);
 }
 
 function appendAction(entity: EntityVehicle, action: BlockBuilder): void {
@@ -62,12 +62,15 @@ function appendAction(entity: EntityVehicle, action: BlockBuilder): void {
 	builder.set(entity, queued);
 }
 
-function generateTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
-	const preset = getTreePresetById(request.presetId);
+function generatePlants(
+	entity: EntityVehicle,
+	request: BrushPlantsRequest,
+): void {
+	const preset = getPlantsPresetById(request.presetId);
 	if (!preset) return;
 	const world = RTMApiCompat.getWorld(entity);
 	const action = new BlockBuilder();
-	const candidates = createTreeCandidates(
+	const candidates = createPlantsCandidates(
 		request.centerX,
 		request.centerZ,
 		request.radius,
@@ -80,17 +83,17 @@ function generateTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
 		const candidate = candidates[i];
 		const ngto = preset.ngtoList[candidate.ngtoIndex];
 		if (!ngto) continue;
-		const tree = createTallTreeObject(ngto, candidate.extraHeight);
+		const plants = createTallPlantsObject(ngto, candidate.extraHeight);
 		const centerX = Math.floor(ngto.xSize / 2) + 0.5;
 		const centerZ = Math.floor(ngto.zSize / 2) + 0.5;
-		tree.setPivot(centerX, 0.5, centerZ);
-		tree.rotate(candidate.yaw, 0, 0);
-		tree.movePivotToBaseXZ();
-		RotatableBlockObjectMapper.toBlockCoordSelf(tree);
+		plants.setPivot(centerX, 0.5, centerZ);
+		plants.rotate(candidate.yaw, 0, 0);
+		plants.movePivotToBaseXZ();
+		RotatableBlockObjectMapper.toBlockCoordSelf(plants);
 		const y = getSurfaceY(world, candidate.x, candidate.z);
-		if (!isValidTreeGround(world, candidate.x, y, candidate.z)) continue;
+		if (!isValidPlantsGround(world, candidate.x, y, candidate.z)) continue;
 		const placements = RotatableBlockObjectMapper.toBlockPlacements(
-			tree,
+			plants,
 			candidate.x,
 			y,
 			candidate.z,
@@ -100,16 +103,24 @@ function generateTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
 	appendAction(entity, action);
 }
 
-function eraseTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
-	const preset = getTreePresetById(request.presetId);
+function erasePlants(entity: EntityVehicle, request: BrushPlantsRequest): void {
+	const preset = getPlantsPresetById(request.presetId);
 	if (!preset) return;
 	const world = RTMApiCompat.getWorld(entity);
 	const targetKeys = getPresetBlockKeys(preset);
 	const action = new BlockBuilder();
 	const air = new BlockSet(RTMApiCompat.getBlockAir(), 0);
 	const radiusSq = request.radius * request.radius;
-	for (let x = request.centerX - request.radius; x <= request.centerX + request.radius; x++) {
-		for (let z = request.centerZ - request.radius; z <= request.centerZ + request.radius; z++) {
+	for (
+		let x = request.centerX - request.radius;
+		x <= request.centerX + request.radius;
+		x++
+	) {
+		for (
+			let z = request.centerZ - request.radius;
+			z <= request.centerZ + request.radius;
+			z++
+		) {
 			const dx = x - request.centerX;
 			const dz = z - request.centerZ;
 			if (dx * dx + dz * dz > radiusSq) continue;
@@ -128,7 +139,7 @@ function eraseTrees(entity: EntityVehicle, request: BrushTreeRequest): void {
 
 function processRequest(entity: EntityVehicle): void {
 	const dataMap = entity.getResourceState().getDataMap();
-	const request = NGTOBuilderUtil.getJsonData<BrushTreeRequest>(
+	const request = NGTOBuilderUtil.getJsonData<BrushPlantsRequest>(
 		dataMap,
 		"brushRequest",
 	);
@@ -138,8 +149,8 @@ function processRequest(entity: EntityVehicle): void {
 	request.density = Math.max(0, Math.min(100, Math.floor(request.density)));
 	request.centerX = Math.floor(request.centerX);
 	request.centerZ = Math.floor(request.centerZ);
-	if (request.action === "generate") generateTrees(entity, request);
-	else if (request.action === "erase") eraseTrees(entity, request);
+	if (request.action === "generate") generatePlants(entity, request);
+	else if (request.action === "erase") erasePlants(entity, request);
 	dataMap.setBoolean("canUndo", UndoManager.canUndo(entity), 1);
 }
 
@@ -198,7 +209,11 @@ function onUpdate(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 		else if (ridingEntity instanceof EntityPlayer) player = ridingEntity;
 		if (player) {
 			hostPlayerList.put(entity, player);
-			dataMap.setString("hostPlayerEntityId", String(player.getEntityId()), 1);
+			dataMap.setString(
+				"hostPlayerEntityId",
+				String(player.getEntityId()),
+				1,
+			);
 			if (rider) {
 				RTMApiCompat.dismountPlayer(entity);
 				RTMApiCompat.startRiding(entity, rider);

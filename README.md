@@ -31,9 +31,9 @@ The author is not responsible for any damage or loss caused by using this pack.
 
 - 準備中
 
-## 樹木・草花ブラシの外部プリセット
+## 草木ブラシの外部プリセット
 
-[外部プリセットの作成・導入方法](docs/tree-brush-presets.md)
+[外部プリセットの作成・導入方法](docs/plants-brush-presets.md)
 
 ## ツール内容 / Tools
 

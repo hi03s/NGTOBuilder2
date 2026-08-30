@@ -19,15 +19,15 @@ import {
 	Pos,
 } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtilClient";
 import { Quaternion } from "../../lib_hi03toolkit_1_0/lib_Quaternion";
-import { BrushTreeRequest } from "./server_tree";
+import { BrushPlantsRequest } from "./server_plants";
 import {
-	createTallTreeNGTO,
-	createTreeCandidates,
+	createTallPlantsNGTO,
+	createPlantsCandidates,
 	getSurfaceY,
-	getTreePresetSignature,
-	getTreePresets,
-	isValidTreeGround,
-} from "./tree_common";
+	getPlantsPresetSignature,
+	getPlantsPresets,
+	isValidPlantsGround,
+} from "./plants_common";
 
 declare const renderer: VehiclePartsRenderer;
 
@@ -63,7 +63,7 @@ let lastGeneratedCenter: HashMap<Entity, Pos>;
 let previousEraseTarget: HashMap<Entity, Pos>;
 let requestIds: HashMap<Entity, number>;
 let repeatTimes: HashMap<string, number>;
-let tallTreeCache: HashMap<string, NGTObject>;
+let tallPlantsCache: HashMap<string, NGTObject>;
 let missingBlockWarnings: HashMap<string, boolean>;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
@@ -73,14 +73,39 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
 	keyManager.register("endEdit", Keyboard.KEY_Q, false, "ツールを終了");
 	keyManager.register("undo", Keyboard.KEY_Z, true, "Undo");
-	keyManager.register("presetNext", Keyboard.KEY_P, false, "プリセットを切り替え(next)");
-	keyManager.register("presetPrev", Keyboard.KEY_P, true, "プリセットを切り替え(prev)");
+	keyManager.register(
+		"presetNext",
+		Keyboard.KEY_P,
+		false,
+		"プリセットを切り替え(next)",
+	);
+	keyManager.register(
+		"presetPrev",
+		Keyboard.KEY_P,
+		true,
+		"プリセットを切り替え(prev)",
+	);
 	keyManager.register("reroll", Keyboard.KEY_R, false, "配置を再抽選");
 	keyManager.register("generateOnce", Keyboard.KEY_RETURN, false, "1回生成");
-	keyManager.register("radiusUp", Keyboard.KEY_RIGHT, false, "生成半径を1m拡大");
-	keyManager.register("radiusDown", Keyboard.KEY_LEFT, false, "生成半径を1m縮小");
+	keyManager.register(
+		"radiusUp",
+		Keyboard.KEY_RIGHT,
+		false,
+		"生成半径を1m拡大",
+	);
+	keyManager.register(
+		"radiusDown",
+		Keyboard.KEY_LEFT,
+		false,
+		"生成半径を1m縮小",
+	);
 	keyManager.register("densityUp", Keyboard.KEY_UP, false, "密度を上げる");
-	keyManager.register("densityDown", Keyboard.KEY_DOWN, false, "密度を下げる");
+	keyManager.register(
+		"densityDown",
+		Keyboard.KEY_DOWN,
+		false,
+		"密度を下げる",
+	);
 	keyManager.register("reset", Keyboard.KEY_C, false, "半径と密度をリセット");
 	previousTarget = new HashMap();
 	randomSeed = new HashMap();
@@ -88,12 +113,12 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	previousEraseTarget = new HashMap();
 	requestIds = new HashMap();
 	repeatTimes = new HashMap();
-	tallTreeCache = new HashMap();
+	tallPlantsCache = new HashMap();
 	missingBlockWarnings = new HashMap();
 	body = renderer.registerParts(new Parts("body"));
 	range = renderer.registerParts(new Parts("range"));
 	rangeErase = renderer.registerParts(new Parts("range_erase"));
-	getTreePresets();
+	getPlantsPresets();
 }
 
 function samePos(a: Pos | null, b: Pos | null): boolean {
@@ -145,12 +170,11 @@ function sendRequest(
 ): void {
 	const dataMap = entity.getResourceState().getDataMap();
 	let previousId = requestIds.get(entity);
-	if (!previousId)
-		previousId = Math.floor(Math.random() * 1000000000) + 1;
+	if (!previousId) previousId = Math.floor(Math.random() * 1000000000) + 1;
 	const id = previousId >= 2000000000 ? 1 : previousId + 1;
 	requestIds.put(entity, id);
-	const presets = getTreePresets();
-	const preset = presets[dataMap.getInt("treePresetIndex")];
+	const presets = getPlantsPresets();
+	const preset = presets[dataMap.getInt("plantsPresetIndex")];
 	if (!preset) return;
 	if (action === "generate" && preset.missingBlocks.length > 0) {
 		const warningKey = `${entity.getEntityId()}:${preset.id}`;
@@ -162,7 +186,7 @@ function sendRequest(
 			);
 		}
 	}
-	const request: BrushTreeRequest = {
+	const request: BrushPlantsRequest = {
 		id: id,
 		action: action,
 		centerX: looking.blockX,
@@ -176,7 +200,7 @@ function sendRequest(
 }
 
 function showHelp(sender: ICommandSender): void {
-	NGTLog.sendChatMessage(sender, "---NGTO Builder2 樹木ブラシ 操作方法---");
+	NGTLog.sendChatMessage(sender, "---NGTO Builder2 草木ブラシ 操作方法---");
 	[
 		"endEdit",
 		"undo",
@@ -189,9 +213,11 @@ function showHelp(sender: ICommandSender): void {
 		"densityUp",
 		"densityDown",
 		"reset",
-	].forEach((name) => NGTLog.sendChatMessage(sender, keyManager.getDescription(name)));
-	NGTLog.sendChatMessage(sender, "[右クリック] 樹木を生成");
-	NGTLog.sendChatMessage(sender, "[左クリック] 選択中の樹木を消去");
+	].forEach((name) =>
+		NGTLog.sendChatMessage(sender, keyManager.getDescription(name)),
+	);
+	NGTLog.sendChatMessage(sender, "[右クリック] 草木を生成");
+	NGTLog.sendChatMessage(sender, "[左クリック] 選択中の草木を消去");
 }
 
 function keyInput(
@@ -211,36 +237,43 @@ function keyInput(
 		dataMap.setBoolean("brushDefaultsInitialized", true, 0);
 		dataMap.setInt("brushRadius", DEFAULT_RADIUS, 1);
 		dataMap.setInt("brushDensity", DEFAULT_DENSITY, 1);
-		dataMap.setInt("treePresetIndex", 0, 1);
+		dataMap.setInt("plantsPresetIndex", 0, 1);
 	}
 	let radius = dataMap.getInt("brushRadius");
 	let density = dataMap.getInt("brushDensity");
-	const presets = getTreePresets();
-	const serverPresetSignature = dataMap.getString("treePresetSignature");
+	const presets = getPlantsPresets();
+	const serverPresetSignature = dataMap.getString("plantsPresetSignature");
 	const presetMismatch =
 		serverPresetSignature !== "" &&
-		serverPresetSignature !== getTreePresetSignature();
-	if (presetMismatch && !dataMap.getBoolean("treePresetMismatchWarned")) {
-		dataMap.setBoolean("treePresetMismatchWarned", true, 0);
+		serverPresetSignature !== getPlantsPresetSignature();
+	if (presetMismatch && !dataMap.getBoolean("plantsPresetMismatchWarned")) {
+		dataMap.setBoolean("plantsPresetMismatchWarned", true, 0);
 		NGTLog.sendChatMessage(
 			sender,
-			"§c[NGTO Builder2] クライアントとサーバーの樹木プリセットが一致しないため生成を無効化しました",
+			"§c[NGTO Builder2] クライアントとサーバーの草木プリセットが一致しないため生成を無効化しました",
 		);
 	}
 
 	if (keyManager.pressed("showHelp")) showHelp(sender);
 	if (keyManager.pressed("endEdit")) dataMap.setBoolean("isEndEdit", true, 1);
-	if (keyManager.pressed("undo") && dataMap.getBoolean("canUndo") && !dataMap.getBoolean("isBuilding"))
+	if (
+		keyManager.pressed("undo") &&
+		dataMap.getBoolean("canUndo") &&
+		!dataMap.getBoolean("isBuilding")
+	)
 		dataMap.setBoolean("isUndo", true, 1);
 
 	let presetDelta = 0;
 	if (keyManager.pressed("presetNext")) presetDelta = 1;
 	if (keyManager.pressed("presetPrev")) presetDelta = -1;
 	if (presetDelta !== 0 && presets.length > 0) {
-		let index = dataMap.getInt("treePresetIndex") + presetDelta;
+		let index = dataMap.getInt("plantsPresetIndex") + presetDelta;
 		index = (index + presets.length) % presets.length;
-		dataMap.setInt("treePresetIndex", index, 1);
-		NGTLog.sendChatMessage(sender, `[NGTO Builder2] プリセット: ${presets[index].name}`);
+		dataMap.setInt("plantsPresetIndex", index, 1);
+		NGTLog.sendChatMessage(
+			sender,
+			`[NGTO Builder2] プリセット: ${presets[index].name}`,
+		);
 	}
 	if (keyManager.pressed("reroll") && looking) {
 		seed = Math.floor(Math.random() * 2147483647) + 1;
@@ -248,10 +281,14 @@ function keyInput(
 		NGTLog.sendChatMessage(sender, "[NGTO Builder2] 配置を再抽選");
 	}
 
-	if (repeatPressed(entity, "radiusUp")) radius = Math.min(MAX_RADIUS, radius + 1);
-	if (repeatPressed(entity, "radiusDown")) radius = Math.max(MIN_RADIUS, radius - 1);
-	if (repeatPressed(entity, "densityUp")) density = Math.min(100, density + DENSITY_STEP);
-	if (repeatPressed(entity, "densityDown")) density = Math.max(0, density - DENSITY_STEP);
+	if (repeatPressed(entity, "radiusUp"))
+		radius = Math.min(MAX_RADIUS, radius + 1);
+	if (repeatPressed(entity, "radiusDown"))
+		radius = Math.max(MIN_RADIUS, radius - 1);
+	if (repeatPressed(entity, "densityUp"))
+		density = Math.min(100, density + DENSITY_STEP);
+	if (repeatPressed(entity, "densityDown"))
+		density = Math.max(0, density - DENSITY_STEP);
 	if (keyManager.pressed("reset")) {
 		radius = DEFAULT_RADIUS;
 		density = DEFAULT_DENSITY;
@@ -295,7 +332,11 @@ function keyInput(
 		const previous = lastGeneratedCenter.get(entity);
 		const dx = previous ? current[0] - previous[0] : 0;
 		const dz = previous ? current[2] - previous[2] : 0;
-		if (!prevRightClick || !previous || dx * dx + dz * dz >= radius * radius) {
+		if (
+			!prevRightClick ||
+			!previous ||
+			dx * dx + dz * dz >= radius * radius
+		) {
 			sendRequest(sender, entity, "generate", looking, seed);
 			lastGeneratedCenter.put(entity, current);
 		}
@@ -317,7 +358,11 @@ function renderRange(
 	const y = getSurfaceY(world, looking.blockX, looking.blockZ);
 	const pos = NGTOBuilderUtilClient.getInterpolatedPos(entity, partialTicks);
 	GL11.glPushMatrix();
-	GL11.glTranslatef(looking.blockX + 0.5 - pos[0], y - pos[1], looking.blockZ + 0.5 - pos[2]);
+	GL11.glTranslatef(
+		looking.blockX + 0.5 - pos[0],
+		y - pos[1],
+		looking.blockZ + 0.5 - pos[2],
+	);
 	const horizontalScale = radiusValue * 2;
 	GL11.glScalef(horizontalScale, 5, horizontalScale);
 	NGTOBuilderUtilClient.enableAlpha(0.25);
@@ -327,31 +372,35 @@ function renderRange(
 	GL11.glPopMatrix();
 }
 
-function getTallTree(
+function getTallPlants(
 	presetIndex: number,
 	ngtoIndex: number,
 	extraHeight: number,
 	source: NGTObject,
 ): NGTObject {
 	const key = `${presetIndex}:${ngtoIndex}:${extraHeight}`;
-	let result = tallTreeCache.get(key);
+	let result = tallPlantsCache.get(key);
 	if (!result) {
-		result = createTallTreeNGTO(source, extraHeight);
-		tallTreeCache.put(key, result);
+		result = createTallPlantsNGTO(source, extraHeight);
+		tallPlantsCache.put(key, result);
 	}
 	return result;
 }
 
-function renderTreePreview(entity: EntityVehicle, pass: number, partialTicks: number): void {
+function renderPlantsPreview(
+	entity: EntityVehicle,
+	pass: number,
+	partialTicks: number,
+): void {
 	const looking = NGTOBuilderUtilClient.getLookingPos(partialTicks);
 	if (!looking || Mouse.isButtonDown(0)) return;
 	const dataMap = entity.getResourceState().getDataMap();
-	const presets = getTreePresets();
-	const presetIndex = dataMap.getInt("treePresetIndex");
+	const presets = getPlantsPresets();
+	const presetIndex = dataMap.getInt("plantsPresetIndex");
 	const preset = presets[presetIndex];
 	if (!preset) return;
 	const seed = updateRandomSession(entity, looking);
-	const candidates = createTreeCandidates(
+	const candidates = createPlantsCandidates(
 		looking.blockX,
 		looking.blockZ,
 		dataMap.getInt("brushRadius"),
@@ -367,28 +416,52 @@ function renderTreePreview(entity: EntityVehicle, pass: number, partialTicks: nu
 		const candidate = candidates[i];
 		const source = preset.ngtoList[candidate.ngtoIndex];
 		if (!source) continue;
-		const tree = getTallTree(presetIndex, candidate.ngtoIndex, candidate.extraHeight, source);
-		const centerX = Math.floor(tree.xSize / 2) + 0.5;
-		const centerZ = Math.floor(tree.zSize / 2) + 0.5;
+		const plants = getTallPlants(
+			presetIndex,
+			candidate.ngtoIndex,
+			candidate.extraHeight,
+			source,
+		);
+		const centerX = Math.floor(plants.xSize / 2) + 0.5;
+		const centerZ = Math.floor(plants.zSize / 2) + 0.5;
 		const y = getSurfaceY(world, candidate.x, candidate.z);
-		if (!isValidTreeGround(world, candidate.x, y, candidate.z)) continue;
+		if (!isValidPlantsGround(world, candidate.x, y, candidate.z)) continue;
 		GL11.glPushMatrix();
-		GL11.glTranslatef(candidate.x + 0.5 - pos[0], y + 0.5 - pos[1], candidate.z + 0.5 - pos[2]);
-		NGTOBuilderUtilClient.glApplyQuaternionMatrix(Quaternion.fromEuler(candidate.yaw, 0, 0));
+		GL11.glTranslatef(
+			candidate.x + 0.5 - pos[0],
+			y + 0.5 - pos[1],
+			candidate.z + 0.5 - pos[2],
+		);
+		NGTOBuilderUtilClient.glApplyQuaternionMatrix(
+			Quaternion.fromEuler(candidate.yaw, 0, 0),
+		);
 		GL11.glTranslatef(-centerX, -0.5, -centerZ);
-		NGTOBuilderUtilClient.renderNGTOUniqueByPass(entity, renderer, tree, pass);
+		NGTOBuilderUtilClient.renderNGTOUniqueByPass(
+			entity,
+			renderer,
+			plants,
+			pass,
+		);
 		GL11.glPopMatrix();
 	}
 	NGTOBuilderUtilClient.disableAlpha();
 }
 
-function renderForToolUser(entity: EntityVehicle, pass: number, partialTicks: number): void {
+function renderForToolUser(
+	entity: EntityVehicle,
+	pass: number,
+	partialTicks: number,
+): void {
 	body.render(renderer);
 	renderRange(entity, partialTicks, Mouse.isButtonDown(0));
-	renderTreePreview(entity, pass, partialTicks);
+	renderPlantsPreview(entity, pass, partialTicks);
 }
 
-function render(entity: EntityVehicle, pass: number, partialTicks: number): void {
+function render(
+	entity: EntityVehicle,
+	pass: number,
+	partialTicks: number,
+): void {
 	if (!entity) {
 		body.render(renderer);
 		return;
@@ -397,7 +470,10 @@ function render(entity: EntityVehicle, pass: number, partialTicks: number): void
 	const world = RTMApiCompat.getWorld(entity);
 	const player = MCWrapperClient.getPlayer();
 	const hostId = dataMap.getString("hostPlayerEntityId");
-	const host = hostId === "" ? null : (world.getEntityByID(Number(hostId)) as unknown as EntityPlayer);
+	const host =
+		hostId === ""
+			? null
+			: (world.getEntityByID(Number(hostId)) as unknown as EntityPlayer);
 	if (!host || host !== player) {
 		body.render(renderer);
 		return;
@@ -412,14 +488,28 @@ function render(entity: EntityVehicle, pass: number, partialTicks: number): void
 	if (left !== prevLeft) dataMap.setBoolean("prevIsLeftClick", left, 0);
 	if (!dataMap.getBoolean("showHelpMessage")) {
 		dataMap.setBoolean("showHelpMessage", true, 0);
-		NGTLog.sendChatMessage(host as unknown as ICommandSender, keyManager.getDescription("showHelp"));
+		NGTLog.sendChatMessage(
+			host as unknown as ICommandSender,
+			keyManager.getDescription("showHelp"),
+		);
 	}
 	const serverVersion = dataMap.getString("VERSIONS");
-	if (serverVersion !== "" && serverVersion !== Version && !dataMap.getBoolean("isVersionChecked")) {
+	if (
+		serverVersion !== "" &&
+		serverVersion !== Version &&
+		!dataMap.getBoolean("isVersionChecked")
+	) {
 		dataMap.setBoolean("isVersionChecked", true, 0);
-		NGTLog.sendChatMessage(host as unknown as ICommandSender, `§cVersions don't match! Client: ${Version}, Server: ${serverVersion}`);
+		NGTLog.sendChatMessage(
+			host as unknown as ICommandSender,
+			`§cVersions don't match! Client: ${Version}, Server: ${serverVersion}`,
+		);
 	}
-	if (NGTUtilClient.getMinecraft().currentScreen === null && pass === 0 && renderer.currentMatId === 0)
+	if (
+		NGTUtilClient.getMinecraft().currentScreen === null &&
+		pass === 0 &&
+		renderer.currentMatId === 0
+	)
 		keyInput(host, entity, partialTicks, right, left, prevRight, prevLeft);
 	renderForToolUser(entity, pass, partialTicks);
 }

@@ -1,12 +1,14 @@
 {
-	"name": "NGTOBuilder2_Tree",
+	"name": "NGTOBuilder2_Plants",
 	"model": {
 		"modelFile": "ngtobuilder2/model_brush.mqo",
-		"textures": [["mat1", "textures/ngtobuilder2/brush/tree.png", "AlphaBlend"]],
-		"rendererPath": "scripts/ngtobuilder2/brush/render_tree.js"
+		"textures": [
+			["mat1", "textures/ngtobuilder2/brush/plants.png", "AlphaBlend"]
+		],
+		"rendererPath": "scripts/ngtobuilder2/brush/render_plants.js"
 	},
-	"buttonTexture": "textures/ngtobuilder2/brush/button_tree.png",
-	"serverScriptPath": "scripts/ngtobuilder2/brush/server_tree.js",
+	"buttonTexture": "textures/ngtobuilder2/brush/button_plants.png",
+	"serverScriptPath": "scripts/ngtobuilder2/brush/server_plants.js",
 	"playerPos": [[0, 0, 0]],
 	"vehicleType": "Car",
 	"size": [1, 1],
@@ -22,6 +24,6 @@
 	"doCulling": false,
 	"changeYawOnStopping": false,
 	"accuracy": "LOW",
-	"tags": "ngto builder 2 hi03 brush tree",
-	"customIconTexture": "textures/ngtobuilder2/brush/icon_tree.png"
+	"tags": "ngto builder 2 hi03 brush plants",
+	"customIconTexture": "textures/ngtobuilder2/brush/icon_plants.png"
 }
