@@ -443,7 +443,7 @@ function renderPlantsPreview(
 			Quaternion.fromEuler(candidate.yaw, 0, 0),
 		);
 		GL11.glTranslatef(-centerX, -0.5, -centerZ);
-		NGTOBuilderUtilClient.renderNGTOUniqueByPass(
+		NGTOBuilderUtilClient.renderNGTO(
 			entity,
 			renderer,
 			plants,

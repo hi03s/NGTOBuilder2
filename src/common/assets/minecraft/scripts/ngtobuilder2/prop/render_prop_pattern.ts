@@ -191,7 +191,6 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	quaternionManager = new HashMap();
 	previousRandomYawTarget = new HashMap();
 	posListCache = new HashMap();
-	prevNGTOData = new HashMap();
 	initParts();
 }
 var keyManager: InputManager;
@@ -201,7 +200,6 @@ var collector: PositionCollector;
 var quaternionManager: HashMap<Entity, Quaternion>;
 var previousRandomYawTarget: HashMap<Entity, Pos>;
 var posListCache: HashMap<string, Pos[]>;
-var prevNGTOData: HashMap<Entity, NGTObject | null>;
 
 function randomizeYaw(quaternion: Quaternion, snapAngle: number): Quaternion {
 	const randomAngle = Math.random() * 360;
@@ -882,8 +880,6 @@ function renderForToolUser(
 		} else ngto = ngtoHash;
 	}
 	const q = quaternionManager.get(entity);
-	const prevNGTO = prevNGTOData.get(entity);
-	prevNGTOData.put(entity, ngto);
 	const isMirrorX = dataMap.getBoolean("isMirrorX");
 	const isMirrorY = dataMap.getBoolean("isMirrorY");
 	const isMirrorZ = dataMap.getBoolean("isMirrorZ");
@@ -923,7 +919,6 @@ function renderForToolUser(
 			if (isMirrorZ) GL11.glScalef(1, 1, -1);
 			GL11.glTranslatef(-centerX2, -centerY2, -centerZ2);
 			NGTOBuilderUtilClient.renderNGTO(
-				prevNGTO !== ngto,
 				entity,
 				renderer,
 				ngto,

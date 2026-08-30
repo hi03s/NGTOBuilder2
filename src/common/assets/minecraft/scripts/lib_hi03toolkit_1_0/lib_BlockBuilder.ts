@@ -258,13 +258,14 @@ export class BlockBuilder {
 					(upperData[0].metadata & 8) !== 0
 				) {
 					// 1.12では下段だけを通常更新付きで置くと、上段不足として即座に破壊される。
-					RTMApiCompat.setBlockWithoutNeighborUpdate(
+					RTMApiCompat.setBlock(
 						world,
 						x,
 						lowerY,
 						z,
 						doublePlantBlock,
 						lowerData[0].metadata,
+						false,
 					);
 					RTMApiCompat.setBlock(
 						world,

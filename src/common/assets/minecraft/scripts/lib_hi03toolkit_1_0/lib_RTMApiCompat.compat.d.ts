@@ -27,14 +27,7 @@ export class RTMApiCompat {
 		z: number,
 		block: Block,
 		metadata: number,
-	): void;
-	static setBlockWithoutNeighborUpdate(
-		world: World,
-		x: number,
-		y: number,
-		z: number,
-		block: Block,
-		metadata: number,
+		notifyNeighbors?: boolean,
 	): void;
 	static getBlock(world: World, x: number, y: number, z: number): Block | null;
 	static getMetadata(
