@@ -23,6 +23,7 @@ export type TreePreset = {
 	name: string;
 	blocks: string[];
 	ngtoList: NGTObject[];
+	missingBlocks: string[];
 	order: number;
 	randomHeight: boolean;
 };
@@ -219,16 +220,33 @@ function addPreset(
 	const randomHeight =
 		config.randomHeight === undefined ? true : config.randomHeight;
 	const ngtoList: NGTObject[] = [];
-	config.blocks.forEach((path) => {
-		loadBlock(String(path)).forEach((ngto) => ngtoList.push(ngto));
+	const missingBlocks: string[] = [];
+	config.blocks.forEach((pathValue) => {
+		const path = String(pathValue);
+		if (!hasExtension(path, ".ngtz") && !hasExtension(path, ".ngto"))
+			throw new Error(`Unsupported tree block file: ${path}`);
+		try {
+			const loaded = loadBlock(path);
+			if (loaded.length === 0) {
+				missingBlocks.push(path);
+				NGTLog.debug(`[NGTO Builder2] Tree block contains no NGTO: ${id}: ${path}`);
+			} else {
+				loaded.forEach((ngto) => ngtoList.push(ngto));
+			}
+		} catch (error) {
+			missingBlocks.push(path);
+			NGTLog.debug(
+				`[NGTO Builder2] Tree block load error: ${id}: ${path}: ${error}`,
+			);
+		}
 	});
-	if (ngtoList.length === 0) throw new Error(`Tree preset has no NGTO: ${id}`);
 	ids[id] = true;
 	presets.push({
 		id: id,
 		name: name,
 		blocks: config.blocks,
 		ngtoList: ngtoList,
+		missingBlocks: missingBlocks,
 		order: order,
 		randomHeight: randomHeight,
 	});
@@ -316,6 +334,7 @@ export function getTreePresetSignature(): string {
 	getTreePresets().forEach((preset) => {
 		addString(preset.id);
 		addNumber(preset.randomHeight ? 1 : 0);
+		preset.missingBlocks.forEach((path) => addString(path));
 		preset.ngtoList.forEach((ngto) => {
 			addNumber(ngto.xSize);
 			addNumber(ngto.ySize);

@@ -64,9 +64,10 @@ let previousEraseTarget: HashMap<Entity, Pos>;
 let requestIds: HashMap<Entity, number>;
 let repeatTimes: HashMap<string, number>;
 let tallTreeCache: HashMap<string, NGTObject>;
+let missingBlockWarnings: HashMap<string, boolean>;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
-	Version = "2.3";
+	Version = "2.4";
 	keyManager = new InputManager();
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
@@ -88,6 +89,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	requestIds = new HashMap();
 	repeatTimes = new HashMap();
 	tallTreeCache = new HashMap();
+	missingBlockWarnings = new HashMap();
 	body = renderer.registerParts(new Parts("body"));
 	range = renderer.registerParts(new Parts("range"));
 	rangeErase = renderer.registerParts(new Parts("range_erase"));
@@ -135,6 +137,7 @@ function updateRandomSession(
 }
 
 function sendRequest(
+	sender: ICommandSender,
 	entity: EntityVehicle,
 	action: "generate" | "erase",
 	looking: LookingPos,
@@ -149,6 +152,16 @@ function sendRequest(
 	const presets = getTreePresets();
 	const preset = presets[dataMap.getInt("treePresetIndex")];
 	if (!preset) return;
+	if (action === "generate" && preset.missingBlocks.length > 0) {
+		const warningKey = `${entity.getEntityId()}:${preset.id}`;
+		if (!missingBlockWarnings.get(warningKey)) {
+			missingBlockWarnings.put(warningKey, true);
+			NGTLog.sendChatMessage(
+				sender,
+				`§e[NGTO Builder2] ${preset.name}: 次のファイルが見つからないか読み込めないため生成対象から除外しました: ${preset.missingBlocks.join(", ")}`,
+			);
+		}
+	}
 	const request: BrushTreeRequest = {
 		id: id,
 		action: action,
@@ -256,13 +269,14 @@ function keyInput(
 		!isUndo &&
 		!presetMismatch &&
 		keyManager.pressed("generateOnce");
-	if (generateOnce && looking) sendRequest(entity, "generate", looking, seed);
+	if (generateOnce && looking)
+		sendRequest(sender, entity, "generate", looking, seed);
 
 	if (!generateOnce && looking && !isUndo && !presetMismatch && isLeftClick) {
 		const current: Pos = [looking.blockX, looking.blockY, looking.blockZ];
 		const previous = previousEraseTarget.get(entity);
 		if (!prevLeftClick || !samePos(previous, current)) {
-			sendRequest(entity, "erase", looking, seed);
+			sendRequest(sender, entity, "erase", looking, seed);
 			previousEraseTarget.put(entity, current);
 		}
 	} else if (!isLeftClick) {
@@ -282,7 +296,7 @@ function keyInput(
 		const dx = previous ? current[0] - previous[0] : 0;
 		const dz = previous ? current[2] - previous[2] : 0;
 		if (!prevRightClick || !previous || dx * dx + dz * dz >= radius * radius) {
-			sendRequest(entity, "generate", looking, seed);
+			sendRequest(sender, entity, "generate", looking, seed);
 			lastGeneratedCenter.put(entity, current);
 		}
 	} else if (!isRightClick) {
