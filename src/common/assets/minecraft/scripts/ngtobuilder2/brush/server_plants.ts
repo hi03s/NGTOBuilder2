@@ -36,9 +36,23 @@ export type BrushPlantsRequest = {
 
 let builder: BlockBuilder;
 const BUILD_LIMIT = 5000;
+const DEFAULT_RADIUS = 16;
+const DEFAULT_DENSITY = 10;
+const BRUSH_SETTINGS_VERSION = 1;
+
+function ensureBrushDefaults(entity: EntityVehicle): void {
+	const dataMap = entity.getResourceState().getDataMap();
+	if (dataMap.getInt("brushSettingsVersion") === BRUSH_SETTINGS_VERSION)
+		return;
+	dataMap.setInt("brushRadius", DEFAULT_RADIUS, 1);
+	dataMap.setInt("brushDensity", DEFAULT_DENSITY, 1);
+	dataMap.setInt("plantsPresetIndex", 0, 1);
+	dataMap.setInt("brushSettingsVersion", BRUSH_SETTINGS_VERSION, 1);
+}
 
 function init(entity: EntityVehicle, scriptExecuter: ScriptExecuter): void {
 	const dataMap = entity.getResourceState().getDataMap();
+	ensureBrushDefaults(entity);
 	if (dataMap.getBoolean("isInitializedServer")) return;
 	dataMap.setBoolean("isInitializedServer", true, 1);
 	builder = builderHashMap.get(entity);

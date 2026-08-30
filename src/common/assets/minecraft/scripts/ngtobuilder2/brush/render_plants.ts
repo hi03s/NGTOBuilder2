@@ -36,6 +36,7 @@ const MIN_RADIUS = 1;
 const MAX_RADIUS = 64;
 const DEFAULT_DENSITY = 10;
 const DENSITY_STEP = 1;
+const BRUSH_SETTINGS_VERSION = 1;
 const KEY_REPEAT_DELAY = 300;
 const KEY_REPEAT_INTERVAL = 100;
 
@@ -123,6 +124,17 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 
 function samePos(a: Pos | null, b: Pos | null): boolean {
 	return !!a && !!b && a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+}
+
+function ensureBrushDefaults(entity: EntityVehicle): void {
+	const dataMap = entity.getResourceState().getDataMap();
+	if (dataMap.getInt("brushSettingsVersion") === BRUSH_SETTINGS_VERSION)
+		return;
+	// 1.12では同期値が反映される前にも描画されるため、クライアント値を直接初期化する。
+	dataMap.setInt("brushRadius", DEFAULT_RADIUS, 0);
+	dataMap.setInt("brushDensity", DEFAULT_DENSITY, 0);
+	dataMap.setInt("plantsPresetIndex", 0, 0);
+	dataMap.setInt("brushSettingsVersion", BRUSH_SETTINGS_VERSION, 0);
 }
 
 function repeatPressed(entity: Entity, name: string): boolean {
@@ -233,12 +245,7 @@ function keyInput(
 	const dataMap = entity.getResourceState().getDataMap();
 	const looking = NGTOBuilderUtilClient.getLookingPos(partialTicks);
 	let seed = updateRandomSession(entity, looking);
-	if (!dataMap.getBoolean("brushDefaultsInitialized")) {
-		dataMap.setBoolean("brushDefaultsInitialized", true, 0);
-		dataMap.setInt("brushRadius", DEFAULT_RADIUS, 1);
-		dataMap.setInt("brushDensity", DEFAULT_DENSITY, 1);
-		dataMap.setInt("plantsPresetIndex", 0, 1);
-	}
+	ensureBrushDefaults(entity);
 	let radius = dataMap.getInt("brushRadius");
 	let density = dataMap.getInt("brushDensity");
 	const presets = getPlantsPresets();
@@ -466,6 +473,7 @@ function render(
 		body.render(renderer);
 		return;
 	}
+	ensureBrushDefaults(entity);
 	const dataMap = entity.getResourceState().getDataMap();
 	const world = RTMApiCompat.getWorld(entity);
 	const player = MCWrapperClient.getPlayer();
