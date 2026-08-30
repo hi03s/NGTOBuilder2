@@ -24,7 +24,7 @@ import {
 	isValidPlantsGround,
 } from "./plants_common";
 
-Version = "2.5";
+Version = "2.3";
 
 export type BrushPlantsRequest = {
 	id: number;

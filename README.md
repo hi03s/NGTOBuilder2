@@ -9,10 +9,10 @@
 
 ## 概要 / About
 
-NGTOをワールド上に設置したり、ワイヤーモデルを簡単に設置するための便利なツールです。<br>
+NGTOの設置、地形生成、草木や積雪のブラシ編集、ワイヤーモデルの設置を補助するツール集です。<br>
 自動車モデルとして収録されています。地面に設置して右クリックで使用します。<br>
 <br>
-This is a convenient tool for placing NGTO objects and wire models in the world more easily.<br>
+This is a collection of tools for placing NGTO objects and wire models, generating terrain, and editing vegetation and snow with brushes.<br>
 It is included as a vehicle model. Place it on the ground and right-click it to use it.
 
 ## 注意事項 / Notice
@@ -66,6 +66,16 @@ Generates miniature blocks in the world according to their arrangement in your i
 
 手持ちのワイヤーアイテムとスロットバーにある碍子からワイヤーを設置します<br>
 Places wires using the wire item you are holding and the insulators in your hotbar.
+
+### ● 山脈生成
+
+指定した稜線と設定をもとに山脈地形を生成します<br>
+Generates mountain terrain from selected ridgelines and settings.
+
+### ● 草木ブラシ
+
+プリセットから草木を読み込み、指定範囲に配置または削除します<br>
+Loads vegetation from external presets and places or removes it within the selected brush range.
 
 ### ● 積雪ブラシ
 

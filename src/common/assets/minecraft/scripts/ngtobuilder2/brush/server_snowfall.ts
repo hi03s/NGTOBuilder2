@@ -10,7 +10,7 @@ import { BlockBuilder } from "../../lib_hi03toolkit_1_0/lib_BlockBuilder";
 import { NGTOBuilderUtil } from "../../lib_hi03toolkit_1_0/lib_NGTOBuilderUtil";
 import { UndoManager } from "../../lib_hi03toolkit_1_0/lib_UndoManager";
 
-Version = "1.0";
+Version = "2.3";
 
 export type BrushSnowfallRequest = {
 	id: number;

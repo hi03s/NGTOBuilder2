@@ -33,7 +33,7 @@ function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager = new InputManager();
 
 	//バージョン
-	Version = "2.2";
+	Version = "2.3";
 
 	//###################
 	//##  ユーザー設定  ##

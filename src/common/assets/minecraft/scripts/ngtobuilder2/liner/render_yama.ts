@@ -29,7 +29,7 @@ declare const renderer: VehiclePartsRenderer;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
 	keyManager = new InputManager();
-	Version = "2.4";
+	Version = "2.3";
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, `ヘルプを表示`);
 	keyManager.register("endEdit", Keyboard.KEY_Q, false, `ツールを終了`);

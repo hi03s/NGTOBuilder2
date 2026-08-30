@@ -61,7 +61,7 @@ let requestIds: HashMap<Entity, number>;
 let repeatTimes: HashMap<string, number>;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
-	Version = "1.0";
+	Version = "2.3";
 	keyManager = new InputManager();
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");

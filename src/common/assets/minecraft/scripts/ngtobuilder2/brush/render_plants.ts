@@ -68,7 +68,7 @@ let tallPlantsCache: HashMap<string, NGTObject>;
 let missingBlockWarnings: HashMap<string, boolean>;
 
 function init(par1: ModelSetVehicle, par2: ModelObject): void {
-	Version = "2.5";
+	Version = "2.3";
 	keyManager = new InputManager();
 	keyManager.setOptionKey(Keyboard.KEY_LCONTROL);
 	keyManager.register("showHelp", Keyboard.KEY_H, false, "ヘルプを表示");
