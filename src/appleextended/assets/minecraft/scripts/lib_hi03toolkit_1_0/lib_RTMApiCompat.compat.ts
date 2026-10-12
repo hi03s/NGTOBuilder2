@@ -4,6 +4,10 @@ import { TileEntityLargeRailSectionCore } from "jp.apple.rail";
 
 // 共通の1.12.2 APIはmc1122ターゲットから継承する。
 export class RTMApiCompat {
+	static isSectionRailCore(core: TileEntityLargeRailCore): boolean {
+		return core instanceof TileEntityLargeRailSectionCore;
+	}
+
 	static getSectionRailPositions(
 		core: TileEntityLargeRailCore,
 	): JavaObjectArray<RailPosition> | null {

@@ -54,6 +54,10 @@ type ResourceStateTileEntity = TileEntity & {
 };
 
 export class RTMApiCompat {
+	static isSectionRailCore(core: TileEntityLargeRailCore): boolean {
+		return false;
+	}
+
 	static getSectionRailPositions(
 		core: TileEntityLargeRailCore,
 	): JavaObjectArray<RailPosition> | null {

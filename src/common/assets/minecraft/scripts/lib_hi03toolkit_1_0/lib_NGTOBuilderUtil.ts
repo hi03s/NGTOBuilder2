@@ -580,17 +580,7 @@ export class NGTOBuilderUtil {
 					}
 				} else {
 					// 自動分割レールは分割前の理論レール全体を取得する。
-					const className = String(
-						(core as unknown as { getClass(): Class })
-							.getClass()
-							.getName(),
-					);
-					if (
-						className ===
-							"jp.kaiz.kaizpatch.rtm.rail.TileEntityLargeRailSectionCore" ||
-						className ===
-							"jp.apple.rail.TileEntityLargeRailSectionCore"
-					) {
+					if (RTMApiCompat.isSectionRailCore(core)) {
 						railMap = this.getLogicalRailMap(
 							core as RailSectionCore,
 						);

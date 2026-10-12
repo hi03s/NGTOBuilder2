@@ -15,6 +15,7 @@ import { World } from "net.minecraft.world";
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static isSectionRailCore(core: TileEntityLargeRailCore): boolean;
 	static getSectionRailPositions(
 		core: TileEntityLargeRailCore,
 	): JavaObjectArray<RailPosition> | null;

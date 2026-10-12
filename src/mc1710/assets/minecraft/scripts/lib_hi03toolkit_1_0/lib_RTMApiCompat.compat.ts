@@ -34,6 +34,10 @@ declare const Packages: {
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static isSectionRailCore(core: unknown): boolean {
+		return false;
+	}
+
 	static getSectionRailPositions(
 		core: unknown,
 	): JavaObjectArray<RailPosition> | null {

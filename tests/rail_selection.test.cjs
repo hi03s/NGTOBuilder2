@@ -27,6 +27,7 @@ class RailBase {
 	}
 }
 class SwitchCore {}
+class SectionCore {}
 class RailMap {
 	constructor(start, end, version) {
 		this.start = start;
@@ -49,6 +50,7 @@ class Vec3 {
 	}
 }
 const compat = {
+	isSectionRailCore: (core) => core instanceof SectionCore,
 	getSectionRailPositions: (core) => core.getLogicalRailPositions(),
 	getWorld: (entity) => entity.world,
 	getTileEntity: (world, x) => world.tiles[x],
@@ -110,7 +112,7 @@ function position(x, z) {
 	};
 }
 function section(className, group, positions) {
-	return {
+	return Object.assign(new SectionCore(), {
 		fixRTMRailMapVersion: 7,
 		getClass: () => ({ getName: () => className }),
 		isRailSection: () => true,
@@ -119,7 +121,7 @@ function section(className, group, positions) {
 		getRailMap: () => {
 			throw Error("Physical section must not be selected");
 		},
-	};
+	});
 }
 function entityFor(...cores) {
 	return { world: { tiles: cores.map((core) => new RailBase(core)) } };
@@ -222,37 +224,68 @@ test("ordinary rail and switch selection retain existing behavior", () => {
 	assert.equal(at(entity, 1), null);
 });
 
-test("AppleExtended compatibility uses the versioned constructor", () => {
-	class Basic extends RailMap {}
-	class Section {
-		isRailSection() { return true; }
-		getLogicalRailPositions() { return [position(0, 0), position(100, 0)]; }
-	}
-	Basic.fixRTMRailMapVersionCurrent = 9;
-	const file = path.resolve(
-		__dirname,
-		"../src/appleextended/assets/minecraft/scripts/lib_hi03toolkit_1_0/lib_RTMApiCompat.compat.ts",
-	);
-	const { RTMApiCompat } = load(file, {
-		"jp.ngt.rtm.rail.util": { RailMapBasic: Basic },
-		"jp.apple.rail": { TileEntityLargeRailSectionCore: Section },
-		"net.minecraftforge.fml.common": {
-			Loader: { isModLoaded: () => false },
-		},
+for (const [target, sectionPackage] of [
+	["kaizpatch", "jp.kaiz.kaizpatch.rtm.rail"],
+	["appleextended", "jp.apple.rail"],
+])
+	test(`${target} detects section subclasses and uses the logical endpoints`, () => {
+		class Basic extends RailMap {}
+		class Section {
+			isRailSection() {
+				return true;
+			}
+			getLogicalRailPositions() {
+				return [position(0, 0), position(100, 0)];
+			}
+		}
+		Basic.fixRTMRailMapVersionCurrent = 9;
+		const file = path.resolve(
+			__dirname,
+			`../src/${target}/assets/minecraft/scripts/lib_hi03toolkit_1_0/lib_RTMApiCompat.compat.ts`,
+		);
+		const { RTMApiCompat } = load(file, {
+			"jp.ngt.rtm.rail.util": { RailMapBasic: Basic },
+			[sectionPackage]: { TileEntityLargeRailSectionCore: Section },
+			"net.minecraftforge.fml.common": {
+				Loader: { isModLoaded: () => false },
+			},
+		});
+		class DerivedSection extends Section {
+			getClass() {
+				throw new Error(
+					"Detection must not rely on a class name string",
+				);
+			}
+		}
+		assert.equal(RTMApiCompat.isSectionRailCore(new Section()), true);
+		assert.equal(
+			RTMApiCompat.isSectionRailCore(new DerivedSection()),
+			true,
+		);
+		assert.equal(RTMApiCompat.isSectionRailCore({}), false);
+		assert.equal(
+			RTMApiCompat.getSectionRailPositions(new DerivedSection())[1].posX,
+			100,
+		);
+		assert.equal(
+			RTMApiCompat.getSectionRailPositions(new Section())[1].posX,
+			100,
+		);
+		assert.equal(RTMApiCompat.getSectionRailPositions({}), null);
+		assert.equal(
+			RTMApiCompat.createLogicalRailMap(position(0, 0), position(100, 0))
+				.version,
+			9,
+		);
+		assert.equal(
+			RTMApiCompat.createLogicalRailMap(
+				position(0, 0),
+				position(100, 0),
+				3,
+			).version,
+			3,
+		);
 	});
-	assert.equal(RTMApiCompat.getSectionRailPositions(new Section())[1].posX, 100);
-	assert.equal(RTMApiCompat.getSectionRailPositions({}), null);
-	assert.equal(
-		RTMApiCompat.createLogicalRailMap(position(0, 0), position(100, 0))
-			.version,
-		9,
-	);
-	assert.equal(
-		RTMApiCompat.createLogicalRailMap(position(0, 0), position(100, 0), 3)
-			.version,
-		3,
-	);
-});
 
 test("AppleExtended is dispatched before generic 1.12.2 and inherits its compatibility API", () => {
 	const config = JSON.parse(
