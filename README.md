@@ -117,6 +117,19 @@ Due to the "offset" not being implemented, some blocks are not placed exactly as
 RealTrainModを導入した状態でmodsフォルダにパックを導入します。<br>
 Install RealTrainMod first, then put this pack into your `mods` folder.<br>
 
+## 開発 / Development
+
+`rtmx.json`でKaizPatch、RTM 1.7.10、AppleExtended、RTM 1.12.2の4ターゲットを設定しています。
+AppleExtendedはSRBXと同じv2.5.3をスキャンし、`applelib`の検出で専用ターゲットへ切り替えます。
+共通の1.12.2互換APIは`mc1122`から継承します。
+
+```sh
+pnpm gen
+pnpm build
+node --test tests/rail_selection.test.cjs
+pnpm zip
+```
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

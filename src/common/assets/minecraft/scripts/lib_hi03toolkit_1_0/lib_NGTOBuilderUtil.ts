@@ -1,4 +1,10 @@
-import { ArrayList, HashMap, IdentityHashMap, List } from "java.util";
+import {
+	ArrayList,
+	HashMap,
+	IdentityHashMap,
+	List,
+	WeakHashMap,
+} from "java.util";
 import { BlockSet, NGTObject } from "jp.ngt.ngtlib.block";
 import { DataMap } from "jp.ngt.rtm.modelpack.state";
 import { Block } from "net.minecraft.block";
@@ -23,9 +29,15 @@ import { Method } from "java.lang.reflect";
 
 export type Pos = [x: number, y: number, z: number];
 
+// 自動分割APIはスキャン対象の旧RTMには存在しないため、実行時に検出する。
+type RailSectionCore = TileEntityLargeRailCore & {
+	fixRTMRailMapVersion?: number;
+	isRailSection(): boolean;
+	getRailGroupId(): { toString(): string } | null;
+};
+
 export type combineNGTOList =
-	| [ngto: NGTObject, offsetX: number, offsetY: number, offsetZ: number]
-	| null;
+	[ngto: NGTObject, offsetX: number, offsetY: number, offsetZ: number] | null;
 
 //### NGTOBuilderUtil ###
 /**
@@ -37,6 +49,11 @@ export class NGTOBuilderUtil {
 	private static ngtoIdentityMap: IdentityHashMap<NGTObject, number> =
 		new IdentityHashMap();
 	private static nextNGTOIdentity = 1;
+	private static logicalRailMapCache = new WeakHashMap<
+		TileEntityLargeRailCore,
+		[signature: string, railMap: RailMap]
+	>();
+	private static logicalRailGroupIds = new WeakHashMap<RailMap, string>();
 
 	/**
 	 * プレイヤーが手に持っているミニチュアブロックからNGTOを取得する
@@ -540,12 +557,21 @@ export class NGTOBuilderUtil {
 					//分岐器上
 					let distance = Infinity;
 					const railMapList = core.getAllRailMaps();
+					if (!railMapList) return null;
 					for (let i = 0; i < railMapList.length; i++) {
 						const rm = railMapList[i];
 						const split = Math.floor(rm.getLength() * 2);
-						const nearestIdx = rm.getNearlestPoint(split, posX, posZ);
+						const nearestIdx = rm.getNearlestPoint(
+							split,
+							posX,
+							posZ,
+						);
 						const posZX = rm.getRailPos(split, nearestIdx);
-						const vec = new Vec3(posZX[1] - posX, 0, posZX[0] - posZ);
+						const vec = new Vec3(
+							posZX[1] - posX,
+							0,
+							posZX[0] - posZ,
+						);
 						const len = vec.length();
 						if (len < distance) {
 							distance = len;
@@ -553,13 +579,74 @@ export class NGTOBuilderUtil {
 						}
 					}
 				} else {
-					//通常レール
-					railMap = core.getRailMap(entity);
+					// 自動分割レールは分割前の理論レール全体を取得する。
+					const className = String(
+						(core as unknown as { getClass(): Class })
+							.getClass()
+							.getName(),
+					);
+					if (
+						className ===
+							"jp.kaiz.kaizpatch.rtm.rail.TileEntityLargeRailSectionCore" ||
+						className ===
+							"jp.apple.rail.TileEntityLargeRailSectionCore"
+					) {
+						railMap = this.getLogicalRailMap(
+							core as RailSectionCore,
+						);
+					} else {
+						railMap = core.getRailMap(entity);
+					}
 				}
 			}
 		}
 		if (railMap) return railMap;
 		return null;
+	}
+
+	private static getLogicalRailMap(core: RailSectionCore): RailMap | null {
+		if (!core.isRailSection()) return null;
+		const positions = RTMApiCompat.getSectionRailPositions(core);
+		const groupId = core.getRailGroupId();
+		// チャンク読み込み中など、論理情報が未初期化なら選択しない。
+		if (
+			!positions ||
+			positions.length !== 2 ||
+			!positions[0] ||
+			!positions[1] ||
+			!groupId
+		)
+			return null;
+		const groupKey = String(groupId.toString());
+		const version = core.fixRTMRailMapVersion;
+		const signature =
+			groupKey +
+			":" +
+			version +
+			":" +
+			positions[0].writeToNBT().toString() +
+			":" +
+			positions[1].writeToNBT().toString();
+		const cached = this.logicalRailMapCache.get(core);
+		if (cached && cached[0] === signature) return cached[1];
+		// KaizPatch/AppleExtendedではバージョン指定付きコンストラクタを使う。
+		const railMap = RTMApiCompat.createLogicalRailMap(
+			positions[0],
+			positions[1],
+			version,
+		);
+		if (!railMap) return null;
+		this.logicalRailMapCache.put(core, [signature, railMap]);
+		this.logicalRailGroupIds.put(railMap, groupKey);
+		return railMap;
+	}
+
+	/** 別セクションから取得したRailMapも同じ理論レールとして扱う。 */
+	static isSameRailMap(railMap1: RailMap, railMap2: RailMap): boolean {
+		if (railMap1 === railMap2) return true;
+		const group1 = this.logicalRailGroupIds.get(railMap1);
+		const group2 = this.logicalRailGroupIds.get(railMap2);
+		return !!group1 && !!group2 && String(group1) === String(group2);
 	}
 
 	static isConnectedRail(railMap1: RailMap, railMap2: RailMap) {

@@ -1,6 +1,7 @@
 import { BlockSet, NGTObject, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
 import { TileEntityInsulator } from "jp.ngt.rtm.electric";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
+import { TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
 import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { Block } from "net.minecraft.block";
 import { Entity } from "net.minecraft.entity";
@@ -14,6 +15,9 @@ import { World } from "net.minecraft.world";
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static getSectionRailPositions(
+		core: TileEntityLargeRailCore,
+	): JavaObjectArray<RailPosition> | null;
 	static createResourceLocation(
 		domain: string,
 		path: string,
@@ -71,6 +75,11 @@ export class RTMApiCompat {
 	static getNGTObjectFromItemNBT(nbt: NBTTagCompound): NGTObject | null;
 	static getRailPitch(railMap: RailMap, split: number, index: number): number;
 	static getRailYaw(railMap: RailMap, split: number, index: number): number;
+	static createLogicalRailMap(
+		start: RailPosition,
+		end: RailPosition,
+		version?: number,
+	): RailMap | null;
 	static getCant(railMap: RailMap, split: number, index: number): number;
 	static getHorizontalAnchorYaw(rp: RailPosition): number;
 	static getHorizontalAnchorLength(rp: RailPosition): number;

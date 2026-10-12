@@ -11,6 +11,8 @@
 		"src/common",
 		"src/mc1710",
 		"src/mc1122",
+		"src/appleextended",
+		"generated/appleextended",
 		"generated/mc1710",
 		"generated/mc1122"
 	]

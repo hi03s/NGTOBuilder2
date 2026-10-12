@@ -1,10 +1,36 @@
 import { ItemMiniature } from "jp.ngt.mcte.item";
 import { NGTObject, TileEntityPlaceable } from "jp.ngt.ngtlib.block";
-import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
+import { TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
+import { RailMap, RailMapBasic, RailPosition } from "jp.ngt.rtm.rail.util";
 import { NBTTagCompound } from "net.minecraft.nbt";
 import { ResourceLocation } from "net.minecraft.util";
 
 export class RTMApiCompat {
+	static getSectionRailPositions(
+		core: TileEntityLargeRailCore,
+	): JavaObjectArray<RailPosition> | null {
+		// 設定済みの旧KaizPatchスキャンには自動分割APIが含まれない。
+		return (
+			core as TileEntityLargeRailCore & {
+				getLogicalRailPositions(): JavaObjectArray<RailPosition> | null;
+			}
+		).getLogicalRailPositions();
+	}
+
+	static createLogicalRailMap(
+		start: RailPosition,
+		end: RailPosition,
+		version?: number,
+	): RailMap {
+		return new RailMapBasic(
+			start,
+			end,
+			typeof version === "number"
+				? version
+				: RailMapBasic.fixRTMRailMapVersionCurrent,
+		);
+	}
+
 	static createResourceLocation(
 		domain: string,
 		path: string,

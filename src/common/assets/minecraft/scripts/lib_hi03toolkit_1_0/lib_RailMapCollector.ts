@@ -67,7 +67,11 @@ export class RailMapCollector {
 
 	hasRailMap(entity: Entity, railMap: RailMap): boolean {
 		const railMapList = this.getOrCreateList(entity)[0];
-		return railMapList.indexOf(railMap) >= 0;
+		for (let i = 0; i < railMapList.length; i++) {
+			if (NGTOBuilderUtil.isSameRailMap(railMapList[i], railMap))
+				return true;
+		}
+		return false;
 	}
 
 	getLastRailMap(entity: Entity): RailMap | null {

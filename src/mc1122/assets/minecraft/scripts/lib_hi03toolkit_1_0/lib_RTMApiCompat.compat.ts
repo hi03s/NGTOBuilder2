@@ -10,6 +10,7 @@ import { RTMItem } from "jp.ngt.rtm";
 import { Connection, TileEntityInsulator } from "jp.ngt.rtm.electric";
 import { EntityVehicle } from "jp.ngt.rtm.entity.vehicle";
 import { ItemInstalledObject, ItemWithModel } from "jp.ngt.rtm.item";
+import { TileEntityLargeRailCore } from "jp.ngt.rtm.rail";
 import { RailMap, RailPosition } from "jp.ngt.rtm.rail.util";
 import { Block } from "net.minecraft.block";
 import { ICommandSender } from "net.minecraft.command";
@@ -53,6 +54,21 @@ type ResourceStateTileEntity = TileEntity & {
 };
 
 export class RTMApiCompat {
+	static getSectionRailPositions(
+		core: TileEntityLargeRailCore,
+	): JavaObjectArray<RailPosition> | null {
+		return null;
+	}
+
+	static createLogicalRailMap(
+		start: RailPosition,
+		end: RailPosition,
+		version?: number,
+	): RailMap | null {
+		// 通常RTM 1.12.2には自動分割レールが存在しない。
+		return null;
+	}
+
 	/** 大文字を含むRTMモデルパック内パスを維持する。 */
 	static createResourceLocation(
 		domain: string,

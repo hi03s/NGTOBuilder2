@@ -34,6 +34,21 @@ declare const Packages: {
 export type Pos = [x: number, y: number, z: number];
 
 export class RTMApiCompat {
+	static getSectionRailPositions(
+		core: unknown,
+	): JavaObjectArray<RailPosition> | null {
+		return null;
+	}
+
+	static createLogicalRailMap(
+		start: RailPosition,
+		end: RailPosition,
+		version?: number,
+	): RailMap | null {
+		// 通常RTM 1.7.10には自動分割レールが存在しない。
+		return null;
+	}
+
 	static createResourceLocation(
 		domain: string,
 		path: string,
