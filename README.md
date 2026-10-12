@@ -1,10 +1,10 @@
 # NGTO Builder 2
 
 [![Static Badge](https://img.shields.io/badge/RTM-1.7.10.46%EF%BD%9E-00cd00)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.7.10)
-[![Static Badge](https://img.shields.io/badge/KaizPatchX-1.10.1%EF%BD%9E-57b57b)](https://github.com/Kai-Z-JP/KaizPatchX)
+[![Static Badge](https://img.shields.io/badge/KaizPatchX-1.10.4%EF%BD%9E-57b57b)](https://github.com/Kai-Z-JP/KaizPatchX)
 [![Static Badge](https://img.shields.io/badge/RTM-2.4.24%EF%BD%9E-46bcff)](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2)
 [![Static Badge](https://img.shields.io/badge/fixRTM-2.0.28%EF%BD%9E-1082c3)](https://github.com/fixrtm/fixRTM)
-[![Static Badge](https://img.shields.io/badge/AppleExtended-2.4.4%EF%BD%9E-f4a542)](https://github.com/ringo-1234/AppleExtended)
+[![Static Badge](https://img.shields.io/badge/AppleExtended-2.5.3%EF%BD%9E-f4a542)](https://github.com/ringo-1234/AppleExtended)
 [![Static Badge](https://img.shields.io/badge/RTMUnofficial-1.0.15%EF%BD%9E-ffb6ca)](https://github.com/325-Sunnygo/RealTrainModUnofficial)
 
 ## 概要 / About
@@ -97,13 +97,13 @@ Places overhead wires using the wire item you are holding and the insulators in 
 ### MC1.7.10
 
 - [RTM1.7.10.46～](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.7.10) ※1
-- [KaizPatchX-1.10.1～](https://github.com/Kai-Z-JP/KaizPatchX)
+- [KaizPatchX-1.10.4～](https://github.com/Kai-Z-JP/KaizPatchX)
 
 ### MC1.12
 
 - [RTM2.4.24～](https://www.curseforge.com/minecraft/mc-mods/realtrainmod/files/all?page=1&pageSize=20&version=1.12.2) ※1
 - [fixRTM-2.0.28～](https://img.shields.io/badge/fixRTM-2.0.28%EF%BD%9E-1082c3)
-- [AppleExtended-2.4.4～](https://github.com/ringo-1234/AppleExtended)
+- [AppleExtended-2.5.3～](https://github.com/ringo-1234/AppleExtended)
 
 ### MC1.21.1
 
